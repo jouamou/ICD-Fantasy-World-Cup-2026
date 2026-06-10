@@ -1139,7 +1139,6 @@ function syncMyData(){
   
   db.ref('rosters').set(localRosters).then(()=>{
     toast("✓ Your predictions are now live on the leaderboard!");
-    document.getElementById('syncBanner').style.display='none';
   }).catch(e=>{
     console.error("Sync failed:", e);
     toast("Sync failed: " + e.message);
