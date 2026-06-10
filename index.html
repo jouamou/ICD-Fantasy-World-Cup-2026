@@ -448,6 +448,10 @@
     <div id="adminPanel" style="display:none">
       <div class="admin-note">
         <b>Organiser mode.</b> Enter the final score and (optionally) the goalscorers for each match as it's played. Leave a match blank until it's finished. Everyone's points are calculated automatically and any match with a result becomes locked for players. Results are saved in this browser, so enter them from one consistent device.
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+          <button class="btn sm" onclick="forceSyncToCloud()" style="background:#7fbb42;color:#fff">↑ Force sync staff data to cloud</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Use this if staff filled predictions before rules were published. Syncs all local data to Firebase instantly.</div>
+        </div>
       </div>
       <div class="filter" id="adminFilter" style="margin-bottom:16px"></div>
       <div id="adminContainer"></div>
@@ -469,6 +473,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyBAj92mDekbkrjRH5vwyxZrtLKFR6LRcs",
   authDomain: "icd-world-cup-2026.firebaseapp.com",
+  databaseURL: "https://icd-world-cup-2026-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "icd-world-cup-2026",
   storageBucket: "icd-world-cup-2026.firebasestorage.app",
   messagingSenderId: "617000099398",
@@ -1112,6 +1117,37 @@ function renderLeaderboard(){
     </div>`).join('');
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ============================================================
+   FORCE SYNC (localStorage → Firebase migration)
+   ============================================================ */
+function forceSyncToCloud(){
+  if(!firebaseReady){
+    toast("Firebase not connected"); return;
+  }
+  const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+  const localResults = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
+  
+  if(Object.keys(localRosters).length===0 && Object.keys(localResults).length===0){
+    toast("No local data to sync");
+    return;
+  }
+  
+  db.ref('rosters').set(localRosters).then(()=>{
+    toast("✓ Rosters synced to cloud");
+  }).catch(e=>{
+    console.error("Sync failed:", e);
+    toast("Sync failed: " + e.message);
+  });
+  
+  if(Object.keys(localResults).length>0){
+    db.ref('results').set(localResults).then(()=>{
+      toast("✓ Results synced to cloud");
+    }).catch(e=>{
+      console.error("Results sync failed:", e);
+    });
+  }
+}
 
 /* ============================================================
    ADMIN / RESULTS
