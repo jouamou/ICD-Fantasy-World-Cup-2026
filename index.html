@@ -478,6 +478,9 @@ const firebaseConfig = {
 
 let db = null;
 let firebaseReady = false;
+window._rosterCache = {};
+window._resultsCache = {};
+
 try {
   if (typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
     firebase.initializeApp(firebaseConfig);
@@ -738,7 +741,17 @@ function fmtDate(iso){
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
 function teamFlag(t){ return FLAG(TEAMS[t]); }
-function getRoster(name){ return DB.rosters()[name]; }
+function getRoster(name){
+  const r = DB.rosters()[name];
+  if(!r) return null;
+  // Firebase strips empty objects, so predictions/scorers may come back undefined.
+  // Normalize the roster shape so the rest of the code can rely on it.
+  if(!r.predictions) r.predictions = {};
+  for(const id in r.predictions){
+    if(r.predictions[id] && !r.predictions[id].scorers) r.predictions[id].scorers = [];
+  }
+  return r;
+}
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -817,6 +830,7 @@ document.getElementById('startBtn').addEventListener('click',()=>{
   if(!rosters[name]) rosters[name]={team:selectedFavTeam,predictions:{}};
   else rosters[name].team=selectedFavTeam;
   DB.saveRosters(rosters);
+  window._rosterCache = rosters; // ensure cache is set immediately
   DB.setCurrent(name); activeName=name;
   enterPredict();
   toast("Welcome, "+name+"!");
@@ -857,7 +871,11 @@ function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
    ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
-  const r=getRoster(activeName); if(!r) return;
+  const r=getRoster(activeName);
+  if(!r){
+    cont.innerHTML=`<div style="padding:20px;color:var(--muted);text-align:center;">Loading your predictions...</div>`;
+    return;
+  }
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
   let html="";
