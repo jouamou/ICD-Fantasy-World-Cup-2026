@@ -362,6 +362,11 @@
 
     <!-- predictions -->
     <div id="predict" style="display:none">
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px">
+        <div style="font-size:13px;color:#856404;margin-bottom:8px"><b>📤 Sync your predictions to the leaderboard</b></div>
+        <div style="font-size:12px;color:#856404;margin-bottom:10px">Click below to upload your predictions so everyone can see your score live.</div>
+        <button class="btn sm" onclick="syncMyData()" style="background:#ffc107;color:#333;border:none;cursor:pointer">Sync my predictions now</button>
+      </div>
       <div class="toolbar">
         <div class="who"><span>Playing as</span> <img id="whoFlag" alt=""> <strong id="whoName"></strong></div>
         <div class="spacer"></div>
@@ -1121,6 +1126,26 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 /* ============================================================
    FORCE SYNC (localStorage → Firebase migration)
    ============================================================ */
+function syncMyData(){
+  if(!firebaseReady){
+    toast("Firebase not connected"); return;
+  }
+  const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+  
+  if(Object.keys(localRosters).length===0){
+    toast("No predictions to sync");
+    return;
+  }
+  
+  db.ref('rosters').set(localRosters).then(()=>{
+    toast("✓ Your predictions are now live on the leaderboard!");
+    document.getElementById('syncBanner').style.display='none';
+  }).catch(e=>{
+    console.error("Sync failed:", e);
+    toast("Sync failed: " + e.message);
+  });
+}
+
 function forceSyncToCloud(){
   if(!firebaseReady){
     toast("Firebase not connected"); return;
