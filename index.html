@@ -455,25 +455,26 @@
   }
 </style>
 <!-- ================================================================
-  FIREBASE REALTIME DATABASE RULES — paste into Firebase Console:
-  https://console.firebase.google.com → your project → Realtime Database → Rules
+  FIREBASE REALTIME DATABASE RULES — paste into the Firebase Console:
+  console.firebase.google.com  ->  icd-world-cup-2026  ->
+  Realtime Database  ->  Rules  ->  (paste, then Publish)
 
   {
     "rules": {
-      "rosters": {
-        "$player": {
-          ".read": true,
-          ".write": true
-        }
-      },
-      "results": {
-        ".read": true,
-        ".write": true
-      }
+      "rosters": { ".read": true, ".write": true },
+      "results": { ".read": true, ".write": true }
     }
   }
 
-  These rules allow all reads/writes. For production, add authentication.
+  IMPORTANT: keep ".read" at the rosters / results level (do NOT nest it
+  under a child such as "$player"). The app reads the WHOLE rosters node to
+  build the shared leaderboard, and Firebase rules do NOT cascade upward, so
+  a read rule on rosters/$player alone makes the whole-node read fail with
+  "permission denied" — which silently breaks cross-device sync and leaves
+  the leaderboard empty on other devices.
+
+  These rules are open (no login), which is fine for an internal staff game.
+  For production you would add Firebase Authentication.
 ================================================================ -->
 </head>
 <body>
@@ -632,7 +633,8 @@
 
 <footer class="footer">
   Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). Match times are shown in your local time<span id="tzNote"></span>.
-  <br><span id="syncStatus" style="font-size:11px;display:inline-block;margin-top:6px"></span><div id="data-recovery-note" style="font-size:11px;opacity:.85;margin-top:4px;max-width:720px;margin-inline:auto;line-height:1.45">If you ever see missing data, use Backup immediately before trying Sync all players. Restore from a downloaded backup can recover local data, but Firebase is the source of truth for shared data.</div>
+  <br><span id="syncStatus" style="font-size:11px;display:inline-block;margin-top:6px"></span>
+  <div id="data-recovery-note" style="font-size:11px;opacity:.85;margin-top:4px;max-width:720px;margin-inline:auto;line-height:1.45">If data ever looks missing, open <b>Results</b> and click <b>⬇ Backup</b> first. <b>Refresh cloud</b> reloads everyone from Firebase; <b>Sync all players</b> re-uploads what's in memory. Firebase is the source of truth for shared data.</div>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -891,16 +893,28 @@ const MATCHES = [
 const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
 
 /* ============================================================
-   PERMANENT CLOUD-FIRST SYNC
-   - Every player saved under rosters/<safeKey> individually
-   - Never overwrites other players' data
-   - Real-time listeners keep all devices in sync automatically
-   - localStorage only as offline read cache, never as source of truth
+   CLOUD-FIRST SYNC (per-player paths, backward compatible)
+   - Each player is stored at rosters/<safeKey> as {name, team, predictions}.
+   - Writing one player NEVER overwrites another (no global clobber).
+   - OLD records written by earlier versions (keyed by name, with no "name"
+     field inside) are still read correctly, so nothing is ever lost.
+   - A whole-node listener keeps every device in sync. This REQUIRES the
+     Firebase rule  "rosters": { ".read": true }  AT THE rosters LEVEL
+     (see the rules note in <head> — read rules do not cascade upward).
    ============================================================ */
 
-function safeKey(name){ return (name||'').trim().replace(/[.#$\[\]]/g,'_'); }
+// Firebase keys cannot contain . # $ [ ] / — sanitise the PATH only (not the name).
+function safeKey(name){ return (name||'').trim().replace(/[.#$\[\]\/]/g,'_'); }
 
-/* Seed from localStorage so offline/cached predictions are never lost on startup */
+// Normalise any record (old OR new format) to {name, team, predictions}.
+// Old format had no "name" field; the Firebase key WAS the player's name.
+function normaliseRecord(key, v){
+  if(!v || typeof v !== 'object') return null;
+  const name = (v.name && String(v.name).trim()) ? v.name : key;
+  return { name, team: v.team || '', predictions: v.predictions || {} };
+}
+
+// Seed caches from localStorage so cached picks are instant and never lost.
 try {
   window._rosterCache  = JSON.parse(localStorage.getItem('ffwc26_rosters')||'{}');
   window._resultsCache = JSON.parse(localStorage.getItem('ffwc26_results')||'{}');
@@ -910,9 +924,9 @@ try {
 }
 
 const DB = {
-  rosters(){ return window._rosterCache; },
+  rosters(){ return window._rosterCache || {}; },
 
-  /* Save ONE player under their own Firebase path — never overwrites others */
+  // Save ONE player under their own path — never touches anyone else's data.
   saveOneRoster(name, data){
     const payload = { name, team: data.team||'', predictions: data.predictions||{} };
     window._rosterCache[name] = payload;
@@ -923,15 +937,13 @@ const DB = {
     }
   },
 
-  /* Legacy wrapper so existing calls to saveRosters() still work safely */
-  saveRosters(r){
-    Object.keys(r||{}).forEach(name => DB.saveOneRoster(name, r[name]));
-  },
+  // Legacy wrapper so any older call still works safely (writes per-player).
+  saveRosters(r){ Object.keys(r||{}).forEach(name => DB.saveOneRoster(name, r[name])); },
 
   current(){ return localStorage.getItem('ffwc26_current')||''; },
   setCurrent(n){ localStorage.setItem('ffwc26_current', n); },
 
-  results(){ return window._resultsCache; },
+  results(){ return window._resultsCache || {}; },
 
   saveOneResult(id, data){
     window._resultsCache[id] = data;
@@ -942,14 +954,65 @@ const DB = {
     }
   },
 
-  /* Legacy wrapper */
   saveResults(r, onlyId){
     if(onlyId!=null){ DB.saveOneResult(onlyId, r[onlyId]); }
     else { Object.keys(r||{}).forEach(id => DB.saveOneResult(id, r[id])); }
   }
 };
 
-/* ─── Manual sync helpers (buttons in UI) ─── */
+/* Merge a cloud snapshot into the cache. Cloud is authoritative, but we keep
+   any local player / prediction that hasn't uploaded yet (e.g. briefly offline),
+   and we read BOTH old and new record formats so old players never vanish. */
+function mergeRosterIntoCache(cloudRaw){
+  const merged = {};
+  Object.entries(cloudRaw || {}).forEach(([key, v]) => {
+    const rec = normaliseRecord(key, v);
+    if(rec) merged[rec.name] = rec;
+  });
+  Object.keys(window._rosterCache || {}).forEach(name => {
+    const local = window._rosterCache[name];
+    if(!local) return;
+    if(!merged[name]){
+      // Local-only player (signed up while offline / pending upload) — keep them.
+      merged[name] = { name, team: local.team||'', predictions: local.predictions||{} };
+    } else {
+      // Cloud wins per match, but keep any local match the cloud doesn't have yet.
+      merged[name] = { ...merged[name],
+        predictions: { ...(local.predictions||{}), ...(merged[name].predictions||{}) } };
+    }
+  });
+  return merged;
+}
+
+let isInitialized = false;
+
+function refreshAll(){
+  renderLeaderboard();
+  renderScorebar();
+  const pr = document.getElementById('predict');
+  if(pr && pr.style.display !== 'none'){ renderGroups(); renderLiveBanner(); renderNextMatch(); }
+}
+
+/* ===== Real-time listeners — keep every device in sync ===== */
+if(firebaseReady){
+  db.ref('rosters').on('value', snap => {
+    window._rosterCache = mergeRosterIntoCache(snap.val() || {});
+    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
+    if(isInitialized) refreshAll();
+  }, err => {
+    console.error('rosters listener error:', err);
+    const ss=document.getElementById('syncStatus');
+    if(ss){ ss.innerHTML='⚠ Cloud read was blocked — check the Realtime Database rules (see code note).'; ss.style.color='#b07a3a'; }
+  });
+
+  db.ref('results').on('value', snap => {
+    window._resultsCache = snap.val() || {};
+    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
+    if(isInitialized) refreshAll();
+  }, err => console.error('results listener error:', err));
+}
+
+/* ----- manual sync helpers (buttons) ----- */
 function syncMyPredictions(){
   if(!activeName){ toast('Choose a player first'); return; }
   const r = DB.rosters()[activeName];
@@ -979,43 +1042,36 @@ function syncAllPlayersNow(){
   });
 }
 
-/* ─── Backup / Restore ─── */
+/* ----- backup / restore ----- */
 function exportBackup(){
-  const data = {
-    rosters: window._rosterCache,
-    results: window._resultsCache,
-    exportedAt: new Date().toISOString(),
-    version: 1
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const data = { rosters: window._rosterCache, results: window._resultsCache,
+    exportedAt:new Date().toISOString(), version:2 };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'icd-worldcup-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'icd-worldcup-backup-'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
   toast('Backup downloaded ✓');
 }
-
 function importBackup(){
   const input = document.createElement('input');
-  input.type = 'file'; input.accept = '.json';
+  input.type='file'; input.accept='.json';
   input.onchange = async e => {
     const file = e.target.files[0]; if(!file) return;
     try{
-      const text = await file.text();
-      const data = JSON.parse(text);
+      const data = JSON.parse(await file.text());
       if(!data.rosters){ toast('Invalid backup file'); return; }
-      /* Write every player to Firebase individually */
-      window._rosterCache = data.rosters || {};
+      window._rosterCache = {};
+      Object.entries(data.rosters).forEach(([key,v])=>{ const r=normaliseRecord(key,v); if(r) window._rosterCache[r.name]=r; });
       window._resultsCache = data.results || {};
       localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
       localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
       if(firebaseReady){
-        const writes = [];
-        Object.keys(window._rosterCache).forEach(name => {
-          const r = window._rosterCache[name];
-          writes.push(db.ref('rosters/'+safeKey(name)).set({ name, team:r.team||'', predictions:r.predictions||{} }));
+        const writes=[];
+        Object.values(window._rosterCache).forEach(r=>{
+          writes.push(db.ref('rosters/'+safeKey(r.name)).set({name:r.name,team:r.team||'',predictions:r.predictions||{}}));
         });
-        Object.keys(window._resultsCache).forEach(id => {
+        Object.keys(window._resultsCache).forEach(id=>{
           writes.push(db.ref('results/'+id).set(window._resultsCache[id]));
         });
         await Promise.all(writes);
@@ -1024,91 +1080,30 @@ function importBackup(){
         toast('Backup loaded locally ✓ ('+Object.keys(window._rosterCache).length+' players)');
       }
       refreshAll();
-    }catch(err){
-      console.error(err); toast('Failed to load backup file');
-    }
+    }catch(err){ console.error(err); toast('Failed to load backup file'); }
   };
   input.click();
 }
-
 function refreshCloudNow(){
   if(!firebaseReady){ toast('Cloud unavailable'); return; }
-  const btn = document.getElementById('refreshCloudBtn');
+  const btn=document.getElementById('refreshCloudBtn');
   if(btn){ btn.disabled=true; btn.textContent='Refreshing…'; }
   Promise.all([db.ref('rosters').once('value'), db.ref('results').once('value')])
-    .then(([rs, res])=>{
-      const rawRosters = rs.val() || {};
-      window._rosterCache = {};
-      Object.values(rawRosters).forEach(v=>{
-        if(v && v.name) window._rosterCache[v.name] = v;
-      });
-      window._resultsCache = res.val() || {};
+    .then(([rs,res])=>{
+      const raw=rs.val()||{};
+      const rebuilt={};
+      Object.entries(raw).forEach(([key,v])=>{ const r=normaliseRecord(key,v); if(r) rebuilt[r.name]=r; });
+      window._rosterCache=rebuilt;
+      window._resultsCache=res.val()||{};
       localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
       localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
       refreshAll();
-      toast('Cloud data refreshed ✓');
+      toast('Cloud data refreshed ✓ ('+Object.keys(rebuilt).length+' players)');
       if(btn){ btn.disabled=false; btn.textContent='Refresh cloud'; }
     }).catch(e=>{
-      console.error(e); toast('Refresh failed');
+      console.error(e); toast('Refresh failed — check DB rules');
       if(btn){ btn.disabled=false; btn.textContent='Refresh cloud'; }
     });
-}
-
-let isInitialized = false;
-
-function refreshAll(){
-  renderLeaderboard();
-  renderScorebar();
-  const pr = document.getElementById('predict');
-  if(pr && pr.style.display !== 'none'){ renderGroups(); renderLiveBanner(); renderNextMatch(); }
-}
-
-/* ─── Real-time Firebase listeners — auto-sync all devices ─── */
-/* Deep-merge helper: cloud is authoritative but we never discard local
-   predictions that haven't uploaded yet (e.g. briefly offline) */
-function mergeRosterIntoCache(cloudRaw){
-  const incoming = {};
-  Object.values(cloudRaw || {}).forEach(v => { if(v && v.name) incoming[v.name] = v; });
-  /* For each player: keep cloud record but fill in any local predictions
-     that are missing from the cloud (upload-pending data protection) */
-  const merged = { ...incoming };
-  Object.keys(window._rosterCache || {}).forEach(name => {
-    const local = window._rosterCache[name];
-    if(!local || !local.predictions) return;
-    if(!merged[name]){
-      /* Player exists locally but not yet in cloud — keep them */
-      merged[name] = local;
-    } else {
-      /* Merge predictions: cloud wins per-match, but keep any local
-         match that cloud doesn't have yet */
-      const cloudPreds = merged[name].predictions || {};
-      const localPreds = local.predictions || {};
-      const safePreds = { ...localPreds, ...cloudPreds }; // cloud overwrites local per match
-      merged[name] = { ...merged[name], predictions: safePreds };
-    }
-  });
-  return merged;
-}
-
-if(firebaseReady){
-  db.ref('rosters').on('value', snap => {
-    window._rosterCache = mergeRosterIntoCache(snap.val() || {});
-    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
-    if(isInitialized){
-      refreshAll();
-      if(activeName && getRoster(activeName)){
-        const pr = document.getElementById('predict');
-        const ob = document.getElementById('onboard');
-        if(pr && pr.style.display==='none' && ob && ob.style.display!=='none') enterPredict();
-      }
-    }
-  }, e => console.error('rosters listener:', e));
-
-  db.ref('results').on('value', snap => {
-    window._resultsCache = snap.val() || {};
-    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
-    if(isInitialized) refreshAll();
-  }, e => console.error('results listener:', e));
 }
 
 let activeName = DB.current();
@@ -1197,8 +1192,9 @@ function checkStart(){
 document.getElementById('nameInput').addEventListener('input',checkStart);
 document.getElementById('startBtn').addEventListener('click',()=>{
   const name=document.getElementById('nameInput').value.trim();
+  // Preserve any existing predictions for this name (returning player), never wipe them.
   const existing = DB.rosters()[name] || {predictions:{}};
-  DB.saveOneRoster(name, { team:selectedFavTeam, predictions:existing.predictions||{} });
+  DB.saveOneRoster(name, { team:selectedFavTeam, predictions: existing.predictions || {} });
   DB.setCurrent(name); activeName=name;
   enterPredict();
   toast("Welcome, "+name+"!");
@@ -1207,7 +1203,12 @@ document.getElementById('startBtn').addEventListener('click',()=>{
 function enterPredict(){
   document.getElementById('onboard').style.display='none';
   document.getElementById('predict').style.display='block';
-  const r=getRoster(activeName);
+  let r=getRoster(activeName);
+  if(!r){
+    // Safety net: a cloud refresh must never leave a signed-in player with no roster.
+    r={ name:activeName, team:selectedFavTeam||'', predictions:{} };
+    DB.saveOneRoster(activeName, r);
+  }
   document.getElementById('whoName').textContent=activeName;
   document.getElementById('whoFlag').src=teamFlag(r.team);
   buildGroupFilter();
@@ -1389,7 +1390,13 @@ function jumpToMatch(id,g){
    ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
-  const r=getRoster(activeName); if(!r) return;
+  let r=getRoster(activeName);
+  if(!r && activeName){
+    // Recover instead of bailing — otherwise the groups silently never render.
+    r={ name:activeName, team:selectedFavTeam||'', predictions:{} };
+    DB.saveOneRoster(activeName, r);
+  }
+  if(!r) return;
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
 
@@ -1815,8 +1822,8 @@ function init(){
   const ss = document.getElementById('syncStatus');
   if(ss){
     ss.innerHTML = firebaseReady
-      ? '☁ Live sync active — all predictions update instantly across every device.'
-      : '⚠ Cloud sync unavailable — check your internet connection and refresh the page.';
+      ? '☁ Cloud sync active — the leaderboard is shared live across every device.'
+      : '⚠ Cloud sync unavailable right now — your picks are saved on this device only.';
     ss.style.color = firebaseReady ? 'var(--green-700)' : '#b07a3a';
   }
   if(activeName && getRoster(activeName)){
