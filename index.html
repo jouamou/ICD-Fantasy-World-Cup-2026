@@ -509,7 +509,7 @@
         <div class="who"><span>Playing as</span> <img id="whoFlag" alt=""> <strong id="whoName"></strong></div>
         <div class="spacer"></div>
         <button class="btn ghost sm" id="switchBtn">Switch player</button>
-        <button class="btn gold sm" id="syncPredBtn" onclick="syncMyPredictions()">Sync my predictions</button>
+        <button class="btn gold sm" onclick="syncMyPredictions()">☁ Sync my picks</button>
       </div>
       <div id="liveBanner"></div>
       <div class="nextwrap" id="nextWrap"></div>
@@ -595,11 +595,12 @@
       <div class="admin-note">
         <b>Organiser mode.</b> Matches lock automatically the moment they kick off, so no one can change a prediction once play begins. You only need to enter the final score. Use the <b>Today &amp; live</b> view to see just the matches that need attention, tap the score with the quick buttons, and it syncs to everyone instantly. The 🔎 link opens the live score for that match so you can confirm it fast.
       </div>
-      <div class="toolbar" style="margin-bottom:16px">
-        <div class="filter" id="adminFilter"></div>
-        <div class="spacer"></div>
-        <button class="btn gold sm" onclick="syncAllPlayersNow()">Sync all players</button>
-        <button class="btn ghost sm" onclick="refreshCloudNow()">Refresh cloud</button>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px">
+        <div class="filter" id="adminFilter" style="margin:0"></div>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost sm" id="refreshCloudBtn" onclick="refreshCloudNow()">Refresh cloud</button>
+          <button class="btn gold sm" id="syncAllBtn" onclick="syncAllPlayersNow()">Sync all players</button>
+        </div>
       </div>
       <div id="adminContainer"></div>
     </div>
@@ -866,44 +867,111 @@ const MATCHES = [
 
 const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
 
-/* ---------- hybrid storage: Firebase cloud + localStorage fallback ---------- */
-// seed in-memory caches from localStorage so the UI is instant on load
-window._rosterCache  = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
-window._resultsCache = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
+/* ============================================================
+   PERMANENT CLOUD-FIRST SYNC
+   - Every player saved under rosters/<safeKey> individually
+   - Never overwrites other players' data
+   - Real-time listeners keep all devices in sync automatically
+   - localStorage only as offline read cache, never as source of truth
+   ============================================================ */
+
+function safeKey(name){ return (name||'').trim().replace(/[.#$\[\]]/g,'_'); }
+
+window._rosterCache  = {};
+window._resultsCache = {};
 
 const DB = {
-  rosters(){
-    return firebaseReady ? (window._rosterCache || {})
-                         : JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+  rosters(){ return window._rosterCache; },
+
+  /* Save ONE player under their own Firebase path — never overwrites others */
+  saveOneRoster(name, data){
+    const payload = { name, team: data.team||'', predictions: data.predictions||{} };
+    window._rosterCache[name] = payload;
+    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
+    if(firebaseReady){
+      db.ref('rosters/'+safeKey(name)).set(payload)
+        .catch(e => { console.error('saveOneRoster failed', e); toast('Sync failed — try again'); });
+    }
   },
+
+  /* Legacy wrapper so existing calls to saveRosters() still work safely */
   saveRosters(r){
-    window._rosterCache = r;
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));   // always keep a local copy
+    Object.keys(r||{}).forEach(name => DB.saveOneRoster(name, r[name]));
+  },
+
+  current(){ return localStorage.getItem('ffwc26_current')||''; },
+  setCurrent(n){ localStorage.setItem('ffwc26_current', n); },
+
+  results(){ return window._resultsCache; },
+
+  saveOneResult(id, data){
+    window._resultsCache[id] = data;
+    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
     if(firebaseReady){
-      db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
+      db.ref('results/'+id).set(data)
+        .catch(e => { console.error('saveOneResult failed', e); toast('Result sync failed — try again'); });
     }
   },
-  current(){ return localStorage.getItem("ffwc26_current")||""; },
-  setCurrent(n){ localStorage.setItem("ffwc26_current", n); },
-  results(){
-    return firebaseReady ? (window._resultsCache || {})
-                         : JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
-  },
+
+  /* Legacy wrapper */
   saveResults(r, onlyId){
-    window._resultsCache = r;
-    localStorage.setItem("ffwc26_results", JSON.stringify(r));
-    if(firebaseReady){
-      if(onlyId!=null){
-        // Write just this one match so we never clobber the auto-updater's
-        // writes to other matches (last-write-wins is per-match, not global).
-        db.ref('results/'+onlyId).set(r[onlyId])
-          .catch(err => console.error('Cloud save (result '+onlyId+') failed:', err));
-      } else {
-        db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
-      }
-    }
+    if(onlyId!=null){ DB.saveOneResult(onlyId, r[onlyId]); }
+    else { Object.keys(r||{}).forEach(id => DB.saveOneResult(id, r[id])); }
   }
 };
+
+/* ─── Manual sync helpers (buttons in UI) ─── */
+function syncMyPredictions(){
+  if(!activeName){ toast('Choose a player first'); return; }
+  const r = DB.rosters()[activeName];
+  if(!r){ toast('No predictions found'); return; }
+  if(!firebaseReady){ toast('Cloud unavailable — check connection'); return; }
+  db.ref('rosters/'+safeKey(activeName)).set({ name:activeName, team:r.team||'', predictions:r.predictions||{} })
+    .then(()=>toast('Your predictions synced ✓'))
+    .catch(e=>{ console.error(e); toast('Sync failed'); });
+}
+
+function syncAllPlayersNow(){
+  const rosters = DB.rosters();
+  const names = Object.keys(rosters);
+  if(!names.length){ toast('No player data in memory'); return; }
+  if(!firebaseReady){ toast('Cloud unavailable'); return; }
+  const btn = document.getElementById('syncAllBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Syncing…'; }
+  Promise.all(names.map(name => {
+    const r = rosters[name];
+    return db.ref('rosters/'+safeKey(name)).set({ name, team:r.team||'', predictions:r.predictions||{} });
+  })).then(()=>{
+    toast('All '+names.length+' players synced ✓');
+    if(btn){ btn.disabled=false; btn.textContent='Sync all players'; }
+  }).catch(e=>{
+    console.error(e); toast('Bulk sync failed');
+    if(btn){ btn.disabled=false; btn.textContent='Sync all players'; }
+  });
+}
+
+function refreshCloudNow(){
+  if(!firebaseReady){ toast('Cloud unavailable'); return; }
+  const btn = document.getElementById('refreshCloudBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Refreshing…'; }
+  Promise.all([db.ref('rosters').once('value'), db.ref('results').once('value')])
+    .then(([rs, res])=>{
+      const rawRosters = rs.val() || {};
+      window._rosterCache = {};
+      Object.values(rawRosters).forEach(v=>{
+        if(v && v.name) window._rosterCache[v.name] = v;
+      });
+      window._resultsCache = res.val() || {};
+      localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
+      localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
+      refreshAll();
+      toast('Cloud data refreshed ✓');
+      if(btn){ btn.disabled=false; btn.textContent='Refresh cloud'; }
+    }).catch(e=>{
+      console.error(e); toast('Refresh failed');
+      if(btn){ btn.disabled=false; btn.textContent='Refresh cloud'; }
+    });
+}
 
 let isInitialized = false;
 
@@ -914,19 +982,30 @@ function refreshAll(){
   if(pr && pr.style.display !== 'none'){ renderGroups(); renderLiveBanner(); renderNextMatch(); }
 }
 
-/* ===== Real-time listeners (only if the cloud is available) ===== */
+/* ─── Real-time Firebase listeners — auto-sync all devices ─── */
 if(firebaseReady){
   db.ref('rosters').on('value', snap => {
-    window._rosterCache = snap.val() || {};
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
-    if(isInitialized) refreshAll();
-  }, err => console.error('rosters listener error:', err));
+    const raw = snap.val() || {};
+    /* Rebuild cache keyed by display name, not Firebase key */
+    window._rosterCache = {};
+    Object.values(raw).forEach(v => { if(v && v.name) window._rosterCache[v.name] = v; });
+    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
+    if(isInitialized){
+      refreshAll();
+      /* Auto-enter predict view if player was already identified */
+      if(activeName && getRoster(activeName)){
+        const pr = document.getElementById('predict');
+        const ob = document.getElementById('onboard');
+        if(pr && pr.style.display==='none' && ob && ob.style.display!=='none') enterPredict();
+      }
+    }
+  }, e => console.error('rosters listener:', e));
 
   db.ref('results').on('value', snap => {
     window._resultsCache = snap.val() || {};
-    localStorage.setItem("ffwc26_results", JSON.stringify(window._resultsCache));
+    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
     if(isInitialized) refreshAll();
-  }, err => console.error('results listener error:', err));
+  }, e => console.error('results listener:', e));
 }
 
 let activeName = DB.current();
@@ -941,7 +1020,6 @@ function fmtDate(iso){
 }
 function teamFlag(t){ return FLAG(TEAMS[t]); }
 function getRoster(name){ return DB.rosters()[name]; }
-function safePlayerKey(name){ return (name||'').trim().replace(/[.#$\[\]]/g,'_'); }
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1016,10 +1094,8 @@ function checkStart(){
 document.getElementById('nameInput').addEventListener('input',checkStart);
 document.getElementById('startBtn').addEventListener('click',()=>{
   const name=document.getElementById('nameInput').value.trim();
-  const rosters=DB.rosters();
-  if(!rosters[name]) rosters[name]={team:selectedFavTeam,predictions:{}};
-  else rosters[name].team=selectedFavTeam;
-  DB.saveRosters(rosters);
+  const existing = DB.rosters()[name] || {predictions:{}};
+  DB.saveOneRoster(name, { team:selectedFavTeam, predictions:existing.predictions||{} });
   DB.setCurrent(name); activeName=name;
   enterPredict();
   toast("Welcome, "+name+"!");
@@ -1038,50 +1114,6 @@ function enterPredict(){
   renderNextMatch();
   startCountdownTicker();
 }
-async function syncMyPredictions(){
-  if(!activeName){ toast('Choose a player first'); return; }
-  const roster = getRoster(activeName);
-  if(!roster){ toast('No predictions found for this player'); return; }
-  if(!firebaseReady || !db){ toast('Cloud sync unavailable'); return; }
-  try{
-    await db.ref('rosters/' + safePlayerKey(activeName)).set({ ...roster, name: activeName });
-    toast('Your predictions synced');
-  }catch(err){
-    console.error('manual player sync failed', err);
-    toast('Sync failed');
-  }
-}
-
-async function syncAllPlayersNow(){
-  const rosters = DB.rosters() || {};
-  const names = Object.keys(rosters);
-  if(!names.length){ toast('No player data to sync'); return; }
-  if(!firebaseReady || !db){ toast('Cloud sync unavailable'); return; }
-  try{
-    await Promise.all(names.map(name => db.ref('rosters/' + safePlayerKey(name)).set({ ...rosters[name], name })));
-    toast('All players synced');
-  }catch(err){
-    console.error('sync all players failed', err);
-    toast('Bulk sync failed');
-  }
-}
-
-async function refreshCloudNow(){
-  if(!firebaseReady || !db){ toast('Cloud sync unavailable'); return; }
-  try{
-    const [rosterSnap, resultSnap] = await Promise.all([db.ref('rosters').once('value'), db.ref('results').once('value')]);
-    window._rosterCache = rosterSnap.val() || {};
-    window._resultsCache = resultSnap.val() || {};
-    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
-    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
-    refreshAll();
-    toast('Cloud data refreshed');
-  }catch(err){
-    console.error('cloud refresh failed', err);
-    toast('Refresh failed');
-  }
-}
-
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
   document.getElementById('onboard').style.display='block';
@@ -1435,7 +1467,7 @@ function removeScorer(id,idx){
   refreshMatch(id);
 }
 function saveRoster(r){
-  const rosters=DB.rosters(); rosters[activeName]=r; DB.saveRosters(rosters);
+  DB.saveOneRoster(activeName, r);
 }
 function refreshMatch(id){
   const r=getRoster(activeName);
@@ -1623,20 +1655,17 @@ function quickScoreRow(id,side,val){
   return `<div class="qrow">${btns}</div>`;
 }
 function setResult(id,side,val){
-  const res=DB.results();
-  if(!res[id]) res[id]={h:null,a:null,scorers:[]};
-  res[id][side]= val===''?null:Math.max(0,+val);
-  res[id].auto=false;          // organiser entry: protect it from the auto-updater
-  DB.saveResults(res, id);
+  const cur = DB.results()[id] || {h:null,a:null,scorers:[],auto:false};
+  const updated = { ...cur, [side]: val===''?null:Math.max(0,+val), auto:false };
+  DB.saveOneResult(id, updated);
   toast("Result saved");
   renderScorebar();
   renderAdmin();
 }
 function setResultScorers(id,val){
-  const res=DB.results();
-  if(!res[id]) res[id]={h:null,a:null,scorers:[]};
-  res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
-  DB.saveResults(res, id);
+  const cur = DB.results()[id] || {h:null,a:null,scorers:[],auto:false};
+  const updated = { ...cur, scorers: val.split(',').map(s=>s.trim()).filter(Boolean) };
+  DB.saveOneResult(id, updated);
   toast("Scorers saved");
 }
 
@@ -1683,8 +1712,8 @@ function init(){
   const ss = document.getElementById('syncStatus');
   if(ss){
     ss.innerHTML = firebaseReady
-      ? '☁ Cloud sync active — the leaderboard is shared live across every device.'
-      : '⚠ Cloud sync unavailable right now — your picks are saved on this device only.';
+      ? '☁ Live sync active — all predictions update instantly across every device.'
+      : '⚠ Cloud sync unavailable — check your internet connection and refresh the page.';
     ss.style.color = firebaseReady ? 'var(--green-700)' : '#b07a3a';
   }
   if(activeName && getRoster(activeName)){
