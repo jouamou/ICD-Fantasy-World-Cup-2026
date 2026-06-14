@@ -188,10 +188,18 @@
   }
   .livebanner:hover{box-shadow:var(--shadow-lg)}
   .lb-dot{width:9px;height:9px;border-radius:50%;background:#d6263a;flex:0 0 auto;animation:pulse 1.1s infinite}
-  .lb-text{flex:1 1 auto;min-width:0;font-size:13px;color:var(--ink);line-height:1.3}
+  .lb-text{flex:1 1 auto;min-width:0;font-size:13px;color:var(--ink);line-height:1.35}
   .lb-text b{font-weight:700;color:var(--head)}
-  .lb-min{font-family:'Oswald';font-weight:700;font-size:13px;color:#d6263a;flex:0 0 auto;
-    background:#fbe5e8;padding:3px 9px;border-radius:30px;white-space:nowrap}
+  .lb-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb-score{font-family:'Oswald';font-weight:700;font-size:15px;color:var(--head);margin:0 2px}
+  .lb-grp{color:var(--muted);font-weight:500}
+  .lb-check{display:inline-block;margin-top:2px;font-size:11.5px;color:var(--green-700);text-decoration:none;font-weight:600}
+  .lb-check:hover{text-decoration:underline}
+  .lb-min{font-family:'Inter';font-weight:700;font-size:11px;color:#d6263a;flex:0 0 auto;
+    background:#fbe5e8;padding:4px 10px;border-radius:30px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+  .lb-min.ft{background:var(--green-100);color:var(--green-800)}
+  .lb-min.paused{background:#eef0ea;color:var(--muted)}
+  .lb-livedot{width:6px;height:6px;border-radius:50%;background:#d6263a;animation:pulse 1.1s infinite}
 
   /* ===== NEXT / LIVE MATCH HERO (minimalist) ===== */
   .nextwrap{margin-bottom:20px}
@@ -361,6 +369,7 @@
   .am-status.done{background:var(--green-100);color:var(--green-800)}
   .am-status.pending{background:#fce9cf;color:#9a5b14}
   .am-status.upcoming{background:#eef0ea;color:var(--muted)}
+  .am-status.auto{background:#e3eefb;color:#2563a8}
   .am-check{margin-left:6px;text-decoration:none;font-size:15px;flex:0 0 auto}
   @media(max-width:560px){
     .qbtn{width:38px;height:40px;font-size:16px}
@@ -725,7 +734,7 @@ const M = (id,g,h,a,date,time,venue)=>({id,g,h,a,date,time,venue});
    "3:00 PM ET" + "2026-06-11"  ->  millisecond timestamp. */
 function kickoffMs(m){
   try{
-    const tm = (m.time||"").trim();                    // e.g. "3:00 PM ET"
+    const tm = (m.time||"").trim();
     const match = tm.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
     if(!match) return null;
     let hh = parseInt(match[1],10);
@@ -733,7 +742,6 @@ function kickoffMs(m){
     const ap = match[3].toUpperCase();
     if(ap==="PM" && hh!==12) hh+=12;
     if(ap==="AM" && hh===12) hh=0;
-    // Build an ISO string in the -04:00 (EDT) offset, let JS convert to UTC.
     const hpad = String(hh).padStart(2,'0');
     const mpad = String(mm).padStart(2,'0');
     const iso = `${m.date}T${hpad}:${mpad}:00-04:00`;
@@ -742,8 +750,6 @@ function kickoffMs(m){
   }catch(e){ return null; }
 }
 
-// The viewer's own timezone abbreviation (e.g. "GMT+3"), shown once so they know
-// the times are local to them, not US Eastern.
 function localTzLabel(){
   try{
     const s = new Intl.DateTimeFormat(undefined,{timeZoneName:'short'}).formatToParts(new Date())
@@ -751,13 +757,11 @@ function localTzLabel(){
     return s ? s.value : '';
   }catch(e){ return ''; }
 }
-// Local kickoff time for a match, e.g. "10:00 PM". Falls back to the stored ET label.
 function localTime(m){
   const ko=kickoffMs(m);
   if(ko==null) return (m.time||'').replace(/\s*ET$/i,'');
   return new Date(ko).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 }
-// Local date for a match, in the viewer's timezone.
 function localDate(m){
   const ko=kickoffMs(m);
   if(ko==null) return fmtDate(m.date);
@@ -849,36 +853,52 @@ const MATCHES = [
   M(72,"L","Croatia","Ghana","2026-06-27","5:00 PM ET","Lincoln Financial Field, Philadelphia")
 ];
 
-const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
+const ADMIN_PASS = "icd2026";
 
 /* ---------- hybrid storage: Firebase cloud + localStorage fallback ---------- */
-// seed in-memory caches from localStorage so the UI is instant on load
 window._rosterCache  = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
 window._resultsCache = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
 
 const DB = {
   rosters(){
-    return firebaseReady ? (window._rosterCache || {})
-                         : JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+    return window._rosterCache || {};
+  },
+  saveRoster(name, data){
+    if(!window._rosterCache) window._rosterCache = {};
+    window._rosterCache[name] = data;
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
+    if(firebaseReady){
+      const safeKey = name.replace(/[.#$\[\]]/g, '_');
+      db.ref('rosters/' + safeKey).set(data)
+        .catch(err => console.error('Cloud save (roster) failed:', err));
+    }
   },
   saveRosters(r){
     window._rosterCache = r;
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));   // always keep a local copy
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));
     if(firebaseReady){
-      db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
+      Object.keys(r).forEach(name => {
+        const safeKey = name.replace(/[.#$\[\]]/g, '_');
+        db.ref('rosters/' + safeKey).set(r[name])
+          .catch(err => console.error('Cloud save failed for', name, err));
+      });
     }
   },
   current(){ return localStorage.getItem("ffwc26_current")||""; },
   setCurrent(n){ localStorage.setItem("ffwc26_current", n); },
   results(){
-    return firebaseReady ? (window._resultsCache || {})
-                         : JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
+    return window._resultsCache || {};
   },
-  saveResults(r){
+  saveResults(r, onlyId){
     window._resultsCache = r;
     localStorage.setItem("ffwc26_results", JSON.stringify(r));
     if(firebaseReady){
-      db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
+      if(onlyId!=null){
+        db.ref('results/'+onlyId).set(r[onlyId])
+          .catch(err => console.error('Cloud save (result '+onlyId+') failed:', err));
+      } else {
+        db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
+      }
     }
   }
 };
@@ -892,12 +912,27 @@ function refreshAll(){
   if(pr && pr.style.display !== 'none'){ renderGroups(); renderLiveBanner(); renderNextMatch(); }
 }
 
-/* ===== Real-time listeners (only if the cloud is available) ===== */
 if(firebaseReady){
   db.ref('rosters').on('value', snap => {
-    window._rosterCache = snap.val() || {};
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
-    if(isInitialized) refreshAll();
+    const cloudData = snap.val() || {};
+    window._rosterCache = cloudData;
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(cloudData));
+
+    if(!activeName){
+      const saved = localStorage.getItem("ffwc26_current") || "";
+      if(saved && cloudData[saved]){
+        activeName = saved;
+      }
+    }
+
+    if(isInitialized){
+      refreshAll();
+      const pr = document.getElementById('predict');
+      const ob = document.getElementById('onboard');
+      if(activeName && pr && pr.style.display === 'none' && ob && ob.style.display !== 'none'){
+        enterPredict();
+      }
+    }
   }, err => console.error('rosters listener error:', err));
 
   db.ref('results').on('value', snap => {
@@ -912,7 +947,6 @@ let selectedFavTeam = "";
 let activeFilter = "all";
 let adminFilter = "today";
 
-/* ---------- helpers ---------- */
 function fmtDate(iso){
   const d=new Date(iso+"T12:00:00");
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
@@ -925,7 +959,6 @@ function toast(msg){
   clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),1800);
 }
 
-/* ---------- scoring ---------- */
 function scoreMatch(pred, res){
   if(!res || res.h===""||res.h==null||res.a===""||res.a==null) return null;
   if(!pred || pred.h==null || pred.a==null) return 0;
@@ -936,7 +969,6 @@ function scoreMatch(pred, res){
     const ps=Math.sign(ph-pa), rs=Math.sign(rh-ra);
     if(ps===rs) pts+=5;
   }
-  // goalscorers
   const predSc=(pred.scorers||[]).map(s=>s.trim().toLowerCase()).filter(Boolean);
   const realSc=(res.scorers||[]).map(s=>s.trim().toLowerCase()).filter(Boolean);
   let matched=0;
@@ -966,9 +998,6 @@ function predictedCount(roster){
   return n;
 }
 
-/* ============================================================
-   ONBOARDING
-   ============================================================ */
 function buildTeamGrid(){
   const grid=document.getElementById('teamGrid');
   let html="";
@@ -993,10 +1022,13 @@ function checkStart(){
 document.getElementById('nameInput').addEventListener('input',checkStart);
 document.getElementById('startBtn').addEventListener('click',()=>{
   const name=document.getElementById('nameInput').value.trim();
-  const rosters=DB.rosters();
-  if(!rosters[name]) rosters[name]={team:selectedFavTeam,predictions:{}};
-  else rosters[name].team=selectedFavTeam;
-  DB.saveRosters(rosters);
+  const existing = (window._rosterCache || {})[name];
+  const playerData = existing
+    ? { ...existing, team: selectedFavTeam }
+    : { team: selectedFavTeam, predictions: {} };
+  if(!window._rosterCache) window._rosterCache = {};
+  window._rosterCache[name] = playerData;
+  DB.saveRoster(name, playerData);
   DB.setCurrent(name); activeName=name;
   enterPredict();
   toast("Welcome, "+name+"!");
@@ -1005,7 +1037,9 @@ document.getElementById('startBtn').addEventListener('click',()=>{
 function enterPredict(){
   document.getElementById('onboard').style.display='none';
   document.getElementById('predict').style.display='block';
-  const r=getRoster(activeName);
+  const r = (window._rosterCache && window._rosterCache[activeName])
+    ? window._rosterCache[activeName]
+    : { team: '', predictions: {} };
   document.getElementById('whoName').textContent=activeName;
   document.getElementById('whoFlag').src=teamFlag(r.team);
   buildGroupFilter();
@@ -1018,15 +1052,12 @@ function enterPredict(){
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
   document.getElementById('onboard').style.display='block';
-  selectedFavTeam=""; 
+  selectedFavTeam="";
   document.getElementById('nameInput').value="";
   document.querySelectorAll('.team-opt').forEach(o=>o.classList.remove('sel'));
   document.getElementById('startBtn').disabled=true;
 });
 
-/* ============================================================
-   GROUP FILTER
-   ============================================================ */
 function buildGroupFilter(){
   const f=document.getElementById('groupFilter');
   let html=`<button class="${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All groups</button>`;
@@ -1035,40 +1066,26 @@ function buildGroupFilter(){
 }
 function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 
-/* ============================================================
-   LIVE NOW BANNER + NEXT MATCH HERO
-   ============================================================ */
-// A match is treated as "in play" for 120 minutes after kickoff. Real matches run
-// ~105-115 min wall-clock with halftime and stoppage, so this keeps a live game on
-// the banner through full time without overlapping the next kickoff.
 const LIVE_MINUTES = 120;
 const MATCH_WINDOW_MS = LIVE_MINUTES * 60 * 1000;
 
 function withKickoffs(){
   return MATCHES.map(m=>({m, ko:kickoffMs(m)})).filter(x=>x.ko!=null).sort((a,b)=>a.ko-b.ko);
 }
-
-// All matches currently in their live window.
 function liveMatches(){
   const now=Date.now();
   return withKickoffs().filter(x=> now>=x.ko && now < x.ko+MATCH_WINDOW_MS);
 }
-// The very next match that hasn't kicked off yet.
 function nextMatch(){
   const now=Date.now();
   return withKickoffs().find(x=> x.ko>now) || null;
 }
-// Rough elapsed match minute from wall-clock time since kickoff. This is an
-// estimate (it can't know about the real halftime break or added time), so it is
-// deliberately approximate and capped.
-function matchMinute(ko){
-  const mins=Math.floor((Date.now()-ko)/60000)+1; // +1 so kickoff reads 1'
-  if(mins<1) return "1'";
-  if(mins<=45) return mins+"'";
-  if(mins<=60) return "HT";              // rough halftime window
-  if(mins<=105) return (mins-15)+"'";    // second half, minus ~15 min break
-  if(mins<=115) return "90+'";           // stoppage
-  return "FT?";                          // likely finished, awaiting your result
+function matchPhase(ko){
+  const mins=Math.floor((Date.now()-ko)/60000);
+  if(mins<45) return {label:"1st half", playing:true};
+  if(mins<60) return {label:"Half-time", playing:false};
+  if(mins<105) return {label:"2nd half", playing:true};
+  return {label:"Full time?", playing:false};
 }
 
 function renderLiveBanner(){
@@ -1079,13 +1096,26 @@ function renderLiveBanner(){
   const rows = live.map(({m,ko})=>{
     const res=DB.results()[m.id];
     const hasResult = res && res.h!=null && res.h!=="" && res.a!=null && res.a!=="";
-    const score = hasResult ? `${res.h} – ${res.a}` : 'vs';
-    const minLabel = hasResult ? 'FT' : matchMinute(ko);
-    const showDot = !hasResult && minLabel!=='HT' && minLabel!=='FT?';
+    const phase = matchPhase(ko);
+    const q = encodeURIComponent(`${m.h} vs ${m.a} score`);
+    let pill;
+    if(hasResult){
+      pill = `<span class="lb-min ft">Full time</span>`;
+    } else if(phase.playing){
+      pill = `<span class="lb-min"><span class="lb-livedot"></span>${phase.label}</span>`;
+    } else {
+      pill = `<span class="lb-min paused">${phase.label}</span>`;
+    }
+    const middle = hasResult
+      ? `<b>${m.h}</b> <span class="lb-score">${res.h} – ${res.a}</span> <b>${m.a}</b>`
+      : `<b>${m.h}</b> <span style="color:var(--muted)">v</span> <b>${m.a}</b>`;
     return `<div class="livebanner" onclick="jumpToMatch(${m.id},'${m.g}')">
       <span class="lb-dot"></span>
-      <div class="lb-text"><b>${m.h}</b> ${score} <b>${m.a}</b> <span style="color:var(--muted)">&middot; Group ${m.g}</span></div>
-      <span class="lb-min">${showDot?'🔴 ':''}${minLabel}</span>
+      <div class="lb-text">
+        <div class="lb-line">${middle} <span class="lb-grp">&middot; Group ${m.g}</span></div>
+        ${hasResult ? '' : `<a class="lb-check" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🔎 Check the live score</a>`}
+      </div>
+      ${pill}
     </div>`;
   }).join('');
   el.innerHTML = `<div class="live-head"><span class="lh-dot"></span>LIVE NOW</div>` + rows;
@@ -1096,7 +1126,6 @@ function renderNextMatch(){
   if(!wrap) return;
   const nx=nextMatch();
   if(!nx){
-    // No upcoming match. If something is live, the banner covers it; otherwise season done.
     wrap.innerHTML = liveMatches().length
       ? ''
       : `<div class="next-none">🏁 The group stage is complete. Knockout fixtures will appear here as they are confirmed.</div>`;
@@ -1123,14 +1152,12 @@ function renderNextMatch(){
 }
 
 function updateCountdown(){
-  // refresh the live banner minute clock every tick too
   renderLiveBanner();
   const cd=document.getElementById('cd');
   if(!cd) return;
   const ko=parseInt(cd.dataset.ko,10);
   let diff=ko-Date.now();
   if(diff<=0){
-    // kickoff just passed — refresh hero AND group cards so this match locks visually
     renderNextMatch();
     const pr=document.getElementById('predict');
     if(pr && pr.style.display!=='none') renderGroups();
@@ -1155,7 +1182,6 @@ function jumpToMatch(id,g){
   setTimeout(()=>{
     const el=document.getElementById('match-'+id);
     if(el){
-      // open the group if collapsed
       const body=el.closest('.group-body');
       if(body && !body.classList.contains('open')){
         const head=body.previousElementSibling;
@@ -1169,17 +1195,12 @@ function jumpToMatch(id,g){
   },80);
 }
 
-/* ============================================================
-   RENDER MATCHES
-   ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
   const r=getRoster(activeName); if(!r) return;
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
 
-  // Remember which groups are currently open so a re-render (e.g. from a live
-  // cloud update) doesn't collapse what the player has expanded.
   const openNow={};
   cont.querySelectorAll('.group-block').forEach(blk=>{
     const g=blk.dataset.g;
@@ -1190,10 +1211,8 @@ function renderGroups(){
   let html="";
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
-    // group points
     let gpts=0, hasRes=false;
     gm.forEach(m=>{ const p=scoreMatch(r.predictions[m.id],res[m.id]); if(p!=null){gpts+=p;hasRes=true;} });
-    // Open if: filtered to this single group, OR it was already open before re-render.
     const open = (activeFilter!=='all') || (openNow[g]===true);
     html+=`<div class="group-block" data-g="${g}">
       <div class="group-head ${open?'open':''}" onclick="toggleGroup(this)">
@@ -1220,14 +1239,12 @@ function matchCard(m,roster,result){
   const pred=roster.predictions[m.id]||{};
   const ph=pred.h, pa=pred.a;
   const hasResult = result && result.h!=null && result.h!=="" && result.a!=null && result.a!=="";
-  // Auto-lock: a match locks when the official result is in OR when kickoff time has passed.
   const ko = kickoffMs(m);
   const started = ko!=null && Date.now() >= ko;
   const locked = hasResult || started;
   const lockReason = hasResult ? 'Result in · locked' : (started ? 'Kicked off · locked' : '');
   const earned = hasResult ? scoreMatch(pred,result) : null;
 
-  // winner line
   let winLine="";
   if(ph!=null&&pa!=null){
     if(+ph>+pa) winLine=`Your pick: <b>${m.h} win</b>`;
@@ -1274,7 +1291,6 @@ function matchCard(m,roster,result){
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
     </div>`;
   } else {
-    // Locked because kickoff passed, but no official result entered yet.
     let lockedPick = (ph!=null && pa!=null)
       ? `Your locked prediction: <b>${m.h} ${ph} – ${pa} ${m.a}</b>${scorers.length?` · ⚽ ${scorers.join(', ')}`:''}`
       : `No prediction was made before kickoff.`;
@@ -1305,7 +1321,6 @@ function bump(id,side,delta){
   cur = cur==null?0:+cur;
   let next=Math.max(0,Math.min(15,cur+delta));
   r.predictions[id][side]=next;
-  // ensure other side initialised to 0 so a result is comparable
   const other=side==='h'?'a':'h';
   if(r.predictions[id][other]==null) r.predictions[id][other]=0;
   saveRoster(r);
@@ -1322,7 +1337,6 @@ function scorerRow(m,val,idx){
   </div>`;
 }
 function buildDatalists(){
-  // create one datalist per match combining both teams' REAL players
   let html="";
   MATCHES.forEach(m=>{
     const opts=[...(REAL_PLAYERS[m.h]||[]),...(REAL_PLAYERS[m.a]||[]),"Own goal"];
@@ -1355,7 +1369,9 @@ function removeScorer(id,idx){
   refreshMatch(id);
 }
 function saveRoster(r){
-  const rosters=DB.rosters(); rosters[activeName]=r; DB.saveRosters(rosters);
+  if(!window._rosterCache) window._rosterCache = {};
+  window._rosterCache[activeName] = r;
+  DB.saveRoster(activeName, r);
 }
 function refreshMatch(id){
   const r=getRoster(activeName);
@@ -1364,9 +1380,6 @@ function refreshMatch(id){
   if(el){ el.outerHTML=matchCard(m,r,DB.results()[id]); }
 }
 
-/* ============================================================
-   SCOREBAR (hero)
-   ============================================================ */
 function renderScorebar(){
   const bar=document.getElementById('scorebar');
   if(!activeName || !getRoster(activeName)){ bar.innerHTML=`<div class="chip">👋 Pick your name &amp; team to begin</div>`; return; }
@@ -1387,9 +1400,6 @@ function getRank(name){
   return i>-1?i+1:null;
 }
 
-/* ============================================================
-   LEADERBOARD
-   ============================================================ */
 function renderLeaderboard(){
   const rosters=DB.rosters();
   const players=Object.keys(rosters).map(n=>({
@@ -1402,7 +1412,6 @@ function renderLeaderboard(){
   document.getElementById('stPlayed').textContent=played;
   document.getElementById('stTop').textContent=players.length?players[0].pts:0;
 
-  // podium
   const pod=document.getElementById('podium');
   if(players.length===0){ pod.innerHTML=""; }
   else{
@@ -1418,7 +1427,6 @@ function renderLeaderboard(){
       </div>`).join('');
   }
 
-  // list
   const list=document.getElementById('lbList');
   if(players.length===0){
     list.innerHTML=`<div class="empty">No players yet. Be the first — head to <b>Play &amp; Predict</b> and make your picks!</div>`;
@@ -1437,9 +1445,6 @@ function renderLeaderboard(){
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-/* ============================================================
-   ADMIN / RESULTS
-   ============================================================ */
 function checkAdmin(){
   const v=document.getElementById('adminPass').value.trim();
   if(v===ADMIN_PASS){
@@ -1458,7 +1463,6 @@ function buildAdminFilter(){
 }
 function setAdminFilter(g){ adminFilter=g; buildAdminFilter(); renderAdmin(); }
 
-// Has the official result been entered for a match?
 function adminHasResult(m){
   const r=DB.results()[m.id];
   return r && r.h!=null && r.h!=="" && r.a!=null && r.a!=="";
@@ -1471,7 +1475,6 @@ function renderAdmin(){
 
   let ms;
   if(adminFilter==='today'){
-    // matches that kicked off or kick off within the local calendar day, newest first
     const todayStr=new Date().toDateString();
     ms=MATCHES.filter(m=>{
       const ko=kickoffMs(m); if(ko==null) return false;
@@ -1480,7 +1483,6 @@ function renderAdmin(){
       return sameDay || liveWindow;
     }).sort((a,b)=>(kickoffMs(b)||0)-(kickoffMs(a)||0));
   } else if(adminFilter==='needs'){
-    // matches that have kicked off but have no official result yet
     ms=MATCHES.filter(m=>{
       const ko=kickoffMs(m); if(ko==null) return false;
       return now>=ko && !adminHasResult(m);
@@ -1505,11 +1507,12 @@ function renderAdmin(){
     const ko=kickoffMs(m);
     const started = ko!=null && now>=ko;
     const done = adminHasResult(m);
+    const isAuto = done && r.auto===true;
     let statusChip='';
-    if(done) statusChip=`<span class="am-status done">✓ Result in</span>`;
+    if(done && isAuto) statusChip=`<span class="am-status auto">🛰 Auto · verify</span>`;
+    else if(done) statusChip=`<span class="am-status done">✓ Result in</span>`;
     else if(started) statusChip=`<span class="am-status pending">⏳ Needs result</span>`;
     else statusChip=`<span class="am-status upcoming">${localDate(m)} · ${localTime(m)}</span>`;
-    // Google quick-confirm link for this exact fixture
     const q=encodeURIComponent(`${m.h} vs ${m.a} score`);
     return `<div class="admin-match">
       <span class="am-grp">${m.g}</span>
@@ -1530,7 +1533,6 @@ function renderAdmin(){
   }).join('');
 }
 
-// Quick tap buttons 0-4 plus a manual input for higher scores
 function quickScoreRow(id,side,val){
   const v = (val!=null && val!=="") ? +val : null;
   let btns='';
@@ -1544,7 +1546,8 @@ function setResult(id,side,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id][side]= val===''?null:Math.max(0,+val);
-  DB.saveResults(res);
+  res[id].auto=false;
+  DB.saveResults(res, id);
   toast("Result saved");
   renderScorebar();
   renderAdmin();
@@ -1553,13 +1556,10 @@ function setResultScorers(id,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
-  DB.saveResults(res);
+  DB.saveResults(res, id);
   toast("Scorers saved");
 }
 
-/* ============================================================
-   TUTORIAL SAMPLE
-   ============================================================ */
 function sampleDemo(kind,el){
   document.querySelectorAll('.sample .filter button').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
@@ -1572,9 +1572,6 @@ function sampleDemo(kind,el){
   fb.innerHTML=txt; fb.classList.add('show');
 }
 
-/* ============================================================
-   TABS
-   ============================================================ */
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -1587,14 +1584,11 @@ document.querySelectorAll('.tab').forEach(tab=>{
   });
 });
 
-/* ============================================================
-   INIT
-   ============================================================ */
 function init(){
   buildTeamGrid();
   buildDatalists();
   renderScorebar();
-  isInitialized = true;  // Signal that real-time listeners should trigger renders
+  isInitialized = true;
   const tz=document.getElementById('tzNote');
   if(tz){ const lbl=localTzLabel(); if(lbl) tz.textContent=' ('+lbl+')'; }
   const ss = document.getElementById('syncStatus');
