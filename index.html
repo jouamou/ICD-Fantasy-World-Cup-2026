@@ -176,6 +176,11 @@
   .match.locked{opacity:.96}
 
   /* ===== LIVE NOW BANNER (slim) ===== */
+  .live-head{
+    display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;
+    letter-spacing:1.5px;text-transform:uppercase;color:#d6263a;margin-bottom:8px
+  }
+  .live-head .lh-dot{width:8px;height:8px;border-radius:50%;background:#d6263a;animation:pulse 1.1s infinite}
   .livebanner{
     display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
     border-left:4px solid #d6263a;border-radius:10px;padding:11px 14px;margin-bottom:12px;
@@ -781,7 +786,7 @@ const MATCHES = [
   M(18,"C","Morocco","Haiti","2026-06-24","6:00 PM ET","Mercedes-Benz Stadium, Atlanta"),
 
   M(19,"D","United States","Paraguay","2026-06-12","9:00 PM ET","SoFi Stadium, Inglewood"),
-  M(20,"D","Australia","Türkiye","2026-06-13","12:00 AM ET","BC Place, Vancouver"),
+  M(20,"D","Australia","Türkiye","2026-06-14","12:00 AM ET","BC Place, Vancouver"),
   M(21,"D","United States","Australia","2026-06-19","3:00 PM ET","Lumen Field, Seattle"),
   M(22,"D","Türkiye","Paraguay","2026-06-19","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(23,"D","Türkiye","United States","2026-06-25","10:00 PM ET","SoFi Stadium, Inglewood"),
@@ -797,7 +802,7 @@ const MATCHES = [
   M(31,"F","Netherlands","Japan","2026-06-14","4:00 PM ET","AT&T Stadium, Arlington"),
   M(32,"F","Sweden","Tunisia","2026-06-14","10:00 PM ET","Estadio BBVA, Monterrey"),
   M(33,"F","Netherlands","Sweden","2026-06-20","1:00 PM ET","NRG Stadium, Houston"),
-  M(34,"F","Tunisia","Japan","2026-06-20","12:00 AM ET","Estadio BBVA, Monterrey"),
+  M(34,"F","Tunisia","Japan","2026-06-21","12:00 AM ET","Estadio BBVA, Monterrey"),
   M(35,"F","Japan","Sweden","2026-06-25","7:00 PM ET","AT&T Stadium, Arlington"),
   M(36,"F","Tunisia","Netherlands","2026-06-25","7:00 PM ET","Arrowhead Stadium, Kansas City"),
 
@@ -823,7 +828,7 @@ const MATCHES = [
   M(54,"I","Senegal","Iraq","2026-06-26","3:00 PM ET","BMO Field, Toronto"),
 
   M(55,"J","Argentina","Algeria","2026-06-16","9:00 PM ET","Arrowhead Stadium, Kansas City"),
-  M(56,"J","Austria","Jordan","2026-06-16","12:00 AM ET","Levi's Stadium, Santa Clara"),
+  M(56,"J","Austria","Jordan","2026-06-17","12:00 AM ET","Levi's Stadium, Santa Clara"),
   M(57,"J","Argentina","Austria","2026-06-22","1:00 PM ET","AT&T Stadium, Arlington"),
   M(58,"J","Jordan","Algeria","2026-06-22","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(59,"J","Jordan","Argentina","2026-06-27","10:00 PM ET","AT&T Stadium, Arlington"),
@@ -1033,9 +1038,10 @@ function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 /* ============================================================
    LIVE NOW BANNER + NEXT MATCH HERO
    ============================================================ */
-// A match is treated as "in play" for 95 minutes after kickoff (90 + stoppage),
-// extended a little so a result can still be shown right after full time.
-const LIVE_MINUTES = 95;
+// A match is treated as "in play" for 120 minutes after kickoff. Real matches run
+// ~105-115 min wall-clock with halftime and stoppage, so this keeps a live game on
+// the banner through full time without overlapping the next kickoff.
+const LIVE_MINUTES = 120;
 const MATCH_WINDOW_MS = LIVE_MINUTES * 60 * 1000;
 
 function withKickoffs(){
@@ -1052,12 +1058,17 @@ function nextMatch(){
   const now=Date.now();
   return withKickoffs().find(x=> x.ko>now) || null;
 }
-// Rough elapsed match minute, capped at 90+ for stoppage.
+// Rough elapsed match minute from wall-clock time since kickoff. This is an
+// estimate (it can't know about the real halftime break or added time), so it is
+// deliberately approximate and capped.
 function matchMinute(ko){
   const mins=Math.floor((Date.now()-ko)/60000)+1; // +1 so kickoff reads 1'
   if(mins<1) return "1'";
-  if(mins>90) return "90+'";
-  return mins+"'";
+  if(mins<=45) return mins+"'";
+  if(mins<=60) return "HT";              // rough halftime window
+  if(mins<=105) return (mins-15)+"'";    // second half, minus ~15 min break
+  if(mins<=115) return "90+'";           // stoppage
+  return "FT?";                          // likely finished, awaiting your result
 }
 
 function renderLiveBanner(){
@@ -1065,17 +1076,19 @@ function renderLiveBanner(){
   if(!el) return;
   const live=liveMatches();
   if(live.length===0){ el.innerHTML=''; return; }
-  el.innerHTML = live.map(({m,ko})=>{
+  const rows = live.map(({m,ko})=>{
     const res=DB.results()[m.id];
     const hasResult = res && res.h!=null && res.h!=="" && res.a!=null && res.a!=="";
     const score = hasResult ? `${res.h} – ${res.a}` : 'vs';
     const minLabel = hasResult ? 'FT' : matchMinute(ko);
+    const showDot = !hasResult && minLabel!=='HT' && minLabel!=='FT?';
     return `<div class="livebanner" onclick="jumpToMatch(${m.id},'${m.g}')">
       <span class="lb-dot"></span>
       <div class="lb-text"><b>${m.h}</b> ${score} <b>${m.a}</b> <span style="color:var(--muted)">&middot; Group ${m.g}</span></div>
-      <span class="lb-min">${minLabel==='FT'?'FT':'🔴 '+minLabel}</span>
+      <span class="lb-min">${showDot?'🔴 ':''}${minLabel}</span>
     </div>`;
   }).join('');
+  el.innerHTML = `<div class="live-head"><span class="lh-dot"></span>LIVE NOW</div>` + rows;
 }
 
 function renderNextMatch(){
