@@ -898,7 +898,7 @@ const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
 /* Bump this whenever you upload a new index.html. It is shown in the footer
    so you can confirm at a glance which version a device actually loaded —
    if the footer doesn't show this number, that device is on a CACHED copy. */
-const APP_VERSION = "1.3 · 14 Jun 2026";
+const APP_VERSION = "1.4 · 14 Jun 2026";
 
 /* ============================================================
    CLOUD-FIRST SYNC (per-player paths, backward compatible)
@@ -1142,7 +1142,18 @@ function fmtDate(iso){
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
 function teamFlag(t){ return FLAG(TEAMS[t]); }
-function getRoster(name){ return DB.rosters()[name]; }
+function getRoster(name){
+  const r = DB.rosters()[name];
+  if(!r) return null;
+  // Firebase drops empty objects/arrays, so a record can come back without
+  // predictions (or a prediction without a scorers array). Normalize the shape
+  // so the rest of the code can rely on it.
+  if(!r.predictions) r.predictions = {};
+  for(const id in r.predictions){
+    if(r.predictions[id] && !r.predictions[id].scorers) r.predictions[id].scorers = [];
+  }
+  return r;
+}
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
