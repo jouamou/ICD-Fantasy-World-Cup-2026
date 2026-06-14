@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>ICD Fantasy World Cup 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -177,69 +174,6 @@
   }
   .match.scored{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 60%)}
   .match.locked{opacity:.96}
-
-  /* ===== LIVE NOW BANNER (slim) ===== */
-  .live-head{
-    display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;
-    letter-spacing:1.5px;text-transform:uppercase;color:#d6263a;margin-bottom:8px
-  }
-  .live-head .lh-dot{width:8px;height:8px;border-radius:50%;background:#d6263a;animation:pulse 1.1s infinite}
-  .livebanner{
-    display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
-    border-left:4px solid #d6263a;border-radius:10px;padding:11px 14px;margin-bottom:12px;
-    box-shadow:var(--shadow);cursor:pointer;transition:.12s
-  }
-  .livebanner:hover{box-shadow:var(--shadow-lg)}
-  .lb-dot{width:9px;height:9px;border-radius:50%;background:#d6263a;flex:0 0 auto;animation:pulse 1.1s infinite}
-  .lb-text{flex:1 1 auto;min-width:0;font-size:13px;color:var(--ink);line-height:1.35}
-  .lb-text b{font-weight:700;color:var(--head)}
-  .lb-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .lb-score{font-family:'Oswald';font-weight:700;font-size:15px;color:var(--head);margin:0 2px}
-  .lb-grp{color:var(--muted);font-weight:500}
-  .lb-check{display:inline-block;margin-top:2px;font-size:11.5px;color:var(--green-700);text-decoration:none;font-weight:600}
-  .lb-check:hover{text-decoration:underline}
-  .lb-min{font-family:'Inter';font-weight:700;font-size:11px;color:#d6263a;flex:0 0 auto;
-    background:#fbe5e8;padding:4px 10px;border-radius:30px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
-  .lb-min.ft{background:var(--green-100);color:var(--green-800)}
-  .lb-min.paused{background:#eef0ea;color:var(--muted)}
-  .lb-livedot{width:6px;height:6px;border-radius:50%;background:#d6263a;animation:pulse 1.1s infinite}
-
-  /* ===== NEXT / LIVE MATCH HERO (minimalist) ===== */
-  .nextwrap{margin-bottom:20px}
-  .nextcard{
-    background:var(--card);color:var(--ink);border:1px solid var(--line);
-    border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);position:relative
-  }
-  .next-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-  .next-tag{
-    display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
-    letter-spacing:1.2px;text-transform:uppercase;color:var(--green-700)
-  }
-  .next-tag.live{color:#d6263a}
-  .next-tag .pulse{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
-  .next-tag.live .pulse{animation:pulse 1.1s infinite}
-  @keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}100%{opacity:1;transform:scale(1)}}
-  .next-when{font-size:11px;color:var(--muted);font-weight:600;text-align:right;line-height:1.35}
-  .next-teams{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  .next-team{display:flex;align-items:center;gap:9px;flex:1 1 0;min-width:0}
-  .next-team.away{flex-direction:row-reverse;text-align:right}
-  .next-team img{width:34px;height:23px;border-radius:3px;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.08);flex:0 0 auto}
-  .next-team .nt{font-family:'Archivo';font-weight:700;font-size:14px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .next-vs{font-family:'Oswald';font-weight:700;font-size:13px;color:var(--muted);flex:0 0 auto}
-  .countdown{display:flex;gap:6px;align-items:baseline;font-family:'Oswald';font-weight:700;font-size:15px;color:var(--head)}
-  .countdown .seg{font-variant-numeric:tabular-nums}
-  .countdown .cl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-left:1px}
-  .next-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;
-    padding-top:11px;border-top:1px solid var(--line)}
-  .next-cta button{
-    background:var(--green-700);color:#fff;border:none;border-radius:8px;
-    padding:8px 16px;font-family:'Archivo';font-weight:700;font-size:12.5px;cursor:pointer;transition:.15s
-  }
-  .next-cta button:hover{background:var(--green-800)}
-  .next-none{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:16px;text-align:center;color:var(--muted);font-size:13.5px;box-shadow:var(--shadow)
-  }
   .match-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:11px;flex-wrap:wrap}
   .match-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--muted);opacity:.5}
   .match-meta .live{color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
@@ -358,28 +292,6 @@
   .admin-match .am-score input{width:42px;padding:7px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'Oswald';font-weight:700;font-size:18px}
   .admin-match .am-grp{font-size:10px;font-weight:800;color:#fff;background:var(--green-700);border-radius:5px;padding:2px 7px}
   .admin-match input.am-sc{flex:1 1 100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;font-size:12.5px;margin-top:4px}
-  /* quick score entry */
-  .am-quick{display:flex;align-items:center;gap:8px}
-  .qrow{display:flex;gap:4px;align-items:center}
-  .qbtn{
-    width:34px;height:34px;border:1.5px solid var(--line);background:#fff;border-radius:7px;
-    font-family:'Oswald';font-weight:700;font-size:15px;color:var(--head);cursor:pointer;transition:.1s
-  }
-  .qbtn:hover{border-color:var(--green-500);background:var(--green-100)}
-  .qbtn.sel{background:var(--green-700);color:#fff;border-color:var(--green-700)}
-  .qmore{width:38px;height:34px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'Oswald';font-weight:700;font-size:15px}
-  .am-status{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:30px;margin-left:auto}
-  .am-status.done{background:var(--green-100);color:var(--green-800)}
-  .am-status.pending{background:#fce9cf;color:#9a5b14}
-  .am-status.upcoming{background:#eef0ea;color:var(--muted)}
-  .am-status.auto{background:#e3eefb;color:#2563a8}
-  .am-check{margin-left:6px;text-decoration:none;font-size:15px;flex:0 0 auto}
-  @media(max-width:560px){
-    .qbtn{width:38px;height:40px;font-size:16px}
-    .qmore{height:40px}
-    .am-quick{flex-wrap:wrap;gap:6px}
-    .am-status{margin-left:0}
-  }
 
   .footer{text-align:center;padding:26px 16px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);background:var(--card)}
   .footer b{color:var(--green-700)}
@@ -398,87 +310,7 @@
     .side img{width:40px;height:27px}
     .score-val{font-size:28px;min-width:34px}
   }
-
-  /* ===== Tablet ===== */
-  @media(max-width:820px){
-    .wrap{padding:0 12px}
-    .hero-inner{padding:24px 14px 22px}
-    .panel{padding:20px}
-    .tab{padding:13px 14px;font-size:13px}
-  }
-
-  /* ===== Mobile ===== */
-  @media(max-width:560px){
-    .hero h1{font-size:clamp(24px,7vw,34px)}
-    .brand-row span{font-size:10px}
-    .brand-row img{height:34px !important}
-    .hero-sub{font-size:12px}
-    .chip{padding:6px 12px;font-size:12px}
-    .chip b{font-size:16px}
-    .tab{padding:12px 12px;font-size:13px}
-    .tab .ic{font-size:15px}
-    .view{padding:18px 0 50px}
-    .panel{padding:16px;border-radius:12px}
-    .panel h2{font-size:19px}
-    /* match cards */
-    .match{padding:14px 12px}
-    .match-meta{font-size:10.5px;flex-wrap:wrap;gap:5px}
-    .vs-row{gap:8px}
-    .side .tname{font-size:12px}
-    .score-sep{font-size:22px}
-    .score-pick .stepper button{width:30px;height:30px}
-    /* next match hero */
-    .nextcard{padding:13px 14px}
-    .next-team img{width:30px;height:20px}
-    .next-team .nt{font-size:13px}
-    .next-when{font-size:10px}
-    .livebanner{padding:10px 12px}
-    .lb-text{font-size:12px}
-    /* leaderboard */
-    .lb-stats{gap:8px}
-    .stat{padding:12px 8px}
-    .stat .v{font-size:22px}
-    .stat .l{font-size:10px}
-    .podium{gap:8px}
-    /* rules */
-    .rules-grid{grid-template-columns:1fr}
-    .tut-steps{grid-template-columns:1fr}
-    /* tap targets */
-    .btn{padding:13px 22px;min-height:46px}
-    .filter button{padding:9px 14px;min-height:40px}
-  }
-
-  /* ===== Small mobile ===== */
-  @media(max-width:380px){
-    .hero h1{font-size:22px}
-    .next-teams{gap:8px}
-    .next-team .nt{font-size:12px}
-    .countdown{font-size:14px}
-    .score-val{font-size:24px;min-width:30px}
-  }
 </style>
-<!-- ================================================================
-  FIREBASE REALTIME DATABASE RULES — paste into the Firebase Console:
-  console.firebase.google.com  ->  icd-world-cup-2026  ->
-  Realtime Database  ->  Rules  ->  (paste, then Publish)
-
-  {
-    "rules": {
-      "rosters": { ".read": true, ".write": true },
-      "results": { ".read": true, ".write": true }
-    }
-  }
-
-  IMPORTANT: keep ".read" at the rosters / results level (do NOT nest it
-  under a child such as "$player"). The app reads the WHOLE rosters node to
-  build the shared leaderboard, and Firebase rules do NOT cascade upward, so
-  a read rule on rosters/$player alone makes the whole-node read fail with
-  "permission denied" — which silently breaks cross-device sync and leaves
-  the leaderboard empty on other devices.
-
-  These rules are open (no login), which is fine for an internal staff game.
-  For production you would add Firebase Authentication.
-================================================================ -->
 </head>
 <body>
 
@@ -530,14 +362,16 @@
 
     <!-- predictions -->
     <div id="predict" style="display:none">
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px">
+        <div style="font-size:13px;color:#856404;margin-bottom:8px"><b>📤 Sync your predictions to the leaderboard</b></div>
+        <div style="font-size:12px;color:#856404;margin-bottom:10px">Click below to upload your predictions so everyone can see your score live.</div>
+        <button class="btn sm" onclick="syncMyData()" style="background:#ffc107;color:#333;border:none;cursor:pointer">Sync my predictions now</button>
+      </div>
       <div class="toolbar">
         <div class="who"><span>Playing as</span> <img id="whoFlag" alt=""> <strong id="whoName"></strong></div>
         <div class="spacer"></div>
         <button class="btn ghost sm" id="switchBtn">Switch player</button>
-        <button class="btn gold sm" onclick="syncMyPredictions()">☁ Sync my picks</button>
       </div>
-      <div id="liveBanner"></div>
-      <div class="nextwrap" id="nextWrap"></div>
       <div class="filter" id="groupFilter" style="margin-bottom:16px"></div>
       <div id="groupsContainer"></div>
     </div>
@@ -618,26 +452,21 @@
     </div>
     <div id="adminPanel" style="display:none">
       <div class="admin-note">
-        <b>Organiser mode.</b> Matches lock automatically the moment they kick off, so no one can change a prediction once play begins. You only need to enter the final score. Use the <b>Today &amp; live</b> view to see just the matches that need attention, tap the score with the quick buttons, and it syncs to everyone instantly. The 🔎 link opens the live score for that match so you can confirm it fast.
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px">
-        <div class="filter" id="adminFilter" style="margin:0"></div>
-        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn ghost sm" id="refreshCloudBtn" onclick="refreshCloudNow()">Refresh cloud</button>
-          <button class="btn gold sm" id="syncAllBtn" onclick="syncAllPlayersNow()">Sync all players</button>
-          <button class="btn ghost sm" onclick="exportBackup()" title="Download all predictions as JSON backup">⬇ Backup</button>
-          <button class="btn ghost sm" onclick="importBackup()" title="Restore from a JSON backup file">⬆ Restore</button>
+        <b>Organiser mode.</b> Enter the final score and (optionally) the goalscorers for each match as it's played. Leave a match blank until it's finished. Everyone's points are calculated automatically and any match with a result becomes locked for players. Results are saved in this browser, so enter them from one consistent device.
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+          <button class="btn sm" onclick="forceSyncToCloud()" style="background:#7fbb42;color:#fff">↑ Force sync staff data to cloud</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Use this if staff filled predictions before rules were published. Syncs all local data to Firebase instantly.</div>
         </div>
       </div>
+      <div class="filter" id="adminFilter" style="margin-bottom:16px"></div>
       <div id="adminContainer"></div>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). Match times are shown in your local time<span id="tzNote"></span>.
+  Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). All times shown in US Eastern (ET).
   <br><span id="syncStatus" style="font-size:11px;display:inline-block;margin-top:6px"></span>
-  <div id="data-recovery-note" style="font-size:11px;opacity:.85;margin-top:4px;max-width:720px;margin-inline:auto;line-height:1.45">If data ever looks missing, open <b>Results</b> and click <b>⬇ Backup</b> first. <b>Refresh cloud</b> reloads everyone from Firebase; <b>Sync all players</b> re-uploads what's in memory. Firebase is the source of truth for shared data.</div>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -649,6 +478,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyBAj92mDekbkrjRH5vwyxZrtLKFR6LRcs",
   authDomain: "icd-world-cup-2026.firebaseapp.com",
+  databaseURL: "https://icd-world-cup-2026-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "icd-world-cup-2026",
   storageBucket: "icd-world-cup-2026.firebasestorage.app",
   messagingSenderId: "617000099398",
@@ -658,6 +488,9 @@ const firebaseConfig = {
 
 let db = null;
 let firebaseReady = false;
+window._rosterCache = {};
+window._resultsCache = {};
+
 try {
   if (typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
     firebase.initializeApp(firebaseConfig);
@@ -763,50 +596,6 @@ const REAL_PLAYERS = {
 
 /* All 72 group-stage matches. date = ISO, time = US Eastern label */
 const M = (id,g,h,a,date,time,venue)=>({id,g,h,a,date,time,venue});
-
-/* Parse a match's date + ET time label into a real UTC timestamp (ms).
-   In June/July the US Eastern zone is on EDT = UTC-4.
-   "3:00 PM ET" + "2026-06-11"  ->  millisecond timestamp. */
-function kickoffMs(m){
-  try{
-    const tm = (m.time||"").trim();                    // e.g. "3:00 PM ET"
-    const match = tm.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-    if(!match) return null;
-    let hh = parseInt(match[1],10);
-    const mm = parseInt(match[2],10);
-    const ap = match[3].toUpperCase();
-    if(ap==="PM" && hh!==12) hh+=12;
-    if(ap==="AM" && hh===12) hh=0;
-    // Build an ISO string in the -04:00 (EDT) offset, let JS convert to UTC.
-    const hpad = String(hh).padStart(2,'0');
-    const mpad = String(mm).padStart(2,'0');
-    const iso = `${m.date}T${hpad}:${mpad}:00-04:00`;
-    const t = new Date(iso).getTime();
-    return isNaN(t) ? null : t;
-  }catch(e){ return null; }
-}
-
-// The viewer's own timezone abbreviation (e.g. "GMT+3"), shown once so they know
-// the times are local to them, not US Eastern.
-function localTzLabel(){
-  try{
-    const s = new Intl.DateTimeFormat(undefined,{timeZoneName:'short'}).formatToParts(new Date())
-              .find(p=>p.type==='timeZoneName');
-    return s ? s.value : '';
-  }catch(e){ return ''; }
-}
-// Local kickoff time for a match, e.g. "10:00 PM". Falls back to the stored ET label.
-function localTime(m){
-  const ko=kickoffMs(m);
-  if(ko==null) return (m.time||'').replace(/\s*ET$/i,'');
-  return new Date(ko).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
-}
-// Local date for a match, in the viewer's timezone.
-function localDate(m){
-  const ko=kickoffMs(m);
-  if(ko==null) return fmtDate(m.date);
-  return new Date(ko).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-}
 const MATCHES = [
   M(1,"A","Mexico","South Africa","2026-06-11","3:00 PM ET","Estadio Azteca, Mexico City"),
   M(2,"A","Korea Republic","Czechia","2026-06-11","10:00 PM ET","Estadio Akron, Guadalajara"),
@@ -830,7 +619,7 @@ const MATCHES = [
   M(18,"C","Morocco","Haiti","2026-06-24","6:00 PM ET","Mercedes-Benz Stadium, Atlanta"),
 
   M(19,"D","United States","Paraguay","2026-06-12","9:00 PM ET","SoFi Stadium, Inglewood"),
-  M(20,"D","Australia","Türkiye","2026-06-14","12:00 AM ET","BC Place, Vancouver"),
+  M(20,"D","Australia","Türkiye","2026-06-13","12:00 AM ET","BC Place, Vancouver"),
   M(21,"D","United States","Australia","2026-06-19","3:00 PM ET","Lumen Field, Seattle"),
   M(22,"D","Türkiye","Paraguay","2026-06-19","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(23,"D","Türkiye","United States","2026-06-25","10:00 PM ET","SoFi Stadium, Inglewood"),
@@ -846,7 +635,7 @@ const MATCHES = [
   M(31,"F","Netherlands","Japan","2026-06-14","4:00 PM ET","AT&T Stadium, Arlington"),
   M(32,"F","Sweden","Tunisia","2026-06-14","10:00 PM ET","Estadio BBVA, Monterrey"),
   M(33,"F","Netherlands","Sweden","2026-06-20","1:00 PM ET","NRG Stadium, Houston"),
-  M(34,"F","Tunisia","Japan","2026-06-21","12:00 AM ET","Estadio BBVA, Monterrey"),
+  M(34,"F","Tunisia","Japan","2026-06-20","12:00 AM ET","Estadio BBVA, Monterrey"),
   M(35,"F","Japan","Sweden","2026-06-25","7:00 PM ET","AT&T Stadium, Arlington"),
   M(36,"F","Tunisia","Netherlands","2026-06-25","7:00 PM ET","Arrowhead Stadium, Kansas City"),
 
@@ -872,7 +661,7 @@ const MATCHES = [
   M(54,"I","Senegal","Iraq","2026-06-26","3:00 PM ET","BMO Field, Toronto"),
 
   M(55,"J","Argentina","Algeria","2026-06-16","9:00 PM ET","Arrowhead Stadium, Kansas City"),
-  M(56,"J","Austria","Jordan","2026-06-17","12:00 AM ET","Levi's Stadium, Santa Clara"),
+  M(56,"J","Austria","Jordan","2026-06-16","12:00 AM ET","Levi's Stadium, Santa Clara"),
   M(57,"J","Argentina","Austria","2026-06-22","1:00 PM ET","AT&T Stadium, Arlington"),
   M(58,"J","Jordan","Algeria","2026-06-22","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(59,"J","Jordan","Argentina","2026-06-27","10:00 PM ET","AT&T Stadium, Arlington"),
@@ -895,102 +684,37 @@ const MATCHES = [
 
 const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
 
-/* Bump this whenever you upload a new index.html. It is shown in the footer
-   so you can confirm at a glance which version a device actually loaded —
-   if the footer doesn't show this number, that device is on a CACHED copy. */
-const APP_VERSION = "1.4 · 14 Jun 2026";
-
-/* ============================================================
-   CLOUD-FIRST SYNC (per-player paths, backward compatible)
-   - Each player is stored at rosters/<safeKey> as {name, team, predictions}.
-   - Writing one player NEVER overwrites another (no global clobber).
-   - OLD records written by earlier versions (keyed by name, with no "name"
-     field inside) are still read correctly, so nothing is ever lost.
-   - A whole-node listener keeps every device in sync. This REQUIRES the
-     Firebase rule  "rosters": { ".read": true }  AT THE rosters LEVEL
-     (see the rules note in <head> — read rules do not cascade upward).
-   ============================================================ */
-
-// Firebase keys cannot contain . # $ [ ] / — sanitise the PATH only (not the name).
-function safeKey(name){ return (name||'').trim().replace(/[.#$\[\]\/]/g,'_'); }
-
-// Normalise any record (old OR new format) to {name, team, predictions}.
-// Old format had no "name" field; the Firebase key WAS the player's name.
-function normaliseRecord(key, v){
-  if(!v || typeof v !== 'object') return null;
-  const name = (v.name && String(v.name).trim()) ? v.name : key;
-  return { name, team: v.team || '', predictions: v.predictions || {} };
-}
-
-// Seed caches from localStorage so cached picks are instant and never lost.
-try {
-  window._rosterCache  = JSON.parse(localStorage.getItem('ffwc26_rosters')||'{}');
-  window._resultsCache = JSON.parse(localStorage.getItem('ffwc26_results')||'{}');
-} catch(e){
-  window._rosterCache  = {};
-  window._resultsCache = {};
-}
+/* ---------- hybrid storage: Firebase cloud + localStorage fallback ---------- */
+// seed in-memory caches from localStorage so the UI is instant on load
+window._rosterCache  = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+window._resultsCache = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
 
 const DB = {
-  rosters(){ return window._rosterCache || {}; },
-
-  // Save ONE player under their own path — never touches anyone else's data.
-  saveOneRoster(name, data){
-    const payload = { name, team: data.team||'', predictions: data.predictions||{} };
-    window._rosterCache[name] = payload;
-    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
+  rosters(){
+    return firebaseReady ? (window._rosterCache || {})
+                         : JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+  },
+  saveRosters(r){
+    window._rosterCache = r;
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));   // always keep a local copy
     if(firebaseReady){
-      db.ref('rosters/'+safeKey(name)).set(payload)
-        .catch(e => { console.error('saveOneRoster failed', e); toast('Sync failed — try again'); });
+      db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
     }
   },
-
-  // Legacy wrapper so any older call still works safely (writes per-player).
-  saveRosters(r){ Object.keys(r||{}).forEach(name => DB.saveOneRoster(name, r[name])); },
-
-  current(){ return localStorage.getItem('ffwc26_current')||''; },
-  setCurrent(n){ localStorage.setItem('ffwc26_current', n); },
-
-  results(){ return window._resultsCache || {}; },
-
-  saveOneResult(id, data){
-    window._resultsCache[id] = data;
-    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
-    if(firebaseReady){
-      db.ref('results/'+id).set(data)
-        .catch(e => { console.error('saveOneResult failed', e); toast('Result sync failed — try again'); });
-    }
+  current(){ return localStorage.getItem("ffwc26_current")||""; },
+  setCurrent(n){ localStorage.setItem("ffwc26_current", n); },
+  results(){
+    return firebaseReady ? (window._resultsCache || {})
+                         : JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
   },
-
-  saveResults(r, onlyId){
-    if(onlyId!=null){ DB.saveOneResult(onlyId, r[onlyId]); }
-    else { Object.keys(r||{}).forEach(id => DB.saveOneResult(id, r[id])); }
+  saveResults(r){
+    window._resultsCache = r;
+    localStorage.setItem("ffwc26_results", JSON.stringify(r));
+    if(firebaseReady){
+      db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
+    }
   }
 };
-
-/* Merge a cloud snapshot into the cache. Cloud is authoritative, but we keep
-   any local player / prediction that hasn't uploaded yet (e.g. briefly offline),
-   and we read BOTH old and new record formats so old players never vanish. */
-function mergeRosterIntoCache(cloudRaw){
-  const merged = {};
-  Object.entries(cloudRaw || {}).forEach(([key, v]) => {
-    const rec = normaliseRecord(key, v);
-    if(rec) merged[rec.name] = rec;
-  });
-  Object.keys(window._rosterCache || {}).forEach(name => {
-    const local = window._rosterCache[name];
-    if(!local) return;
-    if(!merged[name]){
-      // Local-only player (signed up while offline / pending upload) — keep them.
-      merged[name] = { name, team: local.team||'', predictions: local.predictions||{} };
-    } else {
-      // Cloud wins per match, but keep any local match the cloud doesn't have yet.
-      merged[name] = { ...merged[name],
-        predictions: { ...(local.predictions||{}), ...(merged[name].predictions||{}) } };
-    }
-  });
-  return merged;
-}
 
 let isInitialized = false;
 
@@ -998,143 +722,28 @@ function refreshAll(){
   renderLeaderboard();
   renderScorebar();
   const pr = document.getElementById('predict');
-  if(pr && pr.style.display !== 'none'){ renderGroups(); renderLiveBanner(); renderNextMatch(); }
-  renderSyncStatus();
+  if(pr && pr.style.display !== 'none') renderGroups();
 }
 
-// Footer status: shows cloud state, how many players are loaded, and the app
-// version. The version number is the key diagnostic — if a device's footer is
-// missing it, that device is running a stale (cached) copy of the page.
-function renderSyncStatus(){
-  const ss=document.getElementById('syncStatus');
-  if(!ss) return;
-  const n = Object.keys(DB.rosters()).length;
-  if(firebaseReady){
-    ss.innerHTML = '☁ Cloud sync active · <b>'+n+'</b> player'+(n===1?'':'s')+' loaded · app v'+APP_VERSION;
-    ss.style.color = 'var(--green-700)';
-  } else {
-    ss.innerHTML = '⚠ Cloud sync unavailable — picks saved on this device only · app v'+APP_VERSION;
-    ss.style.color = '#b07a3a';
-  }
-}
-
-/* ===== Real-time listeners — keep every device in sync ===== */
+/* ===== Real-time listeners (only if the cloud is available) ===== */
 if(firebaseReady){
   db.ref('rosters').on('value', snap => {
-    window._rosterCache = mergeRosterIntoCache(snap.val() || {});
-    localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
+    window._rosterCache = snap.val() || {};
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
     if(isInitialized) refreshAll();
-  }, err => {
-    console.error('rosters listener error:', err);
-    const ss=document.getElementById('syncStatus');
-    if(ss){ ss.innerHTML='⚠ Cloud read was blocked — check the Realtime Database rules (see code note).'; ss.style.color='#b07a3a'; }
-  });
+  }, err => console.error('rosters listener error:', err));
 
   db.ref('results').on('value', snap => {
     window._resultsCache = snap.val() || {};
-    localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
+    localStorage.setItem("ffwc26_results", JSON.stringify(window._resultsCache));
     if(isInitialized) refreshAll();
   }, err => console.error('results listener error:', err));
-}
-
-/* ----- manual sync helpers (buttons) ----- */
-function syncMyPredictions(){
-  if(!activeName){ toast('Choose a player first'); return; }
-  const r = DB.rosters()[activeName];
-  if(!r){ toast('No predictions found'); return; }
-  if(!firebaseReady){ toast('Cloud unavailable — check connection'); return; }
-  db.ref('rosters/'+safeKey(activeName)).set({ name:activeName, team:r.team||'', predictions:r.predictions||{} })
-    .then(()=>toast('Your predictions synced ✓'))
-    .catch(e=>{ console.error(e); toast('Sync failed'); });
-}
-
-function syncAllPlayersNow(){
-  const rosters = DB.rosters();
-  const names = Object.keys(rosters);
-  if(!names.length){ toast('No player data in memory'); return; }
-  if(!firebaseReady){ toast('Cloud unavailable'); return; }
-  const btn = document.getElementById('syncAllBtn');
-  if(btn){ btn.disabled=true; btn.textContent='Syncing…'; }
-  Promise.all(names.map(name => {
-    const r = rosters[name];
-    return db.ref('rosters/'+safeKey(name)).set({ name, team:r.team||'', predictions:r.predictions||{} });
-  })).then(()=>{
-    toast('All '+names.length+' players synced ✓');
-    if(btn){ btn.disabled=false; btn.textContent='Sync all players'; }
-  }).catch(e=>{
-    console.error(e); toast('Bulk sync failed');
-    if(btn){ btn.disabled=false; btn.textContent='Sync all players'; }
-  });
-}
-
-/* ----- backup / restore ----- */
-function exportBackup(){
-  const data = { rosters: window._rosterCache, results: window._resultsCache,
-    exportedAt:new Date().toISOString(), version:2 };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'icd-worldcup-backup-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
-  toast('Backup downloaded ✓');
-}
-function importBackup(){
-  const input = document.createElement('input');
-  input.type='file'; input.accept='.json';
-  input.onchange = async e => {
-    const file = e.target.files[0]; if(!file) return;
-    try{
-      const data = JSON.parse(await file.text());
-      if(!data.rosters){ toast('Invalid backup file'); return; }
-      window._rosterCache = {};
-      Object.entries(data.rosters).forEach(([key,v])=>{ const r=normaliseRecord(key,v); if(r) window._rosterCache[r.name]=r; });
-      window._resultsCache = data.results || {};
-      localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
-      localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
-      if(firebaseReady){
-        const writes=[];
-        Object.values(window._rosterCache).forEach(r=>{
-          writes.push(db.ref('rosters/'+safeKey(r.name)).set({name:r.name,team:r.team||'',predictions:r.predictions||{}}));
-        });
-        Object.keys(window._resultsCache).forEach(id=>{
-          writes.push(db.ref('results/'+id).set(window._resultsCache[id]));
-        });
-        await Promise.all(writes);
-        toast('Backup restored to cloud ✓ ('+Object.keys(window._rosterCache).length+' players)');
-      } else {
-        toast('Backup loaded locally ✓ ('+Object.keys(window._rosterCache).length+' players)');
-      }
-      refreshAll();
-    }catch(err){ console.error(err); toast('Failed to load backup file'); }
-  };
-  input.click();
-}
-function refreshCloudNow(){
-  if(!firebaseReady){ toast('Cloud unavailable'); return; }
-  const btn=document.getElementById('refreshCloudBtn');
-  if(btn){ btn.disabled=true; btn.textContent='Refreshing…'; }
-  Promise.all([db.ref('rosters').once('value'), db.ref('results').once('value')])
-    .then(([rs,res])=>{
-      const raw=rs.val()||{};
-      const rebuilt={};
-      Object.entries(raw).forEach(([key,v])=>{ const r=normaliseRecord(key,v); if(r) rebuilt[r.name]=r; });
-      window._rosterCache=rebuilt;
-      window._resultsCache=res.val()||{};
-      localStorage.setItem('ffwc26_rosters', JSON.stringify(window._rosterCache));
-      localStorage.setItem('ffwc26_results', JSON.stringify(window._resultsCache));
-      refreshAll();
-      toast('Cloud data refreshed ✓ ('+Object.keys(rebuilt).length+' players)');
-      if(btn){ btn.disabled=false; btn.textContent='Refresh cloud'; }
-    }).catch(e=>{
-      console.error(e); toast('Refresh failed — check DB rules');
-      if(btn){ btn.disabled=false; btn.textContent='Refresh cloud'; }
-    });
 }
 
 let activeName = DB.current();
 let selectedFavTeam = "";
 let activeFilter = "all";
-let adminFilter = "today";
+let adminFilter = "all";
 
 /* ---------- helpers ---------- */
 function fmtDate(iso){
@@ -1145,9 +754,8 @@ function teamFlag(t){ return FLAG(TEAMS[t]); }
 function getRoster(name){
   const r = DB.rosters()[name];
   if(!r) return null;
-  // Firebase drops empty objects/arrays, so a record can come back without
-  // predictions (or a prediction without a scorers array). Normalize the shape
-  // so the rest of the code can rely on it.
+  // Firebase strips empty objects, so predictions/scorers may come back undefined.
+  // Normalize the roster shape so the rest of the code can rely on it.
   if(!r.predictions) r.predictions = {};
   for(const id in r.predictions){
     if(r.predictions[id] && !r.predictions[id].scorers) r.predictions[id].scorers = [];
@@ -1228,9 +836,11 @@ function checkStart(){
 document.getElementById('nameInput').addEventListener('input',checkStart);
 document.getElementById('startBtn').addEventListener('click',()=>{
   const name=document.getElementById('nameInput').value.trim();
-  // Preserve any existing predictions for this name (returning player), never wipe them.
-  const existing = DB.rosters()[name] || {predictions:{}};
-  DB.saveOneRoster(name, { team:selectedFavTeam, predictions: existing.predictions || {} });
+  const rosters=DB.rosters();
+  if(!rosters[name]) rosters[name]={team:selectedFavTeam,predictions:{}};
+  else rosters[name].team=selectedFavTeam;
+  DB.saveRosters(rosters);
+  window._rosterCache = rosters; // ensure cache is set immediately
   DB.setCurrent(name); activeName=name;
   enterPredict();
   toast("Welcome, "+name+"!");
@@ -1239,20 +849,12 @@ document.getElementById('startBtn').addEventListener('click',()=>{
 function enterPredict(){
   document.getElementById('onboard').style.display='none';
   document.getElementById('predict').style.display='block';
-  let r=getRoster(activeName);
-  if(!r){
-    // Safety net: a cloud refresh must never leave a signed-in player with no roster.
-    r={ name:activeName, team:selectedFavTeam||'', predictions:{} };
-    DB.saveOneRoster(activeName, r);
-  }
+  const r=getRoster(activeName);
   document.getElementById('whoName').textContent=activeName;
   document.getElementById('whoFlag').src=teamFlag(r.team);
   buildGroupFilter();
   renderGroups();
   renderScorebar();
-  renderLiveBanner();
-  renderNextMatch();
-  startCountdownTicker();
 }
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
@@ -1275,185 +877,25 @@ function buildGroupFilter(){
 function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 
 /* ============================================================
-   LIVE NOW BANNER + NEXT MATCH HERO
-   ============================================================ */
-// A match is treated as "in play" for 120 minutes after kickoff. Real matches run
-// ~105-115 min wall-clock with halftime and stoppage, so this keeps a live game on
-// the banner through full time without overlapping the next kickoff.
-const LIVE_MINUTES = 120;
-const MATCH_WINDOW_MS = LIVE_MINUTES * 60 * 1000;
-
-function withKickoffs(){
-  return MATCHES.map(m=>({m, ko:kickoffMs(m)})).filter(x=>x.ko!=null).sort((a,b)=>a.ko-b.ko);
-}
-
-// All matches currently in their live window.
-function liveMatches(){
-  const now=Date.now();
-  return withKickoffs().filter(x=> now>=x.ko && now < x.ko+MATCH_WINDOW_MS);
-}
-// The very next match that hasn't kicked off yet.
-function nextMatch(){
-  const now=Date.now();
-  return withKickoffs().find(x=> x.ko>now) || null;
-}
-// Rough phase of play from wall-clock time since kickoff. This is only an estimate
-// (no live feed), so it stays vague on purpose: 1st half, half-time, 2nd half, or
-// "full time?" once enough time has passed that the match has almost certainly ended.
-function matchPhase(ko){
-  const mins=Math.floor((Date.now()-ko)/60000);
-  if(mins<45) return {label:"1st half", playing:true};
-  if(mins<60) return {label:"Half-time", playing:false};
-  if(mins<105) return {label:"2nd half", playing:true};
-  return {label:"Full time?", playing:false};
-}
-
-function renderLiveBanner(){
-  const el=document.getElementById('liveBanner');
-  if(!el) return;
-  const live=liveMatches();
-  if(live.length===0){ el.innerHTML=''; return; }
-  const rows = live.map(({m,ko})=>{
-    const res=DB.results()[m.id];
-    const hasResult = res && res.h!=null && res.h!=="" && res.a!=null && res.a!=="";
-    const phase = matchPhase(ko);
-    const q = encodeURIComponent(`${m.h} vs ${m.a} score`);
-    // Right-hand status pill
-    let pill;
-    if(hasResult){
-      pill = `<span class="lb-min ft">Full time</span>`;
-    } else if(phase.playing){
-      pill = `<span class="lb-min"><span class="lb-livedot"></span>${phase.label}</span>`;
-    } else {
-      pill = `<span class="lb-min paused">${phase.label}</span>`;
-    }
-    // Middle: real score if entered, otherwise team names with a gentle prompt
-    const middle = hasResult
-      ? `<b>${m.h}</b> <span class="lb-score">${res.h} – ${res.a}</span> <b>${m.a}</b>`
-      : `<b>${m.h}</b> <span style="color:var(--muted)">v</span> <b>${m.a}</b>`;
-    return `<div class="livebanner" onclick="jumpToMatch(${m.id},'${m.g}')">
-      <span class="lb-dot"></span>
-      <div class="lb-text">
-        <div class="lb-line">${middle} <span class="lb-grp">&middot; Group ${m.g}</span></div>
-        ${hasResult ? '' : `<a class="lb-check" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🔎 Check the live score</a>`}
-      </div>
-      ${pill}
-    </div>`;
-  }).join('');
-  el.innerHTML = `<div class="live-head"><span class="lh-dot"></span>LIVE NOW</div>` + rows;
-}
-
-function renderNextMatch(){
-  const wrap=document.getElementById('nextWrap');
-  if(!wrap) return;
-  const nx=nextMatch();
-  if(!nx){
-    // No upcoming match. If something is live, the banner covers it; otherwise season done.
-    wrap.innerHTML = liveMatches().length
-      ? ''
-      : `<div class="next-none">🏁 The group stage is complete. Knockout fixtures will appear here as they are confirmed.</div>`;
-    return;
-  }
-  const m=nx.m, ko=nx.ko;
-  wrap.innerHTML = `
-    <div class="nextcard">
-      <div class="next-top">
-        <span class="next-tag"><span class="pulse"></span>Next match</span>
-        <span class="next-when">Group ${m.g} &middot; ${localDate(m)}<br>${localTime(m)}</span>
-      </div>
-      <div class="next-teams">
-        <div class="next-team"><img src="${teamFlag(m.h)}" alt=""><span class="nt">${m.h}</span></div>
-        <span class="next-vs">vs</span>
-        <div class="next-team away"><img src="${teamFlag(m.a)}" alt=""><span class="nt">${m.a}</span></div>
-      </div>
-      <div class="next-foot">
-        <div class="countdown" id="cd" data-ko="${ko}"></div>
-        <div class="next-cta"><button onclick="jumpToMatch(${m.id},'${m.g}')">Predict →</button></div>
-      </div>
-    </div>`;
-  updateCountdown();
-}
-
-function updateCountdown(){
-  // refresh the live banner minute clock every tick too
-  renderLiveBanner();
-  const cd=document.getElementById('cd');
-  if(!cd) return;
-  const ko=parseInt(cd.dataset.ko,10);
-  let diff=ko-Date.now();
-  if(diff<=0){
-    // kickoff just passed — refresh hero AND group cards so this match locks visually
-    renderNextMatch();
-    const pr=document.getElementById('predict');
-    if(pr && pr.style.display!=='none') renderGroups();
-    return;
-  }
-  const d=Math.floor(diff/86400000); diff-=d*86400000;
-  const h=Math.floor(diff/3600000); diff-=h*3600000;
-  const mn=Math.floor(diff/60000); diff-=mn*60000;
-  const s=Math.floor(diff/1000);
-  const seg=(n,l)=>`<span class="seg">${String(n).padStart(2,'0')}</span><span class="cl">${l}</span>`;
-  cd.innerHTML = (d>0?seg(d,'d')+' ':'')+seg(h,'h')+' '+seg(mn,'m')+' '+seg(s,'s');
-}
-
-let _cdTimer=null;
-function startCountdownTicker(){
-  if(_cdTimer) clearInterval(_cdTimer);
-  _cdTimer=setInterval(updateCountdown,1000);
-}
-
-function jumpToMatch(id,g){
-  activeFilter=g; buildGroupFilter(); renderGroups();
-  setTimeout(()=>{
-    const el=document.getElementById('match-'+id);
-    if(el){
-      // open the group if collapsed
-      const body=el.closest('.group-body');
-      if(body && !body.classList.contains('open')){
-        const head=body.previousElementSibling;
-        if(head){ head.classList.add('open'); body.classList.add('open'); }
-      }
-      el.scrollIntoView({behavior:'smooth',block:'center'});
-      el.style.transition='box-shadow .3s';
-      el.style.boxShadow='0 0 0 3px var(--green-500)';
-      setTimeout(()=>el.style.boxShadow='',1600);
-    }
-  },80);
-}
-
-/* ============================================================
    RENDER MATCHES
    ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
-  let r=getRoster(activeName);
-  if(!r && activeName){
-    // Recover instead of bailing — otherwise the groups silently never render.
-    r={ name:activeName, team:selectedFavTeam||'', predictions:{} };
-    DB.saveOneRoster(activeName, r);
+  const r=getRoster(activeName);
+  if(!r){
+    cont.innerHTML=`<div style="padding:20px;color:var(--muted);text-align:center;">Loading your predictions...</div>`;
+    return;
   }
-  if(!r) return;
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
-
-  // Remember which groups are currently open so a re-render (e.g. from a live
-  // cloud update) doesn't collapse what the player has expanded.
-  const openNow={};
-  cont.querySelectorAll('.group-block').forEach(blk=>{
-    const g=blk.dataset.g;
-    const body=blk.querySelector('.group-body');
-    if(g && body) openNow[g]=body.classList.contains('open');
-  });
-
   let html="";
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
     // group points
     let gpts=0, hasRes=false;
     gm.forEach(m=>{ const p=scoreMatch(r.predictions[m.id],res[m.id]); if(p!=null){gpts+=p;hasRes=true;} });
-    // Open if: filtered to this single group, OR it was already open before re-render.
-    const open = (activeFilter!=='all') || (openNow[g]===true);
-    html+=`<div class="group-block" data-g="${g}">
+    const open = activeFilter!=='all';
+    html+=`<div class="group-block">
       <div class="group-head ${open?'open':''}" onclick="toggleGroup(this)">
         <div class="group-tag">${g}</div>
         <div>
@@ -1478,11 +920,7 @@ function matchCard(m,roster,result){
   const pred=roster.predictions[m.id]||{};
   const ph=pred.h, pa=pred.a;
   const hasResult = result && result.h!=null && result.h!=="" && result.a!=null && result.a!=="";
-  // Auto-lock: a match locks when the official result is in OR when kickoff time has passed.
-  const ko = kickoffMs(m);
-  const started = ko!=null && Date.now() >= ko;
-  const locked = hasResult || started;
-  const lockReason = hasResult ? 'Result in · locked' : (started ? 'Kicked off · locked' : '');
+  const locked=hasResult;
   const earned = hasResult ? scoreMatch(pred,result) : null;
 
   // winner line
@@ -1497,9 +935,9 @@ function matchCard(m,roster,result){
 
   let html=`<div class="match ${locked?'locked':''} ${hasResult?'scored':''}" id="match-${m.id}">
     <div class="match-meta">
-      <span>${localDate(m)} · ${localTime(m)}</span><span class="dot"></span>
+      <span>${fmtDate(m.date)} · ${m.time}</span><span class="dot"></span>
       <span>${m.venue}</span>
-      ${locked?`<span class="dot"></span><span class="live">${lockReason}</span>`:''}
+      ${locked?'<span class="dot"></span><span class="live">Result in · locked</span>':''}
     </div>
     <div class="vs-row">
       <div class="side">
@@ -1524,22 +962,12 @@ function matchCard(m,roster,result){
     html+=`</div>
       <button class="add-scorer" onclick="addScorer(${m.id})">＋ Add goalscorer</button>
     </div>`;
-  } else if(hasResult) {
+  } else {
     html+=`<div class="result-strip">
       <span>Final result:</span>
       <span class="actual">${m.h} ${result.h} – ${result.a} ${m.a}</span>
       ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.join(', ')}</span>`:''}
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
-    </div>`;
-  } else {
-    // Locked because kickoff passed, but no official result entered yet.
-    let lockedPick = (ph!=null && pa!=null)
-      ? `Your locked prediction: <b>${m.h} ${ph} – ${pa} ${m.a}</b>${scorers.length?` · ⚽ ${scorers.join(', ')}`:''}`
-      : `No prediction was made before kickoff.`;
-    html+=`<div class="result-strip">
-      <span>⏱ Match started</span>
-      <span class="actual">${lockedPick}</span>
-      <span style="font-weight:500;color:var(--muted)">Awaiting result</span>
     </div>`;
   }
   html+=`</div>`;
@@ -1613,7 +1041,7 @@ function removeScorer(id,idx){
   refreshMatch(id);
 }
 function saveRoster(r){
-  DB.saveOneRoster(activeName, r);
+  const rosters=DB.rosters(); rosters[activeName]=r; DB.saveRosters(rosters);
 }
 function refreshMatch(id){
   const r=getRoster(activeName);
@@ -1696,6 +1124,56 @@ function renderLeaderboard(){
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 /* ============================================================
+   FORCE SYNC (localStorage → Firebase migration)
+   ============================================================ */
+function syncMyData(){
+  if(!firebaseReady){
+    toast("Firebase not connected"); return;
+  }
+  const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+  
+  if(Object.keys(localRosters).length===0){
+    toast("No predictions to sync");
+    return;
+  }
+  
+  db.ref('rosters').set(localRosters).then(()=>{
+    toast("✓ Your predictions are now live on the leaderboard!");
+  }).catch(e=>{
+    console.error("Sync failed:", e);
+    toast("Sync failed: " + e.message);
+  });
+}
+
+function forceSyncToCloud(){
+  if(!firebaseReady){
+    toast("Firebase not connected"); return;
+  }
+  const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+  const localResults = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
+  
+  if(Object.keys(localRosters).length===0 && Object.keys(localResults).length===0){
+    toast("No local data to sync");
+    return;
+  }
+  
+  db.ref('rosters').set(localRosters).then(()=>{
+    toast("✓ Rosters synced to cloud");
+  }).catch(e=>{
+    console.error("Sync failed:", e);
+    toast("Sync failed: " + e.message);
+  });
+  
+  if(Object.keys(localResults).length>0){
+    db.ref('results').set(localResults).then(()=>{
+      toast("✓ Results synced to cloud");
+    }).catch(e=>{
+      console.error("Results sync failed:", e);
+    });
+  }
+}
+
+/* ============================================================
    ADMIN / RESULTS
    ============================================================ */
 function checkAdmin(){
@@ -1708,110 +1186,47 @@ function checkAdmin(){
 }
 function buildAdminFilter(){
   const f=document.getElementById('adminFilter');
-  let html=`<button class="${adminFilter==='today'?'on':''}" onclick="setAdminFilter('today')">⚡ Today &amp; live</button>`;
-  html+=`<button class="${adminFilter==='needs'?'on':''}" onclick="setAdminFilter('needs')">⏳ Awaiting result</button>`;
-  html+=`<button class="${adminFilter==='all'?'on':''}" onclick="setAdminFilter('all')">All groups</button>`;
+  let html=`<button class="${adminFilter==='all'?'on':''}" onclick="setAdminFilter('all')">All groups</button>`;
   for(const g in GROUPS) html+=`<button class="${adminFilter===g?'on':''}" onclick="setAdminFilter('${g}')">Group ${g}</button>`;
   f.innerHTML=html;
 }
 function setAdminFilter(g){ adminFilter=g; buildAdminFilter(); renderAdmin(); }
-
-// Has the official result been entered for a match?
-function adminHasResult(m){
-  const r=DB.results()[m.id];
-  return r && r.h!=null && r.h!=="" && r.a!=null && r.a!=="";
-}
-
 function renderAdmin(){
   const cont=document.getElementById('adminContainer');
   const res=DB.results();
-  const now=Date.now();
-
-  let ms;
-  if(adminFilter==='today'){
-    // matches that kicked off or kick off within the local calendar day, newest first
-    const todayStr=new Date().toDateString();
-    ms=MATCHES.filter(m=>{
-      const ko=kickoffMs(m); if(ko==null) return false;
-      const sameDay=new Date(ko).toDateString()===todayStr;
-      const liveWindow = now>=ko && now < ko+MATCH_WINDOW_MS;
-      return sameDay || liveWindow;
-    }).sort((a,b)=>(kickoffMs(b)||0)-(kickoffMs(a)||0));
-  } else if(adminFilter==='needs'){
-    // matches that have kicked off but have no official result yet
-    ms=MATCHES.filter(m=>{
-      const ko=kickoffMs(m); if(ko==null) return false;
-      return now>=ko && !adminHasResult(m);
-    }).sort((a,b)=>(kickoffMs(b)||0)-(kickoffMs(a)||0));
-  } else if(adminFilter==='all'){
-    ms=MATCHES;
-  } else {
-    ms=MATCHES.filter(m=>m.g===adminFilter);
-  }
-
-  if(ms.length===0){
-    const msg = adminFilter==='today' ? 'No matches scheduled for today.'
-              : adminFilter==='needs' ? '✅ All kicked-off matches have a result entered. Nothing pending.'
-              : 'No matches in this view.';
-    cont.innerHTML=`<div class="next-none">${msg}</div>`;
-    return;
-  }
-
+  const ms = adminFilter==='all'?MATCHES:MATCHES.filter(m=>m.g===adminFilter);
   cont.innerHTML=ms.map(m=>{
     const r=res[m.id]||{};
     const scText=(r.scorers||[]).join(', ');
-    const ko=kickoffMs(m);
-    const started = ko!=null && now>=ko;
-    const done = adminHasResult(m);
-    const isAuto = done && r.auto===true;
-    let statusChip='';
-    if(done && isAuto) statusChip=`<span class="am-status auto">🛰 Auto · verify</span>`;
-    else if(done) statusChip=`<span class="am-status done">✓ Result in</span>`;
-    else if(started) statusChip=`<span class="am-status pending">⏳ Needs result</span>`;
-    else statusChip=`<span class="am-status upcoming">${localDate(m)} · ${localTime(m)}</span>`;
-    // Google quick-confirm link for this exact fixture
-    const q=encodeURIComponent(`${m.h} vs ${m.a} score`);
     return `<div class="admin-match">
       <span class="am-grp">${m.g}</span>
       <div class="am-teams">
         <img src="${teamFlag(m.h)}" alt="">${m.h}
         <span style="color:var(--muted)">vs</span>
         ${m.a}<img src="${teamFlag(m.a)}" alt="">
-        ${statusChip}
-        <a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener" class="am-check" title="Check the score">🔎</a>
       </div>
-      <div class="am-quick">
-        ${quickScoreRow(m.id,'h',r.h)}
-        <span style="font-weight:700;color:var(--muted);font-size:18px">:</span>
-        ${quickScoreRow(m.id,'a',r.a)}
+      <div class="am-score">
+        <input type="number" min="0" max="20" value="${r.h!=null?r.h:''}" onchange="setResult(${m.id},'h',this.value)">
+        <span style="font-weight:700;color:var(--muted)">:</span>
+        <input type="number" min="0" max="20" value="${r.a!=null?r.a:''}" onchange="setResult(${m.id},'a',this.value)">
       </div>
       <input class="am-sc" type="text" placeholder="Goalscorers, comma separated (e.g. Messi, Álvarez)" value="${scText.replace(/"/g,'&quot;')}" onchange="setResultScorers(${m.id},this.value)">
     </div>`;
   }).join('');
 }
-
-// Quick tap buttons 0-4 plus a manual input for higher scores
-function quickScoreRow(id,side,val){
-  const v = (val!=null && val!=="") ? +val : null;
-  let btns='';
-  for(let n=0;n<=4;n++){
-    btns+=`<button class="qbtn ${v===n?'sel':''}" onclick="setResult(${id},'${side}',${n})">${n}</button>`;
-  }
-  btns+=`<input class="qmore" type="number" min="0" max="20" placeholder="+" value="${(v!=null&&v>4)?v:''}" onchange="setResult(${id},'${side}',this.value)">`;
-  return `<div class="qrow">${btns}</div>`;
-}
 function setResult(id,side,val){
-  const cur = DB.results()[id] || {h:null,a:null,scorers:[],auto:false};
-  const updated = { ...cur, [side]: val===''?null:Math.max(0,+val), auto:false };
-  DB.saveOneResult(id, updated);
+  const res=DB.results();
+  if(!res[id]) res[id]={h:null,a:null,scorers:[]};
+  res[id][side]= val===''?null:Math.max(0,+val);
+  DB.saveResults(res);
   toast("Result saved");
   renderScorebar();
-  renderAdmin();
 }
 function setResultScorers(id,val){
-  const cur = DB.results()[id] || {h:null,a:null,scorers:[],auto:false};
-  const updated = { ...cur, scorers: val.split(',').map(s=>s.trim()).filter(Boolean) };
-  DB.saveOneResult(id, updated);
+  const res=DB.results();
+  if(!res[id]) res[id]={h:null,a:null,scorers:[]};
+  res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
+  DB.saveResults(res);
   toast("Scorers saved");
 }
 
@@ -1853,9 +1268,13 @@ function init(){
   buildDatalists();
   renderScorebar();
   isInitialized = true;  // Signal that real-time listeners should trigger renders
-  const tz=document.getElementById('tzNote');
-  if(tz){ const lbl=localTzLabel(); if(lbl) tz.textContent=' ('+lbl+')'; }
-  renderSyncStatus();
+  const ss = document.getElementById('syncStatus');
+  if(ss){
+    ss.innerHTML = firebaseReady
+      ? '☁ Cloud sync active — the leaderboard is shared live across every device.'
+      : '⚠ Cloud sync unavailable right now — your picks are saved on this device only.';
+    ss.style.color = firebaseReady ? 'var(--green-700)' : '#b07a3a';
+  }
   if(activeName && getRoster(activeName)){
     enterPredict();
   }
