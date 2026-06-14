@@ -639,7 +639,7 @@ try {
 /* ============================================================
    ICD FANTASY WORLD CUP 2026
    Data: official group-stage draw + schedule
-   Storage: Firebase Realtime Database (cloud-synced) + localStorage fallback
+   Storage: Firebase Realtime Database (cloud-first, per-record sync)
    ============================================================ */
 
 const FLAG = c => `https://flagcdn.com/h40/${c}.png`;
@@ -865,36 +865,56 @@ const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
 window._rosterCache  = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
 window._resultsCache = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
 
+window._rosterCache = window._rosterCache || {};
+window._resultsCache = window._resultsCache || {};
+
+function normalizePlayerKey(name){
+  return (name||'').trim().toLowerCase().replace(/[.#$\[\]]/g,'_').replace(/[^a-z0-9_ -]+/g,'').replace(/\s+/g,'-');
+}
+function rosterPayload(name, data){
+  return { ...(data||{}), name:name, predictions:(data&&data.predictions)||{} };
+}
+function mapRosterSnapshot(raw){
+  const out = {};
+  Object.entries(raw || {}).forEach(([_, value]) => {
+    if(!value) return;
+    const displayName = (value.name || '').trim();
+    if(!displayName) return;
+    out[displayName] = { team:value.team || '', predictions:value.predictions || {}, name:displayName };
+  });
+  return out;
+}
+
 const DB = {
   rosters(){
-    return firebaseReady ? (window._rosterCache || {})
-                         : JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
+    return window._rosterCache || {};
   },
-  saveRosters(r){
-    window._rosterCache = r;
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));   // always keep a local copy
-    if(firebaseReady){
-      db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
-    }
+  async saveRoster(name, data){
+    if(!firebaseReady) throw new Error('Cloud sync unavailable');
+    const payload = rosterPayload(name, data);
+    const safeKey = normalizePlayerKey(name);
+    await db.ref('rosters/' + safeKey).set(payload);
+  },
+  async saveRosters(r){
+    if(!firebaseReady) throw new Error('Cloud sync unavailable');
+    const writes = Object.keys(r || {}).map(name => {
+      const safeKey = normalizePlayerKey(name);
+      return db.ref('rosters/' + safeKey).set(rosterPayload(name, r[name]));
+    });
+    await Promise.all(writes);
   },
   current(){ return localStorage.getItem("ffwc26_current")||""; },
   setCurrent(n){ localStorage.setItem("ffwc26_current", n); },
   results(){
-    return firebaseReady ? (window._resultsCache || {})
-                         : JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
+    return window._resultsCache || {};
   },
-  saveResults(r, onlyId){
-    window._resultsCache = r;
-    localStorage.setItem("ffwc26_results", JSON.stringify(r));
-    if(firebaseReady){
-      if(onlyId!=null){
-        // Write just this one match so we never clobber the auto-updater's
-        // writes to other matches (last-write-wins is per-match, not global).
-        db.ref('results/'+onlyId).set(r[onlyId])
-          .catch(err => console.error('Cloud save (result '+onlyId+') failed:', err));
-      } else {
-        db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
-      }
+  async saveResults(r, onlyId){
+    if(!firebaseReady) throw new Error('Cloud sync unavailable');
+    if(onlyId!=null){
+      await db.ref('results/'+onlyId).set(r[onlyId]);
+    } else {
+      const writes = Object.keys(r || {}).map(id => db.ref('results/'+id).set(r[id]));
+      await Promise.all(writes);
     }
   }
 };
@@ -908,12 +928,27 @@ function refreshAll(){
   if(pr && pr.style.display !== 'none'){ renderGroups(); renderLiveBanner(); renderNextMatch(); }
 }
 
-/* ===== Real-time listeners (only if the cloud is available) ===== */
 if(firebaseReady){
   db.ref('rosters').on('value', snap => {
-    window._rosterCache = snap.val() || {};
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
-    if(isInitialized) refreshAll();
+    const cloudData = mapRosterSnapshot(snap.val() || {});
+    window._rosterCache = cloudData;
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(cloudData));
+
+    if(!activeName){
+      const saved = localStorage.getItem("ffwc26_current") || "";
+      if(saved && cloudData[saved]){
+        activeName = saved;
+      }
+    }
+
+    if(isInitialized){
+      refreshAll();
+      const pr = document.getElementById('predict');
+      const ob = document.getElementById('onboard');
+      if(activeName && pr && pr.style.display === 'none' && ob && ob.style.display !== 'none'){
+        enterPredict();
+      }
+    }
   }, err => console.error('rosters listener error:', err));
 
   db.ref('results').on('value', snap => {
@@ -1009,17 +1044,13 @@ function checkStart(){
 document.getElementById('nameInput').addEventListener('input',checkStart);
 document.getElementById('startBtn').addEventListener('click', async ()=>{
   const name=document.getElementById('nameInput').value.trim();
-  const existing=getRoster(name) || {predictions:{}};
-  const roster={team:selectedFavTeam,predictions:existing.predictions||{}};
-  try{
-    await DB.savePlayer(name, roster);
-    DB.setCurrent(name); activeName=name;
-    enterPredict();
-    toast("Welcome, "+name+"!");
-  }catch(err){
-    console.error(err);
-    toast("Cloud sync is unavailable. Predictions are blocked until sync is back.");
-  }
+  const rosters=DB.rosters();
+  if(!rosters[name]) rosters[name]={team:selectedFavTeam,predictions:{}};
+  else rosters[name].team=selectedFavTeam;
+  DB.saveRosters(rosters);
+  DB.setCurrent(name); activeName=name;
+  enterPredict();
+  toast("Welcome, "+name+"!");
 });
 
 function enterPredict(){
@@ -1575,22 +1606,32 @@ function quickScoreRow(id,side,val){
   btns+=`<input class="qmore" type="number" min="0" max="20" placeholder="+" value="${(v!=null&&v>4)?v:''}" onchange="setResult(${id},'${side}',this.value)">`;
   return `<div class="qrow">${btns}</div>`;
 }
-function setResult(id,side,val){
+async function setResult(id,side,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id][side]= val===''?null:Math.max(0,+val);
   res[id].auto=false;          // organiser entry: protect it from the auto-updater
-  DB.saveResults(res, id);
-  toast("Result saved");
-  renderScorebar();
-  renderAdmin();
+  try{
+    await DB.saveResults(res, id);
+    toast("Result saved");
+    renderScorebar();
+    renderAdmin();
+  }catch(err){
+    console.error(err);
+    toast("Could not save result");
+  }
 }
-function setResultScorers(id,val){
+async function setResultScorers(id,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
-  DB.saveResults(res, id);
-  toast("Scorers saved");
+  try{
+    await DB.saveResults(res, id);
+    toast("Scorers saved");
+  }catch(err){
+    console.error(err);
+    toast("Could not save scorers");
+  }
 }
 
 /* ============================================================
@@ -1636,8 +1677,8 @@ function init(){
   const ss = document.getElementById('syncStatus');
   if(ss){
     ss.innerHTML = firebaseReady
-      ? '☁ Cloud sync active — predictions save to the shared database instantly.'
-      : '❌ Cloud sync unavailable — prediction editing is disabled until Firebase reconnects.';
+      ? '☁ Cloud sync active — predictions and results update live across all devices.'
+      : '❌ Cloud sync unavailable — shared prediction saving is disabled until Firebase reconnects.';
     ss.style.color = firebaseReady ? 'var(--green-700)' : '#c0392b';
   }
   if(activeName && getRoster(activeName)){
