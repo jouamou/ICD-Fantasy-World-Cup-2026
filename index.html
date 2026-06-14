@@ -80,7 +80,7 @@
     border-radius:30px;padding:7px 16px;display:flex;align-items:center;gap:8px;
     font-size:13px;font-weight:600;backdrop-filter:blur(4px)
   }
-  .chip b{font-family:'Oswald';font-size:18px;font-weight:700;color:var(--green-500)}
+  .chip b{font-family:'Oswald';font-weight:700;font-size:18px;color:var(--green-500)}
   .chip img{width:20px;height:14px;border-radius:2px;object-fit:cover}
 
   /* ===== TABS ===== */
@@ -303,12 +303,184 @@
   }
   .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
+  /* ===== NEXT MATCH HERO CARD ===== */
+  #nextMatchCard {
+    margin-bottom: 22px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--green-900) 0%, #1a3d0c 100%);
+    border: 1px solid rgba(127,187,66,.25);
+    box-shadow: 0 4px 20px rgba(20,40,10,.18);
+    position: relative;
+  }
+  #nextMatchCard .nmc-pitch {
+    position: absolute; inset: 0; opacity: .06; pointer-events: none;
+    background: repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 80px);
+  }
+  #nextMatchCard .nmc-inner {
+    position: relative;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  #nextMatchCard .nmc-badge {
+    font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--green-500); background: rgba(127,187,66,.12);
+    border: 1px solid rgba(127,187,66,.28); border-radius: 20px;
+    padding: 3px 10px; display: inline-block; margin-bottom: 6px;
+  }
+  #nextMatchCard .nmc-meta {
+    font-size: 11px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 4px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  #nextMatchCard .nmc-meta .sep { opacity: .4; }
+  #nextMatchCard .nmc-teams {
+    flex: 1 1 300px;
+    display: flex; align-items: center; gap: 14px; justify-content: center;
+  }
+  #nextMatchCard .nmc-team {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; text-align: center;
+  }
+  #nextMatchCard .nmc-team img {
+    width: 52px; height: 36px; border-radius: 5px; object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  #nextMatchCard .nmc-team-name {
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,.9); line-height: 1.2;
+  }
+  #nextMatchCard .nmc-vs {
+    font-family: 'Oswald'; font-size: 20px; font-weight: 700;
+    color: rgba(255,255,255,.3); flex: 0 0 auto;
+  }
+  #nextMatchCard .nmc-countdown {
+    flex: 0 0 auto; text-align: center;
+  }
+  #nextMatchCard .nmc-countdown-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: rgba(255,255,255,.45); margin-bottom: 6px;
+  }
+  #nextMatchCard .nmc-countdown-units {
+    display: flex; gap: 6px; align-items: flex-end;
+  }
+  #nextMatchCard .nmc-unit {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #nextMatchCard .nmc-num {
+    font-family: 'Oswald'; font-weight: 700; font-size: 28px; line-height: 1;
+    color: #fff;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    min-width: 48px; padding: 5px 4px;
+    text-align: center;
+  }
+  #nextMatchCard .nmc-unit-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    color: rgba(255,255,255,.4); margin-top: 4px;
+  }
+  #nextMatchCard .nmc-colon {
+    font-family: 'Oswald'; font-size: 22px; font-weight: 700;
+    color: rgba(255,255,255,.3); padding-bottom: 18px;
+  }
+  #nextMatchCard.kickoff-soon .nmc-num { color: var(--green-500); border-color: rgba(127,187,66,.4); }
+  #nextMatchCard .nmc-left { flex: 1 1 180px; }
+  #nextMatchCard .nmc-title {
+    font-family: 'Archivo'; font-weight: 900; font-size: 15px; color: #fff; line-height: 1.2;
+  }
+  /* tz label */
+  .tz-label {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    color: rgba(255,255,255,.5); background: rgba(255,255,255,.07);
+    border-radius: 4px; padding: 2px 6px;
+  }
+
+  /* ===== LIVE MATCH BANNER ===== */
+  #liveMatchBanner {
+    display: none;
+    margin-bottom: 20px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid var(--gold);
+    background: linear-gradient(135deg, #2a1f00, #3a2a00);
+    box-shadow: 0 4px 20px rgba(224,168,46,.22);
+    animation: livePulse 3s ease-in-out infinite;
+  }
+  @keyframes livePulse {
+    0%,100%{box-shadow:0 4px 20px rgba(224,168,46,.22)}
+    50%{box-shadow:0 4px 28px rgba(224,168,46,.42)}
+  }
+  #liveMatchBanner .lmb-inner {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  #liveMatchBanner .lmb-live-dot {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gold); flex: 0 0 auto;
+  }
+  #liveMatchBanner .dot-pulse {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(.8)}
+  }
+  #liveMatchBanner .lmb-teams {
+    flex: 1 1 220px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  #liveMatchBanner .lmb-team {
+    display: flex; align-items: center; gap: 7px;
+  }
+  #liveMatchBanner .lmb-team img {
+    width: 28px; height: 20px; border-radius: 3px; object-fit: cover;
+  }
+  #liveMatchBanner .lmb-team-name {
+    font-size: 13px; font-weight: 700; color: rgba(255,255,255,.9);
+  }
+  #liveMatchBanner .lmb-score {
+    font-family: 'Oswald'; font-weight: 700; font-size: 26px; color: #fff;
+    background: rgba(255,255,255,.08); border-radius: 8px;
+    padding: 3px 14px; flex: 0 0 auto;
+  }
+  #liveMatchBanner .lmb-sep {
+    color: rgba(255,255,255,.25); font-family: 'Oswald'; font-size: 18px;
+  }
+  #liveMatchBanner .lmb-minute {
+    flex: 0 0 auto; text-align: center;
+  }
+  #liveMatchBanner .lmb-min-val {
+    font-family: 'Oswald'; font-weight: 700; font-size: 22px; color: var(--gold);
+    line-height: 1;
+  }
+  #liveMatchBanner .lmb-min-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+  }
+  #liveMatchBanner .lmb-phase {
+    flex: 0 0 auto; font-size: 11px; font-weight: 700;
+    color: rgba(255,255,255,.55); letter-spacing: .5px;
+    background: rgba(255,255,255,.07); border-radius: 6px; padding: 3px 9px;
+  }
+  #liveMatchBanner .lmb-scorers {
+    flex: 1 1 100%; font-size: 11px; color: rgba(255,255,255,.6); font-weight: 600;
+    padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08);
+  }
+  #liveMatchBanner .lmb-scorers span { color: var(--gold); }
+
   @media(max-width:560px){
     .team-opt{flex:1 1 100%}
     .lb-row{grid-template-columns:34px 1fr auto;gap:10px}
     .lb-pred{display:none}
     .side img{width:40px;height:27px}
     .score-val{font-size:28px;min-width:34px}
+    #nextMatchCard .nmc-inner { padding: 16px; gap: 14px; }
+    #nextMatchCard .nmc-num { font-size: 22px; min-width: 38px; }
+    #nextMatchCard .nmc-team img { width: 40px; height: 28px; }
   }
 </style>
 </head>
@@ -362,6 +534,12 @@
 
     <!-- predictions -->
     <div id="predict" style="display:none">
+      <!-- LIVE MATCH BANNER (shown when a game is currently in progress) -->
+      <div id="liveMatchBanner"></div>
+
+      <!-- NEXT MATCH HERO CARD -->
+      <div id="nextMatchCard" style="display:none"></div>
+
       <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px">
         <div style="font-size:13px;color:#856404;margin-bottom:8px"><b>📤 Sync your predictions to the leaderboard</b></div>
         <div style="font-size:12px;color:#856404;margin-bottom:10px">Click below to upload your predictions so everyone can see your score live.</div>
@@ -465,7 +643,7 @@
 </main>
 
 <footer class="footer">
-  Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). All times shown in US Eastern (ET).
+  Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). Times shown in your local timezone.
   <br><span id="syncStatus" style="font-size:11px;display:inline-block;margin-top:6px"></span>
 </footer>
 
@@ -473,7 +651,7 @@
 
 <script>
 /* ============================================================
-   FIREBASE INITIALIZATION (defensive — never crashes the app)
+   FIREBASE INITIALIZATION
    ============================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyBAj92mDekbkrjRH5vwyxZrtLKFR6LRcs",
@@ -496,20 +674,121 @@ try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     firebaseReady = true;
-  } else {
-    console.warn('Firebase SDK not loaded — running in local-only mode.');
   }
 } catch (e) {
-  console.error('Firebase init failed, falling back to local mode:', e);
+  console.error('Firebase init failed:', e);
   firebaseReady = false;
 }
 
 /* ============================================================
-   ICD FANTASY WORLD CUP 2026
-   Data: official group-stage draw + schedule
-   Storage: Firebase Realtime Database (cloud-synced) + localStorage fallback
+   TIME ZONE UTILITIES
+   Match times in the data are stored as US Eastern Time (ET).
+   We convert them to the viewer's local time automatically.
    ============================================================ */
 
+/**
+ * Parse a match into an exact UTC Date.
+ * The schedule uses ET (America/New_York = UTC-5 in winter / UTC-4 in summer).
+ * June/July = EDT = UTC-4.
+ * We encode each match as "YYYY-MM-DD HH:MM ET" and convert properly.
+ */
+function parseMatchUTC(isoDate, etTimeStr) {
+  // etTimeStr examples: "3:00 PM ET", "10:00 PM ET", "12:00 AM ET"
+  const cleaned = etTimeStr.replace(' ET','').trim();
+  const [timePart, ampm] = cleaned.split(' ');
+  let [h, m] = timePart.split(':').map(Number);
+  if (ampm === 'PM' && h !== 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  // June 2026: all in EDT = UTC-4
+  // Construct as UTC by adding 4 hours
+  const etOffsetHours = 4; // EDT
+  const utcH = h + etOffsetHours;
+  // Build UTC date string
+  const base = new Date(isoDate + 'T00:00:00Z');
+  base.setUTCHours(utcH, m, 0, 0);
+  // Handle date rollover if UTC hours >= 24 (shouldn't happen) or < 0 (midnight ET = day before UTC?)
+  // 12:00 AM ET = midnight ET = 04:00 UTC same day — fine
+  return base;
+}
+
+/**
+ * Format a UTC Date into the user's local time.
+ * Returns e.g. "Thu 11 Jun · 7:00 PM" with tz abbreviation.
+ */
+function fmtLocalTime(utcDate) {
+  const opts = {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZoneName: 'short'
+  };
+  return utcDate.toLocaleString('en-US', opts);
+}
+
+function fmtLocalTimeShort(utcDate) {
+  return utcDate.toLocaleString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+}
+
+function getLocalTZ() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch(e) { return 'Local'; }
+}
+
+function getTZAbbr() {
+  const d = new Date();
+  const str = d.toLocaleString('en-US', {timeZoneName:'short'});
+  const parts = str.split(' ');
+  return parts[parts.length - 1] || 'Local';
+}
+
+/* ============================================================
+   MATCH PHASE / MINUTE CALCULATOR
+   Given a match kick-off UTC time, compute current minute & phase.
+   Half-time: 45+5 min → 15 min break → 2nd half 45+6
+   ============================================================ */
+function getMatchPhase(kickoffUTC) {
+  const now = Date.now();
+  const ko = kickoffUTC.getTime();
+  const elapsedMs = now - ko;
+  const elapsedMin = elapsedMs / 60000;
+
+  // Thresholds (minutes from kick-off):
+  //  0 – 50     → 1st half (45 min + up to 5 added)
+  //  50 – 65    → Half time
+  //  65 – 116   → 2nd half (45 min + up to 6 added)
+  //  116 – ...  → Full time (within 3 hours of KO, then we stop showing)
+
+  if (elapsedMin < 0) return null; // not started
+  if (elapsedMin < 50) {
+    // 1st half
+    const min = Math.min(Math.floor(elapsedMin), 45);
+    const added = Math.max(0, Math.floor(elapsedMin) - 45);
+    const displayMin = added > 0 ? `45+${added}` : `${min}`;
+    return { phase: '1st Half', displayMin, phase_code: '1h' };
+  }
+  if (elapsedMin < 65) {
+    return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht' };
+  }
+  if (elapsedMin < 116) {
+    // 2nd half: starts at elapsed 65 min
+    const secondHalfMin = elapsedMin - 65;
+    const min = 45 + Math.min(Math.floor(secondHalfMin), 45);
+    const added = Math.max(0, Math.floor(secondHalfMin) - 45);
+    const displayMin = added > 0 ? `90+${added}` : `${min}`;
+    return { phase: '2nd Half', displayMin, phase_code: '2h' };
+  }
+  if (elapsedMin < 180) {
+    return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft' };
+  }
+  return null; // match is long over, hide
+}
+
+/* ============================================================
+   DATA
+   ============================================================ */
 const FLAG = c => `https://flagcdn.com/h40/${c}.png`;
 
 const TEAMS = {
@@ -542,14 +821,13 @@ const GROUPS = {
   L:["England","Croatia","Ghana","Panama"]
 };
 
-/* Real player squads from the official 2026 FIFA World Cup squad lists (all 1245 players from 48 teams) */
 const REAL_PLAYERS = {
   "Algeria":["Melvin Mastil","Aïssa Mandi","Achref Abada","Mohamed Amine Tougai","Zineddine Belaïd","Ramiz Zerrouki","Riyad Mahrez","Houssem Aouar","Amine Gouiri","Farès Chaïbi","Anis Hadj Moussa","Nadhir Benbouali","Jaouen Hadjam","Hicham Boudaoui","Rayan Aït-Nouri","Oussama Benbot","Rafik Belghali","Mohamed Amoura","Nabil Bentaleb","Adil Boulbina","Ramy Bensebaini","Ibrahim Maza","Luca Zidane","Yacine Titraoui","Farès Ghedjemis","Samir Chergui"],
   "Argentina":["Juan Musso","Nicolás Tagliafico","Gonzalo Montiel","Leandro Paredes","Lisandro Martínez","Rodrigo De Paul","Valentín Barco","Julián Alvarez","Lionel Messi","Giovani Lo Celso","Gerónimo Rulli","Cristian Romero","Exequiel Palacios","Nicolás González","Thiago Almada","Giuliano Simeone","Nico Paz","Nicolás Otamendi","Alexis Mac Allister","José Manuel López","Lautaro Martínez","Emiliano Martínez","Enzo Fernández","Facundo Medina","Nahuel Molina"],
   "Australia":["Mathew Ryan","Miloš Degenek","Alessandro Circati","Jacob Italiano","Jordan Bos","Jason Geria","Mathew Leckie","Connor Metcalfe","Mohamed Touré","Ajdin Hrustic","Awer Mabil","Paul Izzo","Aiden O'Neill","Cammy Devlin","Kai Trewin","Aziz Behich","Nestory Irankunda","Patrick Beach","Harry Souttar","Cristian Volpato","Cameron Burgess","Jackson Irvine","Nishan Velupillay","Paul Okon-Engstler","Lucas Herrington","Tete Yengi"],
   "Austria":["Alexander Schlager","David Affengruber","Kevin Danso","Xaver Schlager","Stefan Posch","Nicolas Seiwald","Marko Arnautović","David Alaba","Marcel Sabitzer","Florian Grillitsch","Michael Gregoritsch","Florian Wiegele","Patrick Pentz","Saša Kalajdžić","Philipp Lienhart","Phillipp Mwene","Carney Chukwuemeka","Romano Schmid","Konrad Laimer","Patrick Wimmer","Alexander Prass","Marco Friedl","Paul Wanner","Michael Svoboda","Alessandro Schöpf"],
   "Belgium":["Thibaut Courtois","Zeno Debast","Arthur Theate","Brandon Mechele","Maxim De Cuyper","Axel Witsel","Kevin De Bruyne","Youri Tielemans","Romelu Lukaku","Leandro Trossard","Jérémy Doku","Senne Lammens","Mike Penders","Dodi Lukébakio","Thomas Meunier","Koni De Winter","Charles De Ketelaere","Joaquin Seys","Diego Moreira","Hans Vanaken","Timothy Castagne","Alexis Saelemaekers","Nicolas Raskin","Amadou Onana","Nathan Ngoy","Matias Fernandez-Pardo"],
-  "Bosnia and Herzegovina":["Nikola Vasilj","Nihad Mujakić","Dennis Hadžikadunić","Tarik Muharemović","Sead Kolašinac","Benjamin Tahirović","Amar Dedić","Armin Gigović","Samed Baždar","Ermedin Demirović","Edin Džeko","Mladen Jurkas","Ivan Bašić","Ivan Šunjić","Amar Memić","Amir Hadžiahmetović","Dženis Burnić","Nikola Katić","Kerim Alajbegović","Esmir Bajraktarević","Stjepan Radeljić","Martin Zlomislić","Haris Tabaković","Nidal Čelik","Jovo Lukić","Ermin Mahmić"],
+  "Bosnia & Herzegovina":["Nikola Vasilj","Nihad Mujakić","Dennis Hadžikadunić","Tarik Muharemović","Sead Kolašinac","Benjamin Tahirović","Amar Dedić","Armin Gigović","Samed Baždar","Ermedin Demirović","Edin Džeko","Mladen Jurkas","Ivan Bašić","Ivan Šunjić","Amar Memić","Amir Hadžiahmetović","Dženis Burnić","Nikola Katić","Kerim Alajbegović","Esmir Bajraktarević","Stjepan Radeljić","Martin Zlomislić","Haris Tabaković","Nidal Čelik","Jovo Lukić","Ermin Mahmić"],
   "Brazil":["Alisson","Éderson Silva","Gabriel Magalhães","Marquinhos","Casemiro","Alex Sandro","Vinícius Júnior","Bruno Guimarães","Matheus Cunha","Neymar","Raphinha","Weverton","Danilo Luiz","Bremer","Léo Pereira","Douglas Santos","Fabinho","Danilo Santos","Endrick","Lucas Paquetá","Luiz Henrique","Gabriel Martinelli","Ederson Moraes","Roger Ibañez","Igor Thiago","Rayan"],
   "Canada":["Dayne St. Clair","Alistair Johnston","Alfie Jones","Luc de Fougerolles","Joel Waterman","Mathieu Choinière","Stephen Eustáquio","Ismaël Koné","Cyle Larin","Jonathan David","Liam Millar","Tani Oluwaseyi","Derek Cornelius","Jacob Shaffelburg","Moïse Bombito","Maxime Crépeau","Tajon Buchanan","Owen Goodman","Alphonso Davies","Ali Ahmed","Jonathan Osorio","Richie Laryea","Niko Sigur","Promise David","Nathan Saliba"],
   "Cape Verde":["Vozinha","Stopira","Diney","Roberto Lopes","Logan Costa","Kevin Pina","Jovane Cabral","João Paulo","Gilson Benchimol","Jamiro Monteiro","Garry Rodrigues","Márcio Rosa","Sidny Lopes Cabral","Deroy Duarte","Laros Duarte","Yannick Semedo","Willy Semedo","Telmo Arcanjo","Dailon Livramento","Ryan Mendes","Nuno da Costa","Steven Moreira","CJ dos Santos","Wagner Pina","Kelvin Pires","Hélio Varela"],
@@ -583,18 +861,17 @@ const REAL_PLAYERS = {
   "Scotland":["Angus Gunn","Aaron Hickey","Andy Robertson","Scott McTominay","Grant Hanley","Kieran Tierney","John McGinn","Tyler Fletcher","Lyndon Dykes","Ché Adams","Ryan Christie","Liam Kelly","Jack Hendry","Ross Stewart","John Souttar","Dominic Hyam","Ben Gannon-Doak","George Hirst","Lewis Ferguson","Lawrence Shankland","Craig Gordon","Nathan Patterson","Kenny McLean","Anthony Ralston","Findlay Curtis","Scott McKenna"],
   "Senegal":["Yehvann Diouf","Mamadou Sarr","Kalidou Koulibaly","Abdoulaye Seck","Idrissa Gueye","Pathé Ciss","Assane Diao","Lamine Camara","Bamba Dieng","Sadio Mané","Nicolas Jackson","Cherif Ndiaye","Iliman Ndiaye","Ismail Jakobs","Krépin Diatta","Édouard Mendy","Pape Matar Sarr","Ismaïla Sarr","Moussa Niakhaté","Ibrahim Mbaye","Habib Diarra","Bara Sapoko Ndiaye","Mory Diaw","Antoine Mendy","El Hadji Malick Diouf","Pape Gueye"],
   "South Africa":["Ronwen Williams","Thabang Matuludi","Khulumani Ndamane","Teboho Mokoena","Thalente Mbatha","Aubrey Modiba","Oswin Appollis","Tshepang Moremi","Lyle Foster","Relebohile Mofokeng","Themba Zwane","Thapelo Maseko","Sphephelo Sithole","Mbekezeli Mbokazi","Iqraam Rayners","Sipho Chaine","Evidence Makgopa","Samukele Kabini","Nkosinathi Sibisi","Khuliso Mudau","Ime Okon","Ricardo Goss","Jayden Adams","Olwethu Makhanya","Kamogelo Sebelebele","Bradley Cross"],
-  "South Korea":["Kim Seung-gyu","Lee Han-beom","Lee Gi-hyuk","Kim Min-jae","Kim Tae-hyeon","Hwang In-beom","Son Heung-min","Paik Seung-ho","Cho Gue-sung","Lee Jae-sung","Hwang Hee-chan","Song Bum-keun","Lee Tae-seok","Cho Wi-je","Kim Moon-hwan","Park Jin-seob","Bae Jun-ho","Oh Hyeon-gyu","Lee Kang-in","Yang Hyun-jun","Jo Hyeon-woo","Seol Young-woo","Jens Castrop","Kim Jin-gyu","Eom Ji-sung","Lee Dong-gyeong"],
+  "Korea Republic":["Kim Seung-gyu","Lee Han-beom","Lee Gi-hyuk","Kim Min-jae","Kim Tae-hyeon","Hwang In-beom","Son Heung-min","Paik Seung-ho","Cho Gue-sung","Lee Jae-sung","Hwang Hee-chan","Song Bum-keun","Lee Tae-seok","Cho Wi-je","Kim Moon-hwan","Park Jin-seob","Bae Jun-ho","Oh Hyeon-gyu","Lee Kang-in","Yang Hyun-jun","Jo Hyeon-woo","Seol Young-woo","Jens Castrop","Kim Jin-gyu","Eom Ji-sung","Lee Dong-gyeong"],
   "Spain":["David Raya","Marc Pubill","Álex Grimaldo","Eric García","Marcos Llorente","Mikel Merino","Ferran Torres","Fabián Ruiz","Gavi","Dani Olmo","Yéremy Pino","Pedro Porro","Joan Garcia","Aymeric Laporte","Álex Baena","Rodri","Nico Williams","Martín Zubimendi","Lamine Yamal","Pedri","Mikel Oyarzabal","Pau Cubarsí","Unai Simón","Marc Cucurella","Víctor Muñoz","Borja Iglesias"],
   "Sweden":["Jacob Widell Zetterström","Gustaf Lagerbielke","Victor Lindelöf","Isak Hien","Gabriel Gudmundsson","Herman Johansson","Lucas Bergvall","Daniel Svensson","Alexander Isak","Benjamin Nygren","Anthony Elanga","Viktor Johansson","Ken Sema","Hjalmar Ekdal","Carl Starfelt","Jesper Karlström","Viktor Gyökeres","Yasin Ayari","Mattias Svanberg","Eric Smith","Alexander Bernhardsson","Besfort Zeneli","Kristoffer Nordfeldt","Elliot Stroud","Gustaf Nilsson","Taha Ali"],
   "Switzerland":["Gregor Kobel","Miro Muheim","Silvan Widmer","Nico Elvedi","Manuel Akanji","Denis Zakaria","Breel Embolo","Remo Freuler","Johan Manzambi","Granit Xhaka","Dan Ndoye","Yvon Mvogo","Ricardo Rodriguez","Ardon Jashari","Djibril Sow","Christian Fassnacht","Rubén Vargas","Eray Cömert","Noah Okafor","Michel Aebischer","Marvin Keller","Fabian Rieder","Zeki Amdouni","Aurèle Amenda","Luca Jaquez","Cedric Itten"],
   "Tunisia":["Mouhib Chamakh","Ali Abdi","Montassar Talbi","Omar Rekik","Adem Arous","Dylan Bronn","Elias Achouri","Elias Saad","Hazem Mastouri","Hannibal Mejbri","Ismaël Gharbi","Mortadha Ben Ouanes","Rani Khedira","Khalil Ayari","Hadj Mahmoud","Aymen Dahmen","Ellyes Skhiri","Rayan Elloumi","Firas Chaouat","Yan Valery","Mohamed Amine Ben Hamida","Sabri Ben Hessen","Moutaz Neffati","Raed Chikhaoui","Anis Ben Slimane","Sebastian Tounekti"],
-  "Turkey":["Mert Günok","Zeki Çelik","Merih Demiral","Çağlar Söyüncü","Salih Özcan","Orkun Kökçü","Kerem Aktürkoğlu","Arda Güler","Deniz Gül","Hakan Çalhanoğlu","Kenan Yıldız","Altay Bayındır","Eren Elmalı","Abdülkerim Bardakcı","Ozan Kabak","İsmail Yüksek","İrfan Can Kahveci","Mert Müldür","Yunus Akgün","Ferdi Kadıoğlu","Barış Alper Yılmaz","Kaan Ayhan","Uğurcan Çakır","Oğuz Aydın","Samet Akaydin","Can Uzun"],
+  "Türkiye":["Mert Günok","Zeki Çelik","Merih Demiral","Çağlar Söyüncü","Salih Özcan","Orkun Kökçü","Kerem Aktürkoğlu","Arda Güler","Deniz Gül","Hakan Çalhanoğlu","Kenan Yıldız","Altay Bayındır","Eren Elmalı","Abdülkerim Bardakcı","Ozan Kabak","İsmail Yüksek","İrfan Can Kahveci","Mert Müldür","Yunus Akgün","Ferdi Kadıoğlu","Barış Alper Yılmaz","Kaan Ayhan","Uğurcan Çakır","Oğuz Aydın","Samet Akaydin","Can Uzun"],
   "United States":["Matt Turner","Sergiño Dest","Chris Richards","Tyler Adams","Antonee Robinson","Auston Trusty","Giovanni Reyna","Weston McKennie","Ricardo Pepi","Christian Pulisic","Brenden Aaronson","Miles Robinson","Tim Ream","Sebastian Berhalter","Cristian Roldan","Alex Freeman","Malik Tillman","Max Arfsten","Haji Wright","Folarin Balogun","Timothy Weah","Mark McKenzie","Joe Scally","Matt Freese","Chris Brady","Alejandro Zendejas"],
   "Uruguay":["Sergio Rochet","José Giménez","Sebastián Cáceres","Ronald Araújo","Manuel Ugarte","Rodrigo Bentancur","Nicolás de la Cruz","Federico Valverde","Darwin Núñez","Giorgian de Arrascaeta","Facundo Pellistri","Santiago Mele","Guillermo Varela","Agustín Canobbio","Emiliano Martínez","Mathías Olivera","Matías Viña","Brian Rodríguez","Rodrigo Aguirre","Maximiliano Araújo","Federico Viñas","Joaquín Piquerez","Fernando Muslera","Santiago Bueno","Juan Manuel Sanabria","Rodrigo Zalazar"],
   "Uzbekistan":["Utkir Yusupov","Abdukodir Khusanov","Khojiakbar Alijonov","Farrukh Sayfiev","Rustam Ashurmatov","Akmal Mozgovoy","Otabek Shukurov","Jamshid Iskanderov","Odiljon Hamrobekov","Jaloliddin Masharipov","Oston Urunov","Abduvohid Nematov","Sherzod Nasrullaev","Eldor Shomurodov","Umar Eshmurodov","Botirali Ergashev","Dostonbek Khamdamov","Abdulla Abdullaev","Azizjon Ganiev","Azizbek Amonov","Igor Sergeev","Abbosbek Fayzullaev","Sherzod Esanov","Bekhruz Karimov","Avazbek Ulmasaliev","Jakhongir Urozov"]
 };
 
-/* All 72 group-stage matches. date = ISO, time = US Eastern label */
 const M = (id,g,h,a,date,time,venue)=>({id,g,h,a,date,time,venue});
 const MATCHES = [
   M(1,"A","Mexico","South Africa","2026-06-11","3:00 PM ET","Estadio Azteca, Mexico City"),
@@ -603,77 +880,66 @@ const MATCHES = [
   M(4,"A","Mexico","Korea Republic","2026-06-18","9:00 PM ET","Estadio Akron, Guadalajara"),
   M(5,"A","Czechia","Mexico","2026-06-24","9:00 PM ET","Estadio Azteca, Mexico City"),
   M(6,"A","South Africa","Korea Republic","2026-06-24","9:00 PM ET","Estadio BBVA, Monterrey"),
-
   M(7,"B","Canada","Bosnia & Herzegovina","2026-06-12","3:00 PM ET","BMO Field, Toronto"),
   M(8,"B","Qatar","Switzerland","2026-06-13","3:00 PM ET","Levi's Stadium, Santa Clara"),
   M(9,"B","Switzerland","Bosnia & Herzegovina","2026-06-18","3:00 PM ET","SoFi Stadium, Inglewood"),
   M(10,"B","Canada","Qatar","2026-06-18","6:00 PM ET","BC Place, Vancouver"),
   M(11,"B","Switzerland","Canada","2026-06-24","3:00 PM ET","BC Place, Vancouver"),
   M(12,"B","Bosnia & Herzegovina","Qatar","2026-06-24","3:00 PM ET","Lumen Field, Seattle"),
-
   M(13,"C","Brazil","Morocco","2026-06-13","6:00 PM ET","MetLife Stadium, New Jersey"),
   M(14,"C","Haiti","Scotland","2026-06-13","9:00 PM ET","Gillette Stadium, Foxboro"),
   M(15,"C","Scotland","Morocco","2026-06-19","6:00 PM ET","Gillette Stadium, Foxboro"),
   M(16,"C","Brazil","Haiti","2026-06-19","8:30 PM ET","Lincoln Financial Field, Philadelphia"),
   M(17,"C","Scotland","Brazil","2026-06-24","6:00 PM ET","Hard Rock Stadium, Miami"),
   M(18,"C","Morocco","Haiti","2026-06-24","6:00 PM ET","Mercedes-Benz Stadium, Atlanta"),
-
   M(19,"D","United States","Paraguay","2026-06-12","9:00 PM ET","SoFi Stadium, Inglewood"),
   M(20,"D","Australia","Türkiye","2026-06-13","12:00 AM ET","BC Place, Vancouver"),
   M(21,"D","United States","Australia","2026-06-19","3:00 PM ET","Lumen Field, Seattle"),
   M(22,"D","Türkiye","Paraguay","2026-06-19","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(23,"D","Türkiye","United States","2026-06-25","10:00 PM ET","SoFi Stadium, Inglewood"),
   M(24,"D","Paraguay","Australia","2026-06-25","10:00 PM ET","Levi's Stadium, Santa Clara"),
-
   M(25,"E","Germany","Curaçao","2026-06-14","1:00 PM ET","NRG Stadium, Houston"),
   M(26,"E","Ivory Coast","Ecuador","2026-06-14","7:00 PM ET","Lincoln Financial Field, Philadelphia"),
   M(27,"E","Germany","Ivory Coast","2026-06-20","4:00 PM ET","BMO Field, Toronto"),
   M(28,"E","Ecuador","Curaçao","2026-06-20","8:00 PM ET","Arrowhead Stadium, Kansas City"),
   M(29,"E","Curaçao","Ivory Coast","2026-06-25","4:00 PM ET","Lincoln Financial Field, Philadelphia"),
   M(30,"E","Ecuador","Germany","2026-06-25","4:00 PM ET","MetLife Stadium, New Jersey"),
-
   M(31,"F","Netherlands","Japan","2026-06-14","4:00 PM ET","AT&T Stadium, Arlington"),
   M(32,"F","Sweden","Tunisia","2026-06-14","10:00 PM ET","Estadio BBVA, Monterrey"),
   M(33,"F","Netherlands","Sweden","2026-06-20","1:00 PM ET","NRG Stadium, Houston"),
   M(34,"F","Tunisia","Japan","2026-06-20","12:00 AM ET","Estadio BBVA, Monterrey"),
   M(35,"F","Japan","Sweden","2026-06-25","7:00 PM ET","AT&T Stadium, Arlington"),
   M(36,"F","Tunisia","Netherlands","2026-06-25","7:00 PM ET","Arrowhead Stadium, Kansas City"),
-
   M(37,"G","Belgium","Egypt","2026-06-15","3:00 PM ET","Lumen Field, Seattle"),
   M(38,"G","Iran","New Zealand","2026-06-15","9:00 PM ET","SoFi Stadium, Inglewood"),
   M(39,"G","Belgium","Iran","2026-06-21","3:00 PM ET","SoFi Stadium, Inglewood"),
   M(40,"G","New Zealand","Egypt","2026-06-21","9:00 PM ET","BC Place, Vancouver"),
   M(41,"G","Egypt","Iran","2026-06-26","11:00 PM ET","Lumen Field, Seattle"),
   M(42,"G","New Zealand","Belgium","2026-06-26","11:00 PM ET","BC Place, Vancouver"),
-
   M(43,"H","Spain","Cape Verde","2026-06-15","12:00 PM ET","Mercedes-Benz Stadium, Atlanta"),
   M(44,"H","Saudi Arabia","Uruguay","2026-06-15","6:00 PM ET","Hard Rock Stadium, Miami"),
   M(45,"H","Spain","Saudi Arabia","2026-06-21","12:00 PM ET","Mercedes-Benz Stadium, Atlanta"),
   M(46,"H","Uruguay","Cape Verde","2026-06-21","6:00 PM ET","Hard Rock Stadium, Miami"),
   M(47,"H","Cape Verde","Saudi Arabia","2026-06-26","8:00 PM ET","NRG Stadium, Houston"),
   M(48,"H","Uruguay","Spain","2026-06-26","8:00 PM ET","Estadio Akron, Guadalajara"),
-
   M(49,"I","France","Senegal","2026-06-16","3:00 PM ET","MetLife Stadium, New Jersey"),
   M(50,"I","Iraq","Norway","2026-06-16","6:00 PM ET","Gillette Stadium, Foxboro"),
   M(51,"I","France","Iraq","2026-06-22","5:00 PM ET","Lincoln Financial Field, Philadelphia"),
   M(52,"I","Norway","Senegal","2026-06-22","8:00 PM ET","MetLife Stadium, New Jersey"),
   M(53,"I","Norway","France","2026-06-26","3:00 PM ET","Gillette Stadium, Foxboro"),
   M(54,"I","Senegal","Iraq","2026-06-26","3:00 PM ET","BMO Field, Toronto"),
-
   M(55,"J","Argentina","Algeria","2026-06-16","9:00 PM ET","Arrowhead Stadium, Kansas City"),
   M(56,"J","Austria","Jordan","2026-06-16","12:00 AM ET","Levi's Stadium, Santa Clara"),
   M(57,"J","Argentina","Austria","2026-06-22","1:00 PM ET","AT&T Stadium, Arlington"),
   M(58,"J","Jordan","Algeria","2026-06-22","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(59,"J","Jordan","Argentina","2026-06-27","10:00 PM ET","AT&T Stadium, Arlington"),
   M(60,"J","Algeria","Austria","2026-06-27","10:00 PM ET","Arrowhead Stadium, Kansas City"),
-
   M(61,"K","Portugal","DR Congo","2026-06-17","1:00 PM ET","NRG Stadium, Houston"),
   M(62,"K","Uzbekistan","Colombia","2026-06-17","10:00 PM ET","Estadio Azteca, Mexico City"),
   M(63,"K","Portugal","Uzbekistan","2026-06-23","1:00 PM ET","NRG Stadium, Houston"),
   M(64,"K","Colombia","DR Congo","2026-06-23","10:00 PM ET","Estadio Akron, Guadalajara"),
   M(65,"K","Colombia","Portugal","2026-06-27","7:30 PM ET","Hard Rock Stadium, Miami"),
   M(66,"K","DR Congo","Uzbekistan","2026-06-27","7:30 PM ET","Mercedes-Benz Stadium, Atlanta"),
-
   M(67,"L","England","Croatia","2026-06-17","4:00 PM ET","AT&T Stadium, Arlington"),
   M(68,"L","Ghana","Panama","2026-06-17","7:00 PM ET","BMO Field, Toronto"),
   M(69,"L","England","Ghana","2026-06-23","4:00 PM ET","Gillette Stadium, Foxboro"),
@@ -682,10 +948,13 @@ const MATCHES = [
   M(72,"L","Croatia","Ghana","2026-06-27","5:00 PM ET","Lincoln Financial Field, Philadelphia")
 ];
 
-const ADMIN_PASS = "icd2026";  /* organiser: change this to anything you like */
+// Pre-compute UTC kick-off times for every match
+const MATCH_UTC = {};
+MATCHES.forEach(m => { MATCH_UTC[m.id] = parseMatchUTC(m.date, m.time); });
 
-/* ---------- hybrid storage: Firebase cloud + localStorage fallback ---------- */
-// seed in-memory caches from localStorage so the UI is instant on load
+const ADMIN_PASS = "icd2026";
+
+/* ---------- hybrid storage ---------- */
 window._rosterCache  = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
 window._resultsCache = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
 
@@ -696,7 +965,7 @@ const DB = {
   },
   saveRosters(r){
     window._rosterCache = r;
-    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));   // always keep a local copy
+    localStorage.setItem("ffwc26_rosters", JSON.stringify(r));
     if(firebaseReady){
       db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
     }
@@ -725,7 +994,6 @@ function refreshAll(){
   if(pr && pr.style.display !== 'none') renderGroups();
 }
 
-/* ===== Real-time listeners (only if the cloud is available) ===== */
 if(firebaseReady){
   db.ref('rosters').on('value', snap => {
     window._rosterCache = snap.val() || {};
@@ -750,12 +1018,10 @@ function fmtDate(iso){
   const d=new Date(iso+"T12:00:00");
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
-function teamFlag(t){ return FLAG(TEAMS[t]); }
+function teamFlag(t){ return FLAG(TEAMS[t]||'xx'); }
 function getRoster(name){
   const r = DB.rosters()[name];
   if(!r) return null;
-  // Firebase strips empty objects, so predictions/scorers may come back undefined.
-  // Normalize the roster shape so the rest of the code can rely on it.
   if(!r.predictions) r.predictions = {};
   for(const id in r.predictions){
     if(r.predictions[id] && !r.predictions[id].scorers) r.predictions[id].scorers = [];
@@ -779,7 +1045,6 @@ function scoreMatch(pred, res){
     const ps=Math.sign(ph-pa), rs=Math.sign(rh-ra);
     if(ps===rs) pts+=5;
   }
-  // goalscorers
   const predSc=(pred.scorers||[]).map(s=>s.trim().toLowerCase()).filter(Boolean);
   const realSc=(res.scorers||[]).map(s=>s.trim().toLowerCase()).filter(Boolean);
   let matched=0;
@@ -807,6 +1072,201 @@ function predictedCount(roster){
     if(p && p.h!=null && p.a!=null) n++;
   }
   return n;
+}
+
+/* ============================================================
+   NEXT MATCH HERO CARD
+   ============================================================ */
+function findNextMatch() {
+  const now = Date.now();
+  const results = DB.results();
+  // Find the next match that hasn't started yet (no result and KO in future)
+  const unplayed = MATCHES.filter(m => {
+    const r = results[m.id];
+    const hasResult = r && r.h != null && r.h !== "";
+    return !hasResult && MATCH_UTC[m.id].getTime() > now;
+  });
+  if (!unplayed.length) return null;
+  // Sort ascending by kick-off
+  unplayed.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
+  return unplayed[0];
+}
+
+function findLiveMatch() {
+  const now = Date.now();
+  const results = DB.results();
+  // A match is "live" if: kick-off is in the past AND no final result yet AND < 3h elapsed
+  const live = MATCHES.filter(m => {
+    const ko = MATCH_UTC[m.id].getTime();
+    const elapsed = now - ko;
+    const r = results[m.id];
+    const hasResult = r && r.h != null && r.h !== "";
+    return !hasResult && elapsed > 0 && elapsed < 180 * 60000;
+  });
+  if (!live.length) return null;
+  // Return the one that started most recently
+  live.sort((a,b) => MATCH_UTC[b.id] - MATCH_UTC[a.id]);
+  return live[0];
+}
+
+function renderNextMatchCard() {
+  const card = document.getElementById('nextMatchCard');
+  if (!card) return;
+
+  const next = findNextMatch();
+  if (!next) { card.style.display = 'none'; return; }
+
+  const koUTC = MATCH_UTC[next.id];
+  const now = Date.now();
+  const diffMs = koUTC.getTime() - now;
+
+  if (diffMs < 0) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+
+  const totalSecs = Math.floor(diffMs / 1000);
+  const days  = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const mins  = Math.floor((totalSecs % 3600) / 60);
+  const secs  = totalSecs % 60;
+
+  const tzAbbr = getTZAbbr();
+  const localTimeStr = fmtLocalTimeShort(koUTC);
+  const soonClass = diffMs < 30 * 60000 ? 'kickoff-soon' : '';
+
+  // Format countdown units
+  let countdownHtml = '';
+  if (days > 0) {
+    countdownHtml += `<div class="nmc-unit"><div class="nmc-num">${String(days).padStart(2,'0')}</div><div class="nmc-unit-label">days</div></div><div class="nmc-colon">:</div>`;
+  }
+  countdownHtml += `
+    <div class="nmc-unit"><div class="nmc-num" id="cd-h">${String(hours).padStart(2,'0')}</div><div class="nmc-unit-label">hrs</div></div>
+    <div class="nmc-colon">:</div>
+    <div class="nmc-unit"><div class="nmc-num" id="cd-m">${String(mins).padStart(2,'0')}</div><div class="nmc-unit-label">min</div></div>
+    <div class="nmc-colon">:</div>
+    <div class="nmc-unit"><div class="nmc-num" id="cd-s">${String(secs).padStart(2,'0')}</div><div class="nmc-unit-label">sec</div></div>`;
+
+  card.className = soonClass;
+
+  card.innerHTML = `
+    <div class="nmc-pitch"></div>
+    <div class="nmc-inner">
+      <div class="nmc-left">
+        <div class="nmc-badge">Group ${next.g} · Up next</div>
+        <div class="nmc-title">${next.venue.split(',')[0]}</div>
+        <div class="nmc-meta">
+          <span>${localTimeStr}</span>
+          <span class="sep">·</span>
+          <span class="tz-label">🕐 ${tzAbbr}</span>
+        </div>
+      </div>
+      <div class="nmc-teams">
+        <div class="nmc-team">
+          <img src="${teamFlag(next.h)}" alt="${next.h}">
+          <div class="nmc-team-name">${next.h}</div>
+        </div>
+        <div class="nmc-vs">vs</div>
+        <div class="nmc-team">
+          <img src="${teamFlag(next.a)}" alt="${next.a}">
+          <div class="nmc-team-name">${next.a}</div>
+        </div>
+      </div>
+      <div class="nmc-countdown">
+        <div class="nmc-countdown-label">Kicks off in</div>
+        <div class="nmc-countdown-units" id="cdUnits">${countdownHtml}</div>
+      </div>
+    </div>`;
+}
+
+function updateCountdown() {
+  const card = document.getElementById('nextMatchCard');
+  if (!card || card.style.display === 'none') return;
+
+  const next = findNextMatch();
+  if (!next) { card.style.display = 'none'; return; }
+
+  const koUTC = MATCH_UTC[next.id];
+  const diffMs = koUTC.getTime() - Date.now();
+  if (diffMs < 0) { renderNextMatchCard(); return; } // re-render to hide/show live
+
+  const totalSecs = Math.floor(diffMs / 1000);
+  const days  = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const mins  = Math.floor((totalSecs % 3600) / 60);
+  const secs  = totalSecs % 60;
+
+  // Update only the numeric elements if they exist
+  const elH = document.getElementById('cd-h');
+  const elM = document.getElementById('cd-m');
+  const elS = document.getElementById('cd-s');
+  if (elH) elH.textContent = String(hours).padStart(2,'0');
+  if (elM) elM.textContent = String(mins).padStart(2,'0');
+  if (elS) elS.textContent = String(secs).padStart(2,'0');
+
+  // Add pulse class when < 30 min
+  if (diffMs < 30 * 60000) card.classList.add('kickoff-soon');
+}
+
+/* ============================================================
+   LIVE MATCH BANNER
+   ============================================================ */
+function renderLiveBanner() {
+  const banner = document.getElementById('liveMatchBanner');
+  if (!banner) return;
+
+  const live = findLiveMatch();
+  if (!live) { banner.style.display = 'none'; return; }
+
+  const phase = getMatchPhase(MATCH_UTC[live.id]);
+  if (!phase) { banner.style.display = 'none'; return; }
+
+  const results = DB.results();
+  const r = results[live.id] || {};
+  const hScore = r.h != null ? r.h : '–';
+  const aScore = r.a != null ? r.a : '–';
+  const scorersText = (r.scorers && r.scorers.length)
+    ? `⚽ <span>${r.scorers.join('  ·  ')}</span>`
+    : '';
+
+  // Phase-specific label
+  let phaseLabel = phase.phase;
+  let isHT = phase.phase_code === 'ht';
+  let isFT = phase.phase_code === 'ft';
+
+  banner.style.display = 'block';
+  banner.innerHTML = `<div class="lmb-inner">
+    <div class="lmb-live-dot">
+      ${!isFT ? '<div class="dot-pulse"></div>' : ''}
+      ${isFT ? 'FT' : 'Live'}
+    </div>
+    <div class="lmb-teams">
+      <div class="lmb-team">
+        <img src="${teamFlag(live.h)}" alt="">
+        <div class="lmb-team-name">${live.h}</div>
+      </div>
+      <div class="lmb-score">${hScore}</div>
+      <div class="lmb-sep">–</div>
+      <div class="lmb-score">${aScore}</div>
+      <div class="lmb-team">
+        <img src="${teamFlag(live.a)}" alt="">
+        <div class="lmb-team-name">${live.a}</div>
+      </div>
+    </div>
+    ${!isFT ? `<div class="lmb-minute">
+      <div class="lmb-min-val">${phase.displayMin}${!isHT ? "'" : ''}</div>
+      <div class="lmb-min-label">${isHT ? 'Half time' : phase.phase}</div>
+    </div>` : ''}
+    <div class="lmb-phase">Group ${live.g}</div>
+    ${scorersText ? `<div class="lmb-scorers">${scorersText}</div>` : ''}
+  </div>`;
+}
+
+/* ============================================================
+   TICK — runs every second
+   ============================================================ */
+function tick() {
+  updateCountdown();
+  renderLiveBanner();
 }
 
 /* ============================================================
@@ -840,7 +1300,7 @@ document.getElementById('startBtn').addEventListener('click',()=>{
   if(!rosters[name]) rosters[name]={team:selectedFavTeam,predictions:{}};
   else rosters[name].team=selectedFavTeam;
   DB.saveRosters(rosters);
-  window._rosterCache = rosters; // ensure cache is set immediately
+  window._rosterCache = rosters;
   DB.setCurrent(name); activeName=name;
   enterPredict();
   toast("Welcome, "+name+"!");
@@ -855,11 +1315,13 @@ function enterPredict(){
   buildGroupFilter();
   renderGroups();
   renderScorebar();
+  renderNextMatchCard();
+  renderLiveBanner();
 }
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
   document.getElementById('onboard').style.display='block';
-  selectedFavTeam=""; 
+  selectedFavTeam="";
   document.getElementById('nameInput').value="";
   document.querySelectorAll('.team-opt').forEach(o=>o.classList.remove('sel'));
   document.getElementById('startBtn').disabled=true;
@@ -877,7 +1339,7 @@ function buildGroupFilter(){
 function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 
 /* ============================================================
-   RENDER MATCHES
+   RENDER MATCHES — now shows local time
    ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
@@ -891,7 +1353,6 @@ function renderGroups(){
   let html="";
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
-    // group points
     let gpts=0, hasRes=false;
     gm.forEach(m=>{ const p=scoreMatch(r.predictions[m.id],res[m.id]); if(p!=null){gpts+=p;hasRes=true;} });
     const open = activeFilter!=='all';
@@ -923,7 +1384,11 @@ function matchCard(m,roster,result){
   const locked=hasResult;
   const earned = hasResult ? scoreMatch(pred,result) : null;
 
-  // winner line
+  // Local time display
+  const koUTC = MATCH_UTC[m.id];
+  const localTime = fmtLocalTimeShort(koUTC);
+  const tzAbbr = getTZAbbr();
+
   let winLine="";
   if(ph!=null&&pa!=null){
     if(+ph>+pa) winLine=`Your pick: <b>${m.h} win</b>`;
@@ -935,7 +1400,8 @@ function matchCard(m,roster,result){
 
   let html=`<div class="match ${locked?'locked':''} ${hasResult?'scored':''}" id="match-${m.id}">
     <div class="match-meta">
-      <span>${fmtDate(m.date)} · ${m.time}</span><span class="dot"></span>
+      <span>${localTime} ${tzAbbr}</span>
+      <span class="dot"></span>
       <span>${m.venue}</span>
       ${locked?'<span class="dot"></span><span class="live">Result in · locked</span>':''}
     </div>
@@ -991,7 +1457,6 @@ function bump(id,side,delta){
   cur = cur==null?0:+cur;
   let next=Math.max(0,Math.min(15,cur+delta));
   r.predictions[id][side]=next;
-  // ensure other side initialised to 0 so a result is comparable
   const other=side==='h'?'a':'h';
   if(r.predictions[id][other]==null) r.predictions[id][other]=0;
   saveRoster(r);
@@ -1008,7 +1473,6 @@ function scorerRow(m,val,idx){
   </div>`;
 }
 function buildDatalists(){
-  // create one datalist per match combining both teams' REAL players
   let html="";
   MATCHES.forEach(m=>{
     const opts=[...(REAL_PLAYERS[m.h]||[]),...(REAL_PLAYERS[m.a]||[]),"Own goal"];
@@ -1051,7 +1515,7 @@ function refreshMatch(id){
 }
 
 /* ============================================================
-   SCOREBAR (hero)
+   SCOREBAR
    ============================================================ */
 function renderScorebar(){
   const bar=document.getElementById('scorebar');
@@ -1088,7 +1552,6 @@ function renderLeaderboard(){
   document.getElementById('stPlayed').textContent=played;
   document.getElementById('stTop').textContent=players.length?players[0].pts:0;
 
-  // podium
   const pod=document.getElementById('podium');
   if(players.length===0){ pod.innerHTML=""; }
   else{
@@ -1104,7 +1567,6 @@ function renderLeaderboard(){
       </div>`).join('');
   }
 
-  // list
   const list=document.getElementById('lbList');
   if(players.length===0){
     list.innerHTML=`<div class="empty">No players yet. Be the first — head to <b>Play &amp; Predict</b> and make your picks!</div>`;
@@ -1124,57 +1586,30 @@ function renderLeaderboard(){
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 /* ============================================================
-   FORCE SYNC (localStorage → Firebase migration)
+   FORCE SYNC
    ============================================================ */
 function syncMyData(){
-  if(!firebaseReady){
-    toast("Firebase not connected"); return;
-  }
+  if(!firebaseReady){ toast("Firebase not connected"); return; }
   const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
-  
-  if(Object.keys(localRosters).length===0){
-    toast("No predictions to sync");
-    return;
-  }
-  
+  if(Object.keys(localRosters).length===0){ toast("No predictions to sync"); return; }
   db.ref('rosters').set(localRosters).then(()=>{
     toast("✓ Your predictions are now live on the leaderboard!");
-  }).catch(e=>{
-    console.error("Sync failed:", e);
-    toast("Sync failed: " + e.message);
-  });
+  }).catch(e=>{ console.error("Sync failed:", e); toast("Sync failed: " + e.message); });
 }
 
 function forceSyncToCloud(){
-  if(!firebaseReady){
-    toast("Firebase not connected"); return;
-  }
+  if(!firebaseReady){ toast("Firebase not connected"); return; }
   const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
   const localResults = JSON.parse(localStorage.getItem("ffwc26_results")||"{}");
-  
-  if(Object.keys(localRosters).length===0 && Object.keys(localResults).length===0){
-    toast("No local data to sync");
-    return;
-  }
-  
-  db.ref('rosters').set(localRosters).then(()=>{
-    toast("✓ Rosters synced to cloud");
-  }).catch(e=>{
-    console.error("Sync failed:", e);
-    toast("Sync failed: " + e.message);
-  });
-  
+  if(Object.keys(localRosters).length===0 && Object.keys(localResults).length===0){ toast("No local data to sync"); return; }
+  db.ref('rosters').set(localRosters).then(()=>{ toast("✓ Rosters synced to cloud"); }).catch(e=>{ console.error("Sync failed:", e); toast("Sync failed: " + e.message); });
   if(Object.keys(localResults).length>0){
-    db.ref('results').set(localResults).then(()=>{
-      toast("✓ Results synced to cloud");
-    }).catch(e=>{
-      console.error("Results sync failed:", e);
-    });
+    db.ref('results').set(localResults).then(()=>{ toast("✓ Results synced to cloud"); }).catch(e=>{ console.error("Results sync failed:", e); });
   }
 }
 
 /* ============================================================
-   ADMIN / RESULTS
+   ADMIN
    ============================================================ */
 function checkAdmin(){
   const v=document.getElementById('adminPass').value.trim();
@@ -1198,12 +1633,17 @@ function renderAdmin(){
   cont.innerHTML=ms.map(m=>{
     const r=res[m.id]||{};
     const scText=(r.scorers||[]).join(', ');
+    // Show local time in admin view too
+    const koUTC = MATCH_UTC[m.id];
+    const localTime = fmtLocalTimeShort(koUTC);
+    const tzAbbr = getTZAbbr();
     return `<div class="admin-match">
       <span class="am-grp">${m.g}</span>
       <div class="am-teams">
         <img src="${teamFlag(m.h)}" alt="">${m.h}
         <span style="color:var(--muted)">vs</span>
         ${m.a}<img src="${teamFlag(m.a)}" alt="">
+        <span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:4px">${localTime} ${tzAbbr}</span>
       </div>
       <div class="am-score">
         <input type="number" min="0" max="20" value="${r.h!=null?r.h:''}" onchange="setResult(${m.id},'h',this.value)">
@@ -1221,6 +1661,8 @@ function setResult(id,side,val){
   DB.saveResults(res);
   toast("Result saved");
   renderScorebar();
+  renderLiveBanner();
+  renderNextMatchCard();
 }
 function setResultScorers(id,val){
   const res=DB.results();
@@ -1228,6 +1670,7 @@ function setResultScorers(id,val){
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
   DB.saveResults(res);
   toast("Scorers saved");
+  renderLiveBanner();
 }
 
 /* ============================================================
@@ -1267,7 +1710,7 @@ function init(){
   buildTeamGrid();
   buildDatalists();
   renderScorebar();
-  isInitialized = true;  // Signal that real-time listeners should trigger renders
+  isInitialized = true;
   const ss = document.getElementById('syncStatus');
   if(ss){
     ss.innerHTML = firebaseReady
@@ -1278,6 +1721,10 @@ function init(){
   if(activeName && getRoster(activeName)){
     enterPredict();
   }
+  // Start the per-second tick for countdown + live banner
+  setInterval(tick, 1000);
+  // Full re-render of next match card every 30s (in case the next match changes)
+  setInterval(renderNextMatchCard, 30000);
 }
 init();
 </script>
