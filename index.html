@@ -23,7 +23,7 @@
     --head:#33392e;
     --muted:#6f756a;
     --line:#e7e9e2;
-    --bg:#f4f6ef;
+    --bg:#f2f4ed;
     --card:#ffffff;
     --shadow:0 1px 3px rgba(20,40,10,.08);
     --shadow-lg:0 10px 30px rgba(20,40,10,.12);
@@ -167,54 +167,95 @@
   .filter button:hover{border-color:var(--green-500);color:var(--green-700)}
   .filter button.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
 
+  /* ── GROUP CARDS — clean, white, mobile-first ─────────────────────── */
   .group-block{
-    margin-bottom:10px;border:1px solid var(--line);border-radius:13px;
-    overflow:hidden;background:var(--card);box-shadow:var(--shadow);
+    margin-bottom:8px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+    border:1px solid var(--line);
+    box-shadow:0 1px 4px rgba(20,40,10,.06);
   }
   .group-head{
-    display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;
-    background:linear-gradient(90deg,var(--green-100) 0%,rgba(234,243,222,.4) 50%,#fff 100%);
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;
+    background:#fff;                        /* pure white — no gradient */
     border-bottom:1px solid transparent;
-    -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    min-height:58px; /* consistent height prevents jumping */
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    user-select:none;
+    transition:background .1s;
   }
+  .group-head:active{background:var(--green-100)}
   .group-head.open{border-bottom-color:var(--line)}
+
+  /* Letter badge — left anchor */
   .group-tag{
-    font-family:'Archivo';font-weight:900;font-size:13px;color:#fff;background:var(--green-700);
-    width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-    flex:0 0 32px;
-  }
-  /* info column — takes available space, clips if needed */
-  .group-head .ginfo{flex:1 1 0;min-width:0;overflow:hidden}
-  .group-head .gname{font-family:'Archivo';font-weight:800;font-size:14px;color:var(--head);white-space:nowrap}
-  .group-head .gteams{
-    font-size:11px;color:var(--muted);margin-top:2px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  /* right cluster — pts pill + optional badge + chevron, never shrinks */
-  .group-head .gright{
-    flex:0 0 auto;display:flex;align-items:center;gap:7px;margin-left:6px;
-  }
-  .group-head .gpts{
-    font-family:'Oswald';font-weight:700;font-size:14px;
-    color:var(--green-700);background:var(--green-100);
-    padding:3px 10px;border-radius:20px;white-space:nowrap;
-    border:1px solid rgba(45,107,21,.12);
-  }
-  /* small orange dot showing N unpredicted matches */
-  .group-head .gunpred{
-    font-family:'Archivo';font-weight:800;font-size:11px;
-    color:#fff;background:var(--gold);
-    width:22px;height:22px;border-radius:50%;
+    flex:0 0 36px;
+    width:36px;height:36px;border-radius:10px;
+    background:var(--green-700);
+    font-family:'Archivo';font-weight:900;font-size:15px;
+    color:#fff;
     display:flex;align-items:center;justify-content:center;
-    flex:0 0 22px;
+    letter-spacing:-.5px;
   }
+
+  /* Text column — takes all remaining space, clips overflow */
+  .group-head .ginfo{
+    flex:1 1 0;min-width:0;overflow:hidden;
+  }
+  .group-head .gname{
+    font-family:'Archivo';font-weight:800;font-size:15px;
+    color:var(--head);line-height:1.1;
+  }
+  .group-head .gteams{
+    font-size:11.5px;color:var(--muted);font-weight:500;
+    margin-top:3px;line-height:1.3;
+    /* two lines max, then ellipsis */
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  /* Right cluster — score + chevron. Never shrinks. */
+  .group-head .gright{
+    flex:0 0 auto;
+    display:flex;align-items:center;gap:8px;
+  }
+  /* Points label: number large, "pts" small below */
+  .group-head .gpts{
+    display:flex;flex-direction:column;align-items:center;
+    line-height:1;
+    font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-700);
+    background:var(--green-100);
+    border-radius:10px;
+    padding:6px 10px 5px;
+    min-width:48px;text-align:center;
+    border:1px solid rgba(45,107,21,.1);
+  }
+  .group-head .gpts span{
+    font-family:'Inter';font-weight:700;font-size:9px;
+    letter-spacing:.5px;text-transform:uppercase;
+    color:var(--green-800);opacity:.7;margin-top:2px;
+  }
+  /* Gold dot: unpredicted count */
+  .group-head .gunpred{
+    font-family:'Archivo';font-weight:800;font-size:10px;
+    color:#fff;background:var(--gold);
+    min-width:20px;height:20px;border-radius:10px;padding:0 5px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 4px rgba(224,168,46,.3);
+  }
+  /* Chevron — minimal, no competition with content */
   .group-head .chev{
-    color:var(--muted);font-size:11px;transition:.2s;font-weight:700;
-    opacity:.7;
+    width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;background:var(--bg);
+    color:var(--muted);font-size:9px;font-weight:900;
+    transition:transform .2s;flex:0 0 20px;
   }
   .group-head.open .chev{transform:rotate(180deg)}
-  .group-body{display:none;padding:6px 8px 8px}
+
+  .group-body{display:none;padding:8px 8px 10px}
   .group-body.open{display:block}
 
   .match{
@@ -824,7 +865,7 @@
       <!-- Floating unpredicted-matches pill -->
       <button id="unpredictedPill" onclick="scrollToFirstUnpredicted()"></button>
       <div class="filter" id="groupFilter" style="margin-bottom:16px"></div>
-      <div id="groupsContainer"></div>
+      <div id="groupsContainer" style="padding-top:2px"></div>
     </div>
   </section>
 
@@ -1675,8 +1716,8 @@ function renderGroups(){
         </div>
         <div class="gright">
           ${hasRes?`<div class="gpts">${gpts}<span>pts</span></div>`:''}
-          ${(!hasRes&&unpredCount>0)?`<div class="gunpred">${unpredCount}</div>`:''}
-          <div class="chev">▼</div>
+          ${unpredCount>0?`<div class="gunpred">${unpredCount}</div>`:''}
+          <div class="chev">▾</div>
         </div>
       </div>
       <div class="group-body ${open?'open':''}">`;
