@@ -958,7 +958,7 @@
       </div>
       <div class="rule-card">
         <div class="rhead"><div class="rico">⚽</div><h3>Goalscorers</h3></div>
-        <p>Naming scorers is optional but it's where the big points are. Start typing and pick from each team's known players, or type any name. Up to three scorers count per match for bonus points.</p>
+        <p>Naming scorers is optional but it's where the big points are. Start typing and pick from the autocomplete list, or type any format — full name, last name only, or FIFA-style initials like <b>J. Quiñones</b>. Accents are optional too. Up to three scorers count per match for bonus points.</p>
       </div>
     </div>
 
@@ -1408,6 +1408,100 @@ function toast(msg){
 }
 
 /* ---------- scoring ---------- */
+/* ============================================================
+   FUZZY NAME MATCHING
+   Handles: accents, initials (J. Quiñones), last-name only,
+   reversed order, extra spaces, own-goal variants.
+   ============================================================ */
+
+// Strip diacritics: é→e, ñ→n, ü→u, ø→o, etc.
+function stripAccents(s){
+  return s.normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
+// Canonical form: lowercase, no accents, collapse whitespace, strip punctuation
+function canon(s){
+  return stripAccents(s||'')
+    .toLowerCase()
+    .replace(/['.,-]/g,' ')   // treat punctuation as space
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+// Split into tokens, filter short noise
+function tokens(s){ return canon(s).split(' ').filter(t=>t.length>0); }
+
+// "Own goal" synonyms
+const OG_WORDS = ['own','goal','og','own goal','o.g','o.g.'];
+function isOwnGoal(s){ const c=canon(s); return OG_WORDS.some(w=>c===w||c.includes(w)); }
+
+/* nameFuzzyMatch(pred, real) → true if pred plausibly refers to the same player as real
+   
+   Real name format from our data: "Julián Quiñones"  (first last)
+   Pred may be any of:
+     julián quiñones / julian quinones  (exact / no accents)
+     j. quiñones / j quinones           (FIFA initial style)
+     quiñones / quinones                (last name only)
+     quiñones julián                    (reversed)
+     quiñones j.                        (reversed initial)
+*/
+function nameFuzzyMatch(pred, real){
+  if(!pred || !real) return false;
+
+  // Own goal special case — accept any variant
+  if(isOwnGoal(pred) && isOwnGoal(real)) return true;
+
+  const pt = tokens(pred);   // prediction tokens
+  const rt = tokens(real);   // real-name tokens
+
+  if(!pt.length || !rt.length) return false;
+
+  // 1. Exact canonical match (covers accents & case)
+  if(canon(pred) === canon(real)) return true;
+
+  // 2. All prediction tokens appear in real tokens (subset match)
+  //    e.g. ["quinones"] ⊆ ["julian","quinones"] → true
+  //    e.g. ["quinones","julian"] ⊆ ["julian","quinones"] → true
+  if(pt.every(p => rt.some(r => r === p))) return true;
+
+  // 3. Initial match: pred token is a single letter matching first char of a real token
+  //    e.g. pred=["j","quinones"], real=["julian","quinones"]
+  //    Each pred token must match a distinct real token (exactly or by initial)
+  const usedRt = new Set();
+  const initialMatch = pt.every(p => {
+    const idx = rt.findIndex((r, i) => {
+      if(usedRt.has(i)) return false;
+      return r === p || (p.length === 1 && r.startsWith(p));
+    });
+    if(idx === -1) return false;
+    usedRt.add(idx);
+    return true;
+  });
+  if(initialMatch) return true;
+
+  // 4. Last-name-only: if pred is a single token and matches the LAST token of real
+  //    e.g. pred="quinones", real="julian quinones" → rt.last = "quinones" ✓
+  if(pt.length === 1 && rt.length >= 2 && rt[rt.length - 1] === pt[0]) return true;
+
+  // 5. Reversed order with initials
+  //    e.g. pred=["quinones","j"], real=["julian","quinones"]
+  //    Try matching reversed pred against real
+  const ptRev = [...pt].reverse();
+  const usedRt2 = new Set();
+  const revMatch = ptRev.every(p => {
+    const idx = rt.findIndex((r, i) => {
+      if(usedRt2.has(i)) return false;
+      return r === p || (p.length === 1 && r.startsWith(p));
+    });
+    if(idx === -1) return false;
+    usedRt2.add(idx);
+    return true;
+  });
+  if(revMatch) return true;
+
+  return false;
+}
+
 function scoreMatch(pred, res){
   if(!res || res.h===""||res.h==null||res.a===""||res.a==null) return null;
   if(!pred || pred.h==null || pred.a==null) return 0;
@@ -1418,12 +1512,12 @@ function scoreMatch(pred, res){
     const ps=Math.sign(ph-pa), rs=Math.sign(rh-ra);
     if(ps===rs) pts+=5;
   }
-  const predSc=(pred.scorers||[]).map(s=>s.trim().toLowerCase()).filter(Boolean);
-  const realSc=(res.scorers||[]).map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const predSc=(pred.scorers||[]).map(s=>s.trim()).filter(Boolean);
+  const realSc=(res.scorers||[]).map(s=>s.trim()).filter(Boolean);
   let matched=0;
   const used=[];
-  predSc.slice(0,3).forEach(s=>{
-    const idx=realSc.findIndex((r,i)=>!used.includes(i)&&r===s);
+  predSc.slice(0,3).forEach(p=>{
+    const idx=realSc.findIndex((r,i)=>!used.includes(i) && nameFuzzyMatch(p, r));
     if(idx>-1){ used.push(idx); matched++; }
   });
   pts+=matched*3;
