@@ -35,7 +35,12 @@
     color:var(--ink);
     line-height:1.55;
     -webkit-font-smoothing:antialiased;
+    /* Prevents text size bumping on rotation */
+    -webkit-text-size-adjust:100%;
   }
+  /* Safe area for notched iPhones */
+  .wrap{padding-left:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right))}
+  footer.footer{padding-bottom:max(26px, calc(env(safe-area-inset-bottom) + 16px))}
   .wrap{max-width:980px;margin:0 auto;padding:0 16px}
 
   /* ===== HERO ===== */
@@ -93,7 +98,9 @@
   .tab{
     flex:0 0 auto;padding:15px 18px;background:none;border:none;cursor:pointer;
     font-family:'Inter';font-size:14px;font-weight:600;color:var(--muted);
-    border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:.15s
+    border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:.15s;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
   }
   .tab:hover{color:var(--green-700)}
   .tab.active{color:var(--green-700);border-bottom-color:var(--green-500)}
@@ -128,7 +135,8 @@
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;
     background:var(--green-700);color:#fff;border:none;border-radius:10px;
-    padding:14px 26px;font-family:'Archivo';font-weight:700;font-size:15px;cursor:pointer;transition:.15s
+    padding:14px 26px;font-family:'Archivo';font-weight:700;font-size:15px;cursor:pointer;transition:.15s;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
   }
   .btn:hover{background:var(--green-800)}
   .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -170,8 +178,13 @@
   .group-body.open{display:block}
 
   .match{
-    border:1px solid var(--line);border-radius:11px;padding:14px;margin:8px 4px;background:#fff;transition:.15s
+    border:1px solid var(--line);border-radius:11px;padding:14px;margin:8px 4px;background:#fff;
+    transition:border-color .15s, box-shadow .15s;
+    /* Touch press feel */
+    -webkit-tap-highlight-color:transparent;
   }
+  .match:not(.locked):active{background:var(--green-100)}
+  .score-val{transition:color .12s}
   .match.scored{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 60%)}
   .match.locked{opacity:.96}
   .match-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:11px;flex-wrap:wrap}
@@ -185,12 +198,15 @@
   .score-pick{display:flex;align-items:center;gap:4px}
   .stepper{display:flex;flex-direction:column;align-items:center}
   .stepper button{
-    width:30px;height:24px;border:1px solid var(--line);background:#fafbf8;color:var(--green-700);
-    cursor:pointer;font-size:14px;font-weight:800;line-height:1;transition:.1s
+    width:36px;height:30px;border:1px solid var(--line);background:#fafbf8;color:var(--green-700);
+    cursor:pointer;font-size:15px;font-weight:800;line-height:1;transition:.1s;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+    user-select:none;
   }
   .stepper button:first-child{border-radius:6px 6px 0 0}
   .stepper button:last-child{border-radius:0 0 6px 6px;border-top:none}
   .stepper button:hover{background:var(--green-100)}
+  .stepper button:active{background:var(--green-500);color:#fff;border-color:var(--green-500)}
   .score-val{
     font-family:'Oswald';font-weight:700;font-size:34px;color:var(--head);
     min-width:42px;text-align:center;line-height:1
@@ -397,80 +413,208 @@
     border-radius: 4px; padding: 2px 6px;
   }
 
-  /* ===== LIVE MATCH BANNER ===== */
+  /* ===== LIVE MATCH BANNER — mobile-first ===== */
   #liveMatchBanner {
     display: none;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     border-radius: 14px;
     overflow: hidden;
     border: 1.5px solid var(--gold);
-    background: linear-gradient(135deg, #2a1f00, #3a2a00);
+    background: linear-gradient(135deg, #2a1f00 0%, #3a2a00 100%);
     box-shadow: 0 4px 20px rgba(224,168,46,.22);
     animation: livePulse 3s ease-in-out infinite;
+    position: relative;
   }
   @keyframes livePulse {
     0%,100%{box-shadow:0 4px 20px rgba(224,168,46,.22)}
-    50%{box-shadow:0 4px 28px rgba(224,168,46,.42)}
+    50%{box-shadow:0 6px 28px rgba(224,168,46,.45)}
   }
+  /* mobile layout: everything in one column-ish grid */
   #liveMatchBanner .lmb-inner {
-    padding: 16px 20px;
-    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 10px 12px;
+    align-items: center;
   }
+  /* LIVE pill — top-left */
   #liveMatchBanner .lmb-live-dot {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-    color: var(--gold); flex: 0 0 auto;
+    grid-column: 1; grid-row: 1;
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(224,168,46,.15);
+    border: 1px solid rgba(224,168,46,.3);
+    border-radius: 20px;
+    padding: 3px 9px;
+    white-space: nowrap;
   }
   #liveMatchBanner .dot-pulse {
-    width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+    width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+    flex: 0 0 auto;
     animation: dotPulse 1.2s ease-in-out infinite;
   }
   @keyframes dotPulse {
     0%,100%{opacity:1;transform:scale(1)}
-    50%{opacity:.4;transform:scale(.8)}
+    50%{opacity:.3;transform:scale(.7)}
   }
-  #liveMatchBanner .lmb-teams {
-    flex: 1 1 220px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  #liveMatchBanner .lmb-team {
-    display: flex; align-items: center; gap: 7px;
-  }
-  #liveMatchBanner .lmb-team img {
-    width: 28px; height: 20px; border-radius: 3px; object-fit: cover;
-  }
-  #liveMatchBanner .lmb-team-name {
-    font-size: 13px; font-weight: 700; color: rgba(255,255,255,.9);
-  }
-  #liveMatchBanner .lmb-score {
-    font-family: 'Oswald'; font-weight: 700; font-size: 26px; color: #fff;
-    background: rgba(255,255,255,.08); border-radius: 8px;
-    padding: 3px 14px; flex: 0 0 auto;
-  }
-  #liveMatchBanner .lmb-sep {
-    color: rgba(255,255,255,.25); font-family: 'Oswald'; font-size: 18px;
-  }
+  /* minute counter — top-right */
   #liveMatchBanner .lmb-minute {
-    flex: 0 0 auto; text-align: center;
+    grid-column: 3; grid-row: 1;
+    text-align: right;
   }
   #liveMatchBanner .lmb-min-val {
-    font-family: 'Oswald'; font-weight: 700; font-size: 22px; color: var(--gold);
+    font-family: 'Oswald'; font-weight: 700; font-size: 20px; color: var(--gold);
     line-height: 1;
   }
   #liveMatchBanner .lmb-min-label {
-    font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
-    color: rgba(255,255,255,.4);
+    font-size: 9px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+    color: rgba(255,255,255,.35); margin-top: 1px;
   }
+  /* group tag — top center (sits between pill and minute) */
   #liveMatchBanner .lmb-phase {
-    flex: 0 0 auto; font-size: 11px; font-weight: 700;
-    color: rgba(255,255,255,.55); letter-spacing: .5px;
-    background: rgba(255,255,255,.07); border-radius: 6px; padding: 3px 9px;
+    grid-column: 2; grid-row: 1;
+    font-size: 10px; font-weight: 700;
+    color: rgba(255,255,255,.45); letter-spacing: .4px;
+    text-align: center;
   }
+  /* teams + score row — full width, second row */
+  #liveMatchBanner .lmb-teams {
+    grid-column: 1 / -1; grid-row: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  #liveMatchBanner .lmb-team {
+    flex: 1;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #liveMatchBanner .lmb-team.right {
+    flex-direction: row-reverse; justify-content: flex-start;
+  }
+  #liveMatchBanner .lmb-team img {
+    width: 32px; height: 22px; border-radius: 3px; object-fit: cover;
+    flex: 0 0 auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  #liveMatchBanner .lmb-team-name {
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,.9);
+    line-height: 1.2;
+  }
+  #liveMatchBanner .lmb-scoreboard {
+    display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  }
+  #liveMatchBanner .lmb-score {
+    font-family: 'Oswald'; font-weight: 700; font-size: 32px; color: #fff;
+    background: rgba(255,255,255,.1); border-radius: 8px;
+    padding: 4px 12px; min-width: 46px; text-align: center;
+    line-height: 1;
+  }
+  #liveMatchBanner .lmb-sep {
+    color: rgba(255,255,255,.2); font-family: 'Oswald'; font-size: 20px;
+    padding: 0 2px;
+  }
+  /* no score yet — dashes */
+  #liveMatchBanner .lmb-score.pending {
+    color: rgba(255,255,255,.3);
+    font-size: 22px;
+  }
+  /* scorers strip — optional third row */
   #liveMatchBanner .lmb-scorers {
-    flex: 1 1 100%; font-size: 11px; color: rgba(255,255,255,.6); font-weight: 600;
-    padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08);
+    grid-column: 1 / -1; grid-row: 3;
+    font-size: 11px; color: rgba(255,255,255,.5); font-weight: 600;
+    padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: flex-start; gap: 6px;
+    flex-wrap: wrap;
   }
-  #liveMatchBanner .lmb-scorers span { color: var(--gold); }
+  #liveMatchBanner .lmb-scorers-label {
+    font-size: 10px; color: var(--gold); font-weight: 700;
+    white-space: nowrap;
+  }
+  #liveMatchBanner .lmb-scorers-names {
+    color: rgba(255,255,255,.65); flex: 1;
+  }
+  /* no-score notice */
+  #liveMatchBanner .lmb-no-score {
+    grid-column: 1 / -1; grid-row: 3;
+    font-size: 10px; color: rgba(255,255,255,.3); font-weight: 600;
+    padding-top: 8px; border-top: 1px solid rgba(255,255,255,.06);
+    text-align: center; letter-spacing: .3px;
+  }
+  /* Progress bar — bottom of the card, shows estimated match progress */
+  #liveMatchBanner .lmb-progress {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    background: rgba(255,255,255,.08); border-radius: 0 0 14px 14px; overflow: hidden;
+  }
+  #liveMatchBanner .lmb-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #f5c842);
+    border-radius: 0 0 14px 14px;
+    transition: width 1s linear;
+  }
+
+  /* ===== PREDICT NOW BUTTON ===== */
+  #nextMatchCard .nmc-predict-btn {
+    font-family: 'Archivo';
+    font-weight: 700;
+    font-size: 14px;
+    background: linear-gradient(135deg, var(--green-500), #6ab838);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: .15s;
+    box-shadow: 0 4px 12px rgba(127,187,66,.25);
+    flex: 0 0 auto;
+  }
+  #nextMatchCard .nmc-predict-btn:hover {
+    background: linear-gradient(135deg, var(--green-600), #5da032);
+    box-shadow: 0 6px 16px rgba(127,187,66,.35);
+  }
+  #nextMatchCard .nmc-predict-btn:active {
+    transform: scale(.98);
+  }
+
+  @keyframes highlightPulse {
+    0% { background-color: rgba(127,187,66,.3) !important; }
+    100% { background-color: #fff !important; }
+  }
+
+  /* ===== UNPREDICTED FLOATING PILL ===== */
+  #unpredictedPill {
+    display: none;
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    background: var(--green-700);
+    color: #fff;
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Archivo';
+    box-shadow: 0 4px 20px rgba(20,40,10,.35);
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    transition: transform .2s, opacity .2s;
+    pointer-events: all;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #unpredictedPill:active { transform: translateX(-50%) scale(.96); }
+  #unpredictedPill.hidden { opacity: 0; pointer-events: none; }
+  #unpredictedPill .pill-count {
+    display: inline-block;
+    background: var(--green-500);
+    color: #fff;
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: 13px;
+    font-weight: 900;
+    margin-right: 4px;
+  }
 
   @media(max-width:560px){
     .team-opt{flex:1 1 100%}
@@ -478,9 +622,75 @@
     .lb-pred{display:none}
     .side img{width:40px;height:27px}
     .score-val{font-size:28px;min-width:34px}
-    #nextMatchCard .nmc-inner { padding: 16px; gap: 14px; }
-    #nextMatchCard .nmc-num { font-size: 22px; min-width: 38px; }
-    #nextMatchCard .nmc-team img { width: 40px; height: 28px; }
+    /* stepper buttons larger touch targets on mobile */
+    .stepper button{width:36px;height:30px;font-size:16px}
+    /* match cards more padding room */
+    .match{padding:12px}
+    /* hero chip wrap nicely */
+    .scorebar{gap:7px}
+    .chip{padding:6px 12px;font-size:12px}
+    /* toolbar wrap */
+    .toolbar{flex-direction:column;align-items:flex-start;gap:8px}
+    /* filter buttons easier tap */
+    .filter button{padding:7px 13px;font-size:12px}
+    /* live banner tightened */
+    #liveMatchBanner .lmb-inner{padding:12px 14px;gap:8px 10px}
+    #liveMatchBanner .lmb-score{font-size:28px;padding:3px 10px;min-width:40px}
+    #liveMatchBanner .lmb-team img{width:28px;height:19px}
+    #liveMatchBanner .lmb-team-name{font-size:11px}
+    /* lb rows */
+    .lb-row{padding:11px 12px}
+    #nextMatchCard .nmc-inner { 
+      padding: 14px; 
+      gap: 12px;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    #nextMatchCard .nmc-left { flex: 1 1 auto; width: 100%; }
+    #nextMatchCard .nmc-title {
+      font-size: 13px;
+    }
+    #nextMatchCard .nmc-badge {
+      font-size: 9px;
+    }
+    #nextMatchCard .nmc-meta {
+      font-size: 10px;
+    }
+    #nextMatchCard .nmc-teams {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+    #nextMatchCard .nmc-team img { width: 38px; height: 26px; }
+    #nextMatchCard .nmc-team-name { font-size: 11px; }
+    #nextMatchCard .nmc-vs { font-size: 16px; }
+    #nextMatchCard .nmc-countdown {
+      flex: 1 1 100%;
+      width: 100%;
+      order: 4;
+    }
+    #nextMatchCard .nmc-countdown-units {
+      justify-content: center;
+    }
+    #nextMatchCard .nmc-num { 
+      font-size: 18px; 
+      min-width: 36px;
+      padding: 3px 2px;
+    }
+    #nextMatchCard .nmc-unit-label {
+      font-size: 8px;
+    }
+    #nextMatchCard .nmc-colon {
+      font-size: 16px;
+      padding-bottom: 12px;
+    }
+    #nextMatchCard .nmc-predict-btn {
+      flex: 1 1 100%;
+      width: 100%;
+      padding: 10px 16px;
+      font-size: 13px;
+      order: 5;
+    }
   }
 </style>
 </head>
@@ -540,16 +750,20 @@
       <!-- NEXT MATCH HERO CARD -->
       <div id="nextMatchCard" style="display:none"></div>
 
-      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px">
-        <div style="font-size:13px;color:#856404;margin-bottom:8px"><b>📤 Sync your predictions to the leaderboard</b></div>
-        <div style="font-size:12px;color:#856404;margin-bottom:10px">Click below to upload your predictions so everyone can see your score live.</div>
-        <button class="btn sm" onclick="syncMyData()" style="background:#ffc107;color:#333;border:none;cursor:pointer">Sync my predictions now</button>
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:#856404;font-weight:700;margin-bottom:2px">📤 Share your predictions</div>
+          <div style="font-size:11px;color:#a07000;line-height:1.4">Tap to sync so your score appears on the leaderboard.</div>
+        </div>
+        <button class="btn sm" onclick="syncMyData()" style="background:#f5a623;color:#fff;border:none;cursor:pointer;flex:0 0 auto;font-size:12px;padding:8px 14px;border-radius:8px">Sync now</button>
       </div>
       <div class="toolbar">
         <div class="who"><span>Playing as</span> <img id="whoFlag" alt=""> <strong id="whoName"></strong></div>
         <div class="spacer"></div>
         <button class="btn ghost sm" id="switchBtn">Switch player</button>
       </div>
+      <!-- Floating unpredicted-matches pill -->
+      <button id="unpredictedPill" onclick="scrollToFirstUnpredicted()"></button>
       <div class="filter" id="groupFilter" style="margin-bottom:16px"></div>
       <div id="groupsContainer"></div>
     </div>
@@ -1094,17 +1308,16 @@ function findNextMatch() {
 
 function findLiveMatch() {
   const now = Date.now();
-  const results = DB.results();
-  // A match is "live" if: kick-off is in the past AND no final result yet AND < 3h elapsed
+  // Show banner for any match within its live time window (kick-off to ~116 min = 2nd half + added time).
+  // We intentionally do NOT gate on whether a result has been entered — the banner stays
+  // visible during the game even after the admin enters the score, and disappears only
+  // when the estimated final whistle time is reached.
   const live = MATCHES.filter(m => {
     const ko = MATCH_UTC[m.id].getTime();
     const elapsed = now - ko;
-    const r = results[m.id];
-    const hasResult = r && r.h != null && r.h !== "";
-    return !hasResult && elapsed > 0 && elapsed < 180 * 60000;
+    return elapsed > 0 && elapsed < 116 * 60000;
   });
   if (!live.length) return null;
-  // Return the one that started most recently
   live.sort((a,b) => MATCH_UTC[b.id] - MATCH_UTC[a.id]);
   return live[0];
 }
@@ -1175,6 +1388,7 @@ function renderNextMatchCard() {
         <div class="nmc-countdown-label">Kicks off in</div>
         <div class="nmc-countdown-units" id="cdUnits">${countdownHtml}</div>
       </div>
+      <button class="nmc-predict-btn" onclick="scrollToMatch(${next.id})">Predict now →</button>
     </div>`;
 }
 
@@ -1218,46 +1432,71 @@ function renderLiveBanner() {
   if (!live) { banner.style.display = 'none'; return; }
 
   const phase = getMatchPhase(MATCH_UTC[live.id]);
+  // If we're past the 116-min window, findLiveMatch already returned null.
+  // But getMatchPhase can return null for very early milliseconds — guard it.
   if (!phase) { banner.style.display = 'none'; return; }
 
   const results = DB.results();
   const r = results[live.id] || {};
-  const hScore = r.h != null ? r.h : '–';
-  const aScore = r.a != null ? r.a : '–';
-  const scorersText = (r.scorers && r.scorers.length)
-    ? `⚽ <span>${r.scorers.join('  ·  ')}</span>`
-    : '';
+  const hasScore = r.h != null && r.h !== '' && r.a != null && r.a !== '';
+  const hScore = hasScore ? r.h : '–';
+  const aScore = hasScore ? r.a : '–';
+  const isHT = phase.phase_code === 'ht';
+  const isFT = phase.phase_code === 'ft';
 
-  // Phase-specific label
-  let phaseLabel = phase.phase;
-  let isHT = phase.phase_code === 'ht';
-  let isFT = phase.phase_code === 'ft';
+  // Progress percentage: 0-100 across the full 116-min window
+  const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
+  const progressPct = Math.min(100, Math.round((elapsedMin / 116) * 100));
+
+  // Build scorers row
+  let scorersHtml = '';
+  if (r.scorers && r.scorers.length) {
+    scorersHtml = `<div class="lmb-scorers">
+      <span class="lmb-scorers-label">⚽ Goals</span>
+      <span class="lmb-scorers-names">${r.scorers.join(' · ')}</span>
+    </div>`;
+  } else if (!hasScore) {
+    scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
+  }
+
+  // Minute display
+  const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
+  const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
+
+  // Live pill label
+  const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
 
   banner.style.display = 'block';
   banner.innerHTML = `<div class="lmb-inner">
     <div class="lmb-live-dot">
-      ${!isFT ? '<div class="dot-pulse"></div>' : ''}
-      ${isFT ? 'FT' : 'Live'}
+      ${(!isFT && !isHT) ? '<div class="dot-pulse"></div>' : ''}
+      ${liveLabel}
     </div>
+    <div class="lmb-phase">Group ${live.g}</div>
+    ${!isFT ? `<div class="lmb-minute">
+      <div class="lmb-min-val">${minDisplay}</div>
+      <div class="lmb-min-label">${minLabel}</div>
+    </div>` : `<div class="lmb-minute">
+      <div class="lmb-min-val" style="color:rgba(255,255,255,.5)">FT</div>
+      <div class="lmb-min-label">Full time</div>
+    </div>`}
     <div class="lmb-teams">
       <div class="lmb-team">
-        <img src="${teamFlag(live.h)}" alt="">
+        <img src="${teamFlag(live.h)}" alt="${live.h}">
         <div class="lmb-team-name">${live.h}</div>
       </div>
-      <div class="lmb-score">${hScore}</div>
-      <div class="lmb-sep">–</div>
-      <div class="lmb-score">${aScore}</div>
-      <div class="lmb-team">
-        <img src="${teamFlag(live.a)}" alt="">
+      <div class="lmb-scoreboard">
+        <div class="lmb-score ${!hasScore ? 'pending' : ''}">${hScore}</div>
+        <div class="lmb-sep">:</div>
+        <div class="lmb-score ${!hasScore ? 'pending' : ''}">${aScore}</div>
+      </div>
+      <div class="lmb-team right">
+        <img src="${teamFlag(live.a)}" alt="${live.a}">
         <div class="lmb-team-name">${live.a}</div>
       </div>
     </div>
-    ${!isFT ? `<div class="lmb-minute">
-      <div class="lmb-min-val">${phase.displayMin}${!isHT ? "'" : ''}</div>
-      <div class="lmb-min-label">${isHT ? 'Half time' : phase.phase}</div>
-    </div>` : ''}
-    <div class="lmb-phase">Group ${live.g}</div>
-    ${scorersText ? `<div class="lmb-scorers">${scorersText}</div>` : ''}
+    ${scorersHtml}
+    <div class="lmb-progress"><div class="lmb-progress-fill" style="width:${progressPct}%"></div></div>
   </div>`;
 }
 
@@ -1267,6 +1506,7 @@ function renderLiveBanner() {
 function tick() {
   updateCountdown();
   renderLiveBanner();
+  updateUnpredictedPill();
 }
 
 /* ============================================================
@@ -1317,6 +1557,7 @@ function enterPredict(){
   renderScorebar();
   renderNextMatchCard();
   renderLiveBanner();
+  updateUnpredictedPill();
 }
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
@@ -1394,7 +1635,7 @@ function matchCard(m,roster,result){
     if(+ph>+pa) winLine=`Your pick: <b>${m.h} win</b>`;
     else if(+pa>+ph) winLine=`Your pick: <b>${m.a} win</b>`;
     else winLine=`Your pick: <b>Draw</b>`;
-  } else winLine=`Tap + to set your score`;
+  } else winLine=`<span style="color:var(--gold);font-weight:600">⬆ Set your prediction</span>`;
 
   const scorers=pred.scorers||[];
 
@@ -1462,6 +1703,7 @@ function bump(id,side,delta){
   saveRoster(r);
   refreshMatch(id);
   renderScorebar();
+  updateUnpredictedPill();
 }
 
 function scorerRow(m,val,idx){
@@ -1704,8 +1946,72 @@ document.querySelectorAll('.tab').forEach(tab=>{
 });
 
 /* ============================================================
-   INIT
+   PREDICT NOW — Scroll to the match card
    ============================================================ */
+function scrollToMatch(matchId) {
+  const matchEl = document.getElementById('match-' + matchId);
+  if (matchEl) {
+    matchEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    matchEl.style.animation = 'none';
+    setTimeout(() => {
+      matchEl.style.animation = 'highlightPulse .6s ease-out';
+    }, 10);
+  }
+}
+
+function scrollToFirstUnpredicted() {
+  const r = getRoster(activeName);
+  if (!r) return;
+  const results = DB.results();
+  // Find first unplayed, un-predicted match
+  const unpred = MATCHES.find(m => {
+    const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
+    if (hasResult) return false;
+    const p = r.predictions[m.id];
+    return !p || p.h == null || p.a == null;
+  });
+  if (!unpred) return;
+  // Open the group if needed
+  activeFilter = 'all';
+  buildGroupFilter();
+  renderGroups();
+  setTimeout(() => {
+    const el = document.getElementById('match-' + unpred.id);
+    if (el) {
+      // Make sure the group body is open
+      const groupBody = el.closest('.group-body');
+      if (groupBody && !groupBody.classList.contains('open')) {
+        groupBody.classList.add('open');
+        groupBody.previousElementSibling.classList.add('open');
+      }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.animation = 'none';
+      setTimeout(() => { el.style.animation = 'highlightPulse .6s ease-out'; }, 10);
+    }
+  }, 100);
+}
+
+function updateUnpredictedPill() {
+  const pill = document.getElementById('unpredictedPill');
+  if (!pill || !activeName) { if(pill) pill.style.display='none'; return; }
+  const r = getRoster(activeName);
+  if (!r) { pill.style.display='none'; return; }
+  const results = DB.results();
+  let count = 0;
+  MATCHES.forEach(m => {
+    const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
+    if (hasResult) return;
+    const p = r.predictions[m.id];
+    if (!p || p.h == null || p.a == null) count++;
+  });
+  if (count === 0) {
+    pill.style.display = 'none';
+  } else {
+    pill.style.display = 'flex';
+    pill.innerHTML = `<span class="pill-count">${count}</span> match${count === 1 ? '' : 'es'} to predict →`;
+  }
+}
+
 function init(){
   buildTeamGrid();
   buildDatalists();
