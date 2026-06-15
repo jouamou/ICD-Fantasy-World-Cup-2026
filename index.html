@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-title" content="ICD FWC 2026">
+<meta name="application-name" content="ICD FWC 2026">
 <title>ICD Fantasy World Cup 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="https://i.ibb.co/2Ymjf2h3/FWC-ICD-2026-180.png">
 <!-- Firebase SDK (compat build — provides the global firebase.* namespace) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
@@ -35,8 +38,10 @@
     color:var(--ink);
     line-height:1.55;
     -webkit-font-smoothing:antialiased;
+    /* Prevents text size bumping on rotation */
     -webkit-text-size-adjust:100%;
   }
+  /* Safe area for notched iPhones */
   .wrap{padding-left:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right))}
   footer.footer{padding-bottom:max(26px, calc(env(safe-area-inset-bottom) + 16px))}
   .wrap{max-width:980px;margin:0 auto;padding:0 16px}
@@ -73,7 +78,10 @@
   .hero-sub{margin-top:10px;font-size:14px;opacity:.9;font-weight:500}
   .ball{display:inline-block;font-size:.9em}
 
-  .scorebar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+  /* scoreboard chip */
+  .scorebar{
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px
+  }
   .chip{
     background:rgba(255,255,255,.12);
     border:1px solid rgba(255,255,255,.22);
@@ -147,7 +155,11 @@
   .toolbar .who img{width:24px;height:17px;border-radius:3px;object-fit:cover;flex:0 0 auto}
   .toolbar .who strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .toolbar .spacer{flex:0}
-  .filter-wrap{position:relative;margin-bottom:16px;}
+  /* Filter wrapper — scroll arrows on desktop, swipe on mobile */
+  .filter-wrap{
+    position:relative;
+    margin-bottom:16px;
+  }
   .filter-wrap .farrow{
     position:absolute;top:50%;transform:translateY(-50%);
     width:32px;height:32px;border-radius:50%;
@@ -155,13 +167,18 @@
     color:var(--head);cursor:pointer;font-size:13px;font-weight:700;
     display:flex;align-items:center;justify-content:center;
     box-shadow:0 1px 6px rgba(0,0,0,.1);
-    transition:.15s;z-index:2;line-height:1;
+    transition:.15s;z-index:2;
+    line-height:1;
   }
   .filter-wrap .farrow:hover{background:var(--green-100);border-color:var(--green-500);color:var(--green-700)}
   .filter-wrap .farrow.left{left:0}
   .filter-wrap .farrow.right{right:0}
   .filter-wrap .farrow.hidden{opacity:0;pointer-events:none}
-  .filter-wrap .fscroll{display:flex;gap:6px;flex-wrap:wrap;padding:2px 0;}
+  .filter-wrap .fscroll{
+    /* desktop: natural wrap, no arrows needed when it fits */
+    display:flex;gap:6px;flex-wrap:wrap;
+    padding:2px 0;
+  }
   .filter-wrap .fscroll button,.filter button{
     border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:30px;
     padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:.12s;
@@ -172,11 +189,16 @@
   .filter-wrap .fscroll button.on,.filter button.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
 
   @media(max-width:700px){
-    .filter-wrap .fscroll{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+    /* on mobile: single row, horizontal swipe, hide arrows */
+    .filter-wrap .fscroll{
+      flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;padding-bottom:2px;
+    }
     .filter-wrap .fscroll::-webkit-scrollbar{display:none}
     .filter-wrap .farrow{display:none}
   }
 
+  /* keep the .filter class working for non-wrapped usages (sample section etc) */
   .filter{display:flex;gap:6px;flex-wrap:wrap;}
   .filter button{
     border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:30px;
@@ -187,35 +209,126 @@
   .filter button:hover{border-color:var(--green-500);color:var(--green-700)}
   .filter button.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
 
-  .group-block{margin-bottom:8px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 1px 4px rgba(20,40,10,.06);}
+  /* ── GROUP CARDS — clean, white, mobile-first ─────────────────────── */
+  .group-block{
+    margin-bottom:8px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+    border:1px solid var(--line);
+    box-shadow:0 1px 4px rgba(20,40,10,.06);
+  }
   .group-head{
-    display:flex;align-items:center;gap:12px;padding:14px 16px;
-    background:#fff;border-bottom:1px solid transparent;cursor:pointer;
-    -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;transition:background .1s;
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;
+    background:#fff;                        /* pure white — no gradient */
+    border-bottom:1px solid transparent;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    user-select:none;
+    transition:background .1s;
   }
   .group-head:active{background:var(--green-100)}
   .group-head.open{border-bottom-color:var(--line)}
-  .group-tag{flex:0 0 36px;width:36px;height:36px;border-radius:10px;background:var(--green-700);font-family:'Archivo';font-weight:900;font-size:15px;color:#fff;display:flex;align-items:center;justify-content:center;letter-spacing:-.5px;}
-  .group-head .ginfo{flex:1 1 0;min-width:0;overflow:hidden;}
-  .group-head .gname{font-family:'Archivo';font-weight:800;font-size:15px;color:var(--head);line-height:1.1;}
-  .group-head .gteams{font-size:11.5px;color:var(--muted);font-weight:500;margin-top:3px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
-  .group-head .gright{flex:0 0 auto;display:flex;align-items:center;gap:8px;}
-  .group-head .gpts{display:flex;flex-direction:column;align-items:center;line-height:1;font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-700);background:var(--green-100);border-radius:10px;padding:6px 10px 5px;min-width:48px;text-align:center;border:1px solid rgba(45,107,21,.1);}
-  .group-head .gpts span{font-family:'Inter';font-weight:700;font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--green-800);opacity:.7;margin-top:2px;}
-  .group-head .gunpred{font-family:'Archivo';font-weight:800;font-size:10px;color:#fff;background:var(--gold);min-width:20px;height:20px;border-radius:10px;padding:0 5px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(224,168,46,.3);}
-  .group-head .chev{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bg);color:var(--muted);font-size:9px;font-weight:900;transition:transform .2s;flex:0 0 20px;}
+
+  /* Letter badge — left anchor */
+  .group-tag{
+    flex:0 0 36px;
+    width:36px;height:36px;border-radius:10px;
+    background:var(--green-700);
+    font-family:'Archivo';font-weight:900;font-size:15px;
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    letter-spacing:-.5px;
+  }
+
+  /* Text column — takes all remaining space, clips overflow */
+  .group-head .ginfo{
+    flex:1 1 0;min-width:0;overflow:hidden;
+  }
+  .group-head .gname{
+    font-family:'Archivo';font-weight:800;font-size:15px;
+    color:var(--head);line-height:1.1;
+  }
+  .group-head .gteams{
+    font-size:11.5px;color:var(--muted);font-weight:500;
+    margin-top:3px;line-height:1.3;
+    /* two lines max, then ellipsis */
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  /* Right cluster — score + chevron. Never shrinks. */
+  .group-head .gright{
+    flex:0 0 auto;
+    display:flex;align-items:center;gap:8px;
+  }
+  /* Points label: number large, "pts" small below */
+  .group-head .gpts{
+    display:flex;flex-direction:column;align-items:center;
+    line-height:1;
+    font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-700);
+    background:var(--green-100);
+    border-radius:10px;
+    padding:6px 10px 5px;
+    min-width:48px;text-align:center;
+    border:1px solid rgba(45,107,21,.1);
+  }
+  .group-head .gpts span{
+    font-family:'Inter';font-weight:700;font-size:9px;
+    letter-spacing:.5px;text-transform:uppercase;
+    color:var(--green-800);opacity:.7;margin-top:2px;
+  }
+  /* Gold dot: unpredicted count */
+  .group-head .gunpred{
+    font-family:'Archivo';font-weight:800;font-size:10px;
+    color:#fff;background:var(--gold);
+    min-width:20px;height:20px;border-radius:10px;padding:0 5px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 4px rgba(224,168,46,.3);
+  }
+  /* Chevron — minimal, no competition with content */
+  .group-head .chev{
+    width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;background:var(--bg);
+    color:var(--muted);font-size:9px;font-weight:900;
+    transition:transform .2s;flex:0 0 20px;
+  }
   .group-head.open .chev{transform:rotate(180deg)}
+
   .group-body{display:none;padding:8px 8px 10px}
   .group-body.open{display:block}
 
-  .match{border:1px solid var(--line);border-radius:11px;padding:14px;margin:8px 4px;background:#fff;transition:border-color .15s, box-shadow .15s;-webkit-tap-highlight-color:transparent;}
+  .match{
+    border:1px solid var(--line);border-radius:11px;padding:14px;margin:8px 4px;background:#fff;
+    transition:border-color .15s, box-shadow .15s;
+    -webkit-tap-highlight-color:transparent;
+  }
   .match:not(.locked):active{background:var(--green-100)}
-  .match.kicked{background:#fafafa;border-color:#e0e0db;opacity:.88;}
-  .kicked-strip{margin-top:11px;background:#f5f5f2;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;flex-wrap:wrap;border:1px solid var(--line);}
+  /* Kicked off but no result yet — muted, slightly indented feel */
+  .match.kicked{
+    background:#fafafa;
+    border-color:#e0e0db;
+    opacity:.88;
+  }
+  .kicked-strip{
+    margin-top:11px;
+    background:#f5f5f2;
+    border-radius:8px;padding:9px 12px;
+    display:flex;align-items:center;gap:10px;
+    font-size:12px;font-weight:600;
+    flex-wrap:wrap;border:1px solid var(--line);
+  }
   .score-val{transition:color .12s}
   .match.scored{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 60%)}
   .match.locked{opacity:.96}
-  .match-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .match-meta{
+    display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+    font-weight:600;margin-bottom:10px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  /* on very narrow screens, let venue drop off */
   .match-meta .venue{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
   .match-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--muted);opacity:.5}
   .match-meta .live{color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
@@ -223,17 +336,30 @@
   .vs-row{display:flex;align-items:center;gap:6px;width:100%}
   .side{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-width:0}
   .side img{width:52px;height:36px;border-radius:5px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.12)}
-  .side .tname{font-size:11px;font-weight:700;color:var(--head);line-height:1.3;word-break:break-word;}
+  .side .tname{font-size:11px;font-weight:700;color:var(--head);line-height:1.3;
+    word-break:break-word; /* allow long names to break cleanly */
+  }
   .score-pick{display:flex;align-items:center;gap:6px;flex:0 0 auto}
   .stepper{display:flex;flex-direction:column;align-items:center}
-  .stepper button{width:36px;height:30px;border:1px solid var(--line);background:#fafbf8;color:var(--green-700);cursor:pointer;font-size:15px;font-weight:800;line-height:1;transition:.1s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+  .stepper button{
+    width:36px;height:30px;border:1px solid var(--line);background:#fafbf8;color:var(--green-700);
+    cursor:pointer;font-size:15px;font-weight:800;line-height:1;transition:.1s;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
   .stepper button:first-child{border-radius:6px 6px 0 0}
   .stepper button:last-child{border-radius:0 0 6px 6px;border-top:none}
   .stepper button:hover{background:var(--green-100)}
   .stepper button:active{background:var(--green-500);color:#fff;border-color:var(--green-500)}
-  .score-val{font-family:'Oswald';font-weight:700;font-size:34px;color:var(--head);min-width:42px;text-align:center;line-height:1}
+  .score-val{
+    font-family:'Oswald';font-weight:700;font-size:34px;color:var(--head);
+    min-width:42px;text-align:center;line-height:1
+  }
   .score-sep{font-family:'Oswald';font-size:24px;color:var(--muted);padding:0 2px}
-  .winner-line{text-align:center;font-size:12px;font-weight:700;margin-top:10px;color:var(--muted);min-height:20px;padding:4px 0;}
+  .winner-line{
+    text-align:center;font-size:12px;font-weight:700;margin-top:10px;
+    color:var(--muted);min-height:20px;padding:4px 0;
+  }
   .winner-line b{color:var(--green-700)}
 
   .scorers{margin-top:12px;border-top:1px dashed var(--line);padding-top:11px}
@@ -246,7 +372,10 @@
   .add-scorer{font-size:12px;font-weight:700;color:var(--green-700);background:none;border:none;cursor:pointer;padding:4px 0;display:inline-flex;align-items:center;gap:5px}
   .add-scorer:hover{text-decoration:underline}
 
-  .result-strip{margin-top:11px;background:var(--green-100);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--green-800);flex-wrap:wrap}
+  .result-strip{
+    margin-top:11px;background:var(--green-100);border-radius:8px;padding:9px 12px;
+    display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--green-800);flex-wrap:wrap
+  }
   .result-strip .actual{font-family:'Oswald';font-weight:700;font-size:16px;color:var(--green-800)}
   .pts-badge{margin-left:auto;font-family:'Archivo';font-weight:800;font-size:13px;color:#fff;background:var(--gold);padding:4px 11px;border-radius:20px}
   .pts-badge.zero{background:var(--muted)}
@@ -271,7 +400,10 @@
   .pod.p3 .ppts{color:#b07a3a}
 
   .lb-list{display:flex;flex-direction:column;gap:8px}
-  .lb-row{display:grid;grid-template-columns:42px 1fr auto auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 16px;box-shadow:var(--shadow)}
+  .lb-row{
+    display:grid;grid-template-columns:42px 1fr auto auto;gap:14px;align-items:center;
+    background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 16px;box-shadow:var(--shadow)
+  }
   .lb-row.me{border-color:var(--green-500);background:var(--green-100)}
   .lb-rank{font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-700);text-align:center}
   .lb-who{display:flex;align-items:center;gap:10px;min-width:0}
@@ -297,6 +429,7 @@
   .pts-table .pdesc{flex:1;font-size:13.5px;color:var(--head);font-weight:500}
   .pts-table .pval{font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-700);background:var(--green-100);border-radius:8px;padding:2px 12px;min-width:54px;text-align:center}
 
+  /* tutorial */
   .tut{background:linear-gradient(135deg,var(--green-800),var(--green-700));color:#fff;border-radius:14px;padding:24px;margin-top:18px}
   .tut h3{font-family:'Archivo';font-weight:800;font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:9px}
   .tut-steps{display:flex;flex-wrap:wrap;gap:14px;counter-reset:step}
@@ -305,6 +438,7 @@
   .tut-step h4{font-size:14px;font-weight:700;margin:4px 0 5px}
   .tut-step p{font-size:12.5px;opacity:.88;line-height:1.5}
 
+  /* sample interactive */
   .sample{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:20px;margin-top:18px;box-shadow:var(--shadow)}
   .sample .stitle{font-family:'Archivo';font-weight:800;font-size:16px;color:var(--head);margin-bottom:4px}
   .sample .ssub{font-size:13px;color:var(--muted);margin-bottom:16px}
@@ -325,113 +459,309 @@
   .footer{text-align:center;padding:26px 16px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);background:var(--card)}
   .footer b{color:var(--green-700)}
 
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--head);color:#fff;padding:12px 22px;border-radius:30px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);z-index:100;opacity:0;transition:.3s;pointer-events:none}
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--head);color:#fff;padding:12px 22px;border-radius:30px;font-size:13px;font-weight:600;
+    box-shadow:var(--shadow-lg);z-index:100;opacity:0;transition:.3s;pointer-events:none
+  }
   .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
   /* ===== NEXT MATCH HERO CARD ===== */
-  #nextMatchCard{margin-bottom:22px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,var(--green-900) 0%,#1a3d0c 100%);border:1px solid rgba(127,187,66,.25);box-shadow:0 4px 20px rgba(20,40,10,.18);position:relative;}
-  #nextMatchCard .nmc-pitch{position:absolute;inset:0;opacity:.06;pointer-events:none;background:repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 80px);}
-  #nextMatchCard .nmc-inner{position:relative;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
-  #nextMatchCard .nmc-badge{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--green-500);background:rgba(127,187,66,.12);border:1px solid rgba(127,187,66,.28);border-radius:20px;padding:3px 10px;display:inline-block;margin-bottom:6px;}
-  #nextMatchCard .nmc-meta{font-size:11px;color:rgba(255,255,255,.55);font-weight:600;margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-  #nextMatchCard .nmc-meta .sep{opacity:.4;}
-  #nextMatchCard .nmc-teams{flex:1 1 300px;display:flex;align-items:center;gap:14px;justify-content:center;}
-  #nextMatchCard .nmc-team{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;text-align:center;}
-  #nextMatchCard .nmc-team img{width:52px;height:36px;border-radius:5px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-  #nextMatchCard .nmc-team-name{font-size:12px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.2;}
-  #nextMatchCard .nmc-vs{font-family:'Oswald';font-size:20px;font-weight:700;color:rgba(255,255,255,.3);flex:0 0 auto;}
-  #nextMatchCard .nmc-countdown{flex:0 0 auto;text-align:center;}
-  #nextMatchCard .nmc-countdown-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px;}
-  #nextMatchCard .nmc-countdown-units{display:flex;gap:6px;align-items:flex-end;}
-  #nextMatchCard .nmc-unit{display:flex;flex-direction:column;align-items:center;}
-  #nextMatchCard .nmc-num{font-family:'Oswald';font-weight:700;font-size:28px;line-height:1;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;min-width:48px;padding:5px 4px;text-align:center;}
-  #nextMatchCard .nmc-unit-label{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:4px;}
-  #nextMatchCard .nmc-colon{font-family:'Oswald';font-size:22px;font-weight:700;color:rgba(255,255,255,.3);padding-bottom:18px;}
-  #nextMatchCard.kickoff-soon .nmc-num{color:var(--green-500);border-color:rgba(127,187,66,.4);}
-  #nextMatchCard .nmc-left{flex:1 1 180px;}
-  #nextMatchCard .nmc-title{font-family:'Archivo';font-weight:900;font-size:15px;color:#fff;line-height:1.2;}
-  .tz-label{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.5);background:rgba(255,255,255,.07);border-radius:4px;padding:2px 6px;}
+  #nextMatchCard {
+    margin-bottom: 22px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--green-900) 0%, #1a3d0c 100%);
+    border: 1px solid rgba(127,187,66,.25);
+    box-shadow: 0 4px 20px rgba(20,40,10,.18);
+    position: relative;
+  }
+  #nextMatchCard .nmc-pitch {
+    position: absolute; inset: 0; opacity: .06; pointer-events: none;
+    background: repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 80px);
+  }
+  #nextMatchCard .nmc-inner {
+    position: relative;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  #nextMatchCard .nmc-badge {
+    font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--green-500); background: rgba(127,187,66,.12);
+    border: 1px solid rgba(127,187,66,.28); border-radius: 20px;
+    padding: 3px 10px; display: inline-block; margin-bottom: 6px;
+  }
+  #nextMatchCard .nmc-meta {
+    font-size: 11px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 4px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  #nextMatchCard .nmc-meta .sep { opacity: .4; }
+  #nextMatchCard .nmc-teams {
+    flex: 1 1 300px;
+    display: flex; align-items: center; gap: 14px; justify-content: center;
+  }
+  #nextMatchCard .nmc-team {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; text-align: center;
+  }
+  #nextMatchCard .nmc-team img {
+    width: 52px; height: 36px; border-radius: 5px; object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  #nextMatchCard .nmc-team-name {
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,.9); line-height: 1.2;
+  }
+  #nextMatchCard .nmc-vs {
+    font-family: 'Oswald'; font-size: 20px; font-weight: 700;
+    color: rgba(255,255,255,.3); flex: 0 0 auto;
+  }
+  #nextMatchCard .nmc-countdown {
+    flex: 0 0 auto; text-align: center;
+  }
+  #nextMatchCard .nmc-countdown-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: rgba(255,255,255,.45); margin-bottom: 6px;
+  }
+  #nextMatchCard .nmc-countdown-units {
+    display: flex; gap: 6px; align-items: flex-end;
+  }
+  #nextMatchCard .nmc-unit {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #nextMatchCard .nmc-num {
+    font-family: 'Oswald'; font-weight: 700; font-size: 28px; line-height: 1;
+    color: #fff;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    min-width: 48px; padding: 5px 4px;
+    text-align: center;
+  }
+  #nextMatchCard .nmc-unit-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    color: rgba(255,255,255,.4); margin-top: 4px;
+  }
+  #nextMatchCard .nmc-colon {
+    font-family: 'Oswald'; font-size: 22px; font-weight: 700;
+    color: rgba(255,255,255,.3); padding-bottom: 18px;
+  }
+  #nextMatchCard.kickoff-soon .nmc-num { color: var(--green-500); border-color: rgba(127,187,66,.4); }
+  #nextMatchCard .nmc-left { flex: 1 1 180px; }
+  #nextMatchCard .nmc-title {
+    font-family: 'Archivo'; font-weight: 900; font-size: 15px; color: #fff; line-height: 1.2;
+  }
+  /* tz label */
+  .tz-label {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    color: rgba(255,255,255,.5); background: rgba(255,255,255,.07);
+    border-radius: 4px; padding: 2px 6px;
+  }
 
-  /* ===== LIVE MATCH BANNER ===== */
-  #liveMatchBanner{display:none;margin-bottom:16px;border-radius:14px;overflow:hidden;border:1.5px solid var(--gold);background:linear-gradient(135deg,#2a1f00 0%,#3a2a00 100%);box-shadow:0 4px 20px rgba(224,168,46,.22);animation:livePulse 3s ease-in-out infinite;position:relative;}
-  @keyframes livePulse{0%,100%{box-shadow:0 4px 20px rgba(224,168,46,.22)}50%{box-shadow:0 6px 28px rgba(224,168,46,.45)}}
-  #liveMatchBanner .lmb-inner{padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:10px 12px;align-items:center;}
-  #liveMatchBanner .lmb-live-dot{grid-column:1;grid-row:1;display:flex;align-items:center;gap:5px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(224,168,46,.15);border:1px solid rgba(224,168,46,.3);border-radius:20px;padding:3px 9px;white-space:nowrap;}
-  #liveMatchBanner .dot-pulse{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:0 0 auto;animation:dotPulse 1.2s ease-in-out infinite;}
-  @keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
-  #liveMatchBanner .lmb-minute{grid-column:3;grid-row:1;text-align:right;}
-  #liveMatchBanner .lmb-min-val{font-family:'Oswald';font-weight:700;font-size:20px;color:var(--gold);line-height:1;}
-  #liveMatchBanner .lmb-min-label{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:1px;}
-  #liveMatchBanner .lmb-phase{grid-column:2;grid-row:1;font-size:10px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.4px;text-align:center;}
-  #liveMatchBanner .lmb-teams{grid-column:1 / -1;grid-row:2;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  #liveMatchBanner .lmb-team{flex:1;display:flex;align-items:center;gap:8px;}
-  #liveMatchBanner .lmb-team.right{flex-direction:row-reverse;justify-content:flex-start;}
-  #liveMatchBanner .lmb-team img{width:32px;height:22px;border-radius:3px;object-fit:cover;flex:0 0 auto;box-shadow:0 1px 4px rgba(0,0,0,.3);}
-  #liveMatchBanner .lmb-team-name{font-size:12px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.2;}
-  #liveMatchBanner .lmb-scoreboard{display:flex;align-items:center;gap:4px;flex:0 0 auto;}
-  #liveMatchBanner .lmb-score{font-family:'Oswald';font-weight:700;font-size:32px;color:#fff;background:rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;min-width:46px;text-align:center;line-height:1;}
-  #liveMatchBanner .lmb-sep{color:rgba(255,255,255,.2);font-family:'Oswald';font-size:20px;padding:0 2px;}
-  #liveMatchBanner .lmb-score.pending{color:rgba(255,255,255,.3);font-size:22px;}
-  #liveMatchBanner .lmb-scorers{grid-column:1 / -1;grid-row:3;font-size:11px;color:rgba(255,255,255,.5);font-weight:600;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;}
-  #liveMatchBanner .lmb-scorers-label{font-size:10px;color:var(--gold);font-weight:700;white-space:nowrap;}
-  #liveMatchBanner .lmb-scorers-names{color:rgba(255,255,255,.65);flex:1;}
-  #liveMatchBanner .lmb-no-score{grid-column:1 / -1;grid-row:3;font-size:10px;color:rgba(255,255,255,.3);font-weight:600;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);text-align:center;letter-spacing:.3px;}
-  #liveMatchBanner .lmb-progress{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);border-radius:0 0 14px 14px;overflow:hidden;}
-  #liveMatchBanner .lmb-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#f5c842);border-radius:0 0 14px 14px;transition:width 1s linear;}
+  /* ===== LIVE MATCH BANNER — mobile-first ===== */
+  #liveMatchBanner {
+    display: none;
+    margin-bottom: 16px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid var(--gold);
+    background: linear-gradient(135deg, #2a1f00 0%, #3a2a00 100%);
+    box-shadow: 0 4px 20px rgba(224,168,46,.22);
+    animation: livePulse 3s ease-in-out infinite;
+    position: relative;
+  }
+  @keyframes livePulse {
+    0%,100%{box-shadow:0 4px 20px rgba(224,168,46,.22)}
+    50%{box-shadow:0 6px 28px rgba(224,168,46,.45)}
+  }
+  /* mobile layout: everything in one column-ish grid */
+  #liveMatchBanner .lmb-inner {
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 10px 12px;
+    align-items: center;
+  }
+  /* LIVE pill — top-left */
+  #liveMatchBanner .lmb-live-dot {
+    grid-column: 1; grid-row: 1;
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(224,168,46,.15);
+    border: 1px solid rgba(224,168,46,.3);
+    border-radius: 20px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+  #liveMatchBanner .dot-pulse {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+    flex: 0 0 auto;
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.3;transform:scale(.7)}
+  }
+  /* minute counter — top-right */
+  #liveMatchBanner .lmb-minute {
+    grid-column: 3; grid-row: 1;
+    text-align: right;
+  }
+  #liveMatchBanner .lmb-min-val {
+    font-family: 'Oswald'; font-weight: 700; font-size: 20px; color: var(--gold);
+    line-height: 1;
+  }
+  #liveMatchBanner .lmb-min-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+    color: rgba(255,255,255,.35); margin-top: 1px;
+  }
+  /* group tag — top center (sits between pill and minute) */
+  #liveMatchBanner .lmb-phase {
+    grid-column: 2; grid-row: 1;
+    font-size: 10px; font-weight: 700;
+    color: rgba(255,255,255,.45); letter-spacing: .4px;
+    text-align: center;
+  }
+  /* teams + score row — full width, second row */
+  #liveMatchBanner .lmb-teams {
+    grid-column: 1 / -1; grid-row: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  #liveMatchBanner .lmb-team {
+    flex: 1;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #liveMatchBanner .lmb-team.right {
+    flex-direction: row-reverse; justify-content: flex-start;
+  }
+  #liveMatchBanner .lmb-team img {
+    width: 32px; height: 22px; border-radius: 3px; object-fit: cover;
+    flex: 0 0 auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  #liveMatchBanner .lmb-team-name {
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,.9);
+    line-height: 1.2;
+  }
+  #liveMatchBanner .lmb-scoreboard {
+    display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  }
+  #liveMatchBanner .lmb-score {
+    font-family: 'Oswald'; font-weight: 700; font-size: 32px; color: #fff;
+    background: rgba(255,255,255,.1); border-radius: 8px;
+    padding: 4px 12px; min-width: 46px; text-align: center;
+    line-height: 1;
+  }
+  #liveMatchBanner .lmb-sep {
+    color: rgba(255,255,255,.2); font-family: 'Oswald'; font-size: 20px;
+    padding: 0 2px;
+  }
+  /* no score yet — dashes */
+  #liveMatchBanner .lmb-score.pending {
+    color: rgba(255,255,255,.3);
+    font-size: 22px;
+  }
+  /* scorers strip — optional third row */
+  #liveMatchBanner .lmb-scorers {
+    grid-column: 1 / -1; grid-row: 3;
+    font-size: 11px; color: rgba(255,255,255,.5); font-weight: 600;
+    padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: flex-start; gap: 6px;
+    flex-wrap: wrap;
+  }
+  #liveMatchBanner .lmb-scorers-label {
+    font-size: 10px; color: var(--gold); font-weight: 700;
+    white-space: nowrap;
+  }
+  #liveMatchBanner .lmb-scorers-names {
+    color: rgba(255,255,255,.65); flex: 1;
+  }
+  /* no-score notice */
+  #liveMatchBanner .lmb-no-score {
+    grid-column: 1 / -1; grid-row: 3;
+    font-size: 10px; color: rgba(255,255,255,.3); font-weight: 600;
+    padding-top: 8px; border-top: 1px solid rgba(255,255,255,.06);
+    text-align: center; letter-spacing: .3px;
+  }
+  /* Progress bar — bottom of the card, shows estimated match progress */
+  #liveMatchBanner .lmb-progress {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    background: rgba(255,255,255,.08); border-radius: 0 0 14px 14px; overflow: hidden;
+  }
+  #liveMatchBanner .lmb-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #f5c842);
+    border-radius: 0 0 14px 14px;
+    transition: width 1s linear;
+  }
 
   /* ===== PREDICT NOW BUTTON ===== */
-  #nextMatchCard .nmc-predict-btn{font-family:'Archivo';font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--green-500),#6ab838);color:#fff;border:none;border-radius:10px;padding:12px 20px;cursor:pointer;transition:.15s;box-shadow:0 4px 12px rgba(127,187,66,.25);flex:0 0 auto;}
-  #nextMatchCard .nmc-predict-btn:hover{background:linear-gradient(135deg,var(--green-600),#5da032);box-shadow:0 6px 16px rgba(127,187,66,.35);}
-  #nextMatchCard .nmc-predict-btn:active{transform:scale(.98);}
+  #nextMatchCard .nmc-predict-btn {
+    font-family: 'Archivo';
+    font-weight: 700;
+    font-size: 14px;
+    background: linear-gradient(135deg, var(--green-500), #6ab838);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: .15s;
+    box-shadow: 0 4px 12px rgba(127,187,66,.25);
+    flex: 0 0 auto;
+  }
+  #nextMatchCard .nmc-predict-btn:hover {
+    background: linear-gradient(135deg, var(--green-600), #5da032);
+    box-shadow: 0 6px 16px rgba(127,187,66,.35);
+  }
+  #nextMatchCard .nmc-predict-btn:active {
+    transform: scale(.98);
+  }
 
-  @keyframes highlightPulse{0%{background-color:rgba(127,187,66,.3) !important}100%{background-color:#fff !important}}
+  @keyframes highlightPulse {
+    0% { background-color: rgba(127,187,66,.3) !important; }
+    100% { background-color: #fff !important; }
+  }
 
   /* ===== UNPREDICTED FLOATING PILL ===== */
-  #unpredictedPill{display:none;position:fixed;bottom:max(20px,env(safe-area-inset-bottom,20px));left:50%;transform:translateX(-50%);z-index:50;background:var(--green-700);color:#fff;border-radius:30px;padding:10px 20px;font-size:13px;font-weight:700;font-family:'Archivo';box-shadow:0 4px 20px rgba(20,40,10,.35);cursor:pointer;white-space:nowrap;border:none;transition:transform .2s,opacity .2s;pointer-events:all;-webkit-tap-highlight-color:transparent;}
-  #unpredictedPill:active{transform:translateX(-50%) scale(.96);}
-  #unpredictedPill.hidden{opacity:0;pointer-events:none;}
-  #unpredictedPill .pill-count{display:inline-block;background:var(--green-500);color:#fff;border-radius:12px;padding:1px 8px;font-size:13px;font-weight:900;margin-right:4px;}
-
-  /* ===== LIVE SCORES API SECTION (NEW) ===== */
-  #apiScoresSection { margin-bottom: 20px; }
-  .api-card { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); }
-  .api-card-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px; border-bottom:1px solid var(--line); gap:10px; flex-wrap:wrap; }
-  .api-card-head .ach-left { display:flex; align-items:center; gap:10px; }
-  .api-live-pill { display:inline-flex; align-items:center; gap:5px; background:#fff1f1; border:1px solid #f5c6c6; color:#c0392b; border-radius:20px; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; padding:3px 9px; white-space:nowrap; }
-  .api-live-dot { width:6px; height:6px; border-radius:50%; background:#c0392b; flex:0 0 auto; animation:dotPulse 1.2s ease-in-out infinite; }
-  .api-card-title { font-family:'Archivo'; font-weight:800; font-size:14px; color:var(--head); }
-  .api-refresh-btn { display:flex; align-items:center; gap:5px; background:var(--bg); border:1.5px solid var(--line); color:var(--muted); border-radius:8px; padding:6px 11px; font-size:11px; font-weight:700; cursor:pointer; transition:.15s; white-space:nowrap; -webkit-tap-highlight-color:transparent; }
-  .api-refresh-btn:hover { border-color:var(--green-500); color:var(--green-700); }
-  .api-refresh-btn.spinning .refresh-icon { animation:spin .7s linear infinite; }
-  .refresh-icon { display:inline-block; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .api-last-updated { font-size:10px; color:var(--muted); font-weight:500; padding:0 16px 10px; text-align:right; }
-  .api-matches-list { padding:6px 8px 8px; display:flex; flex-direction:column; gap:6px; }
-  .api-match-row { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
-  .api-match-row.live-row { background:#fffbf0; border-color:var(--gold); }
-  .api-match-row.finished-row { background:var(--green-100); border-color:rgba(45,107,21,.2); }
-  .api-match-row .api-team { display:flex; align-items:center; gap:7px; min-width:0; }
-  .api-match-row .api-team.right { flex-direction:row-reverse; justify-content:flex-start; }
-  .api-match-row .api-team img { width:26px; height:18px; border-radius:3px; object-fit:cover; flex:0 0 auto; box-shadow:0 0 0 1px rgba(0,0,0,.06); }
-  .api-match-row .api-tname { font-size:12px; font-weight:700; color:var(--head); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .api-match-row .api-center { display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .api-score-display { font-family:'Oswald'; font-weight:700; font-size:22px; color:var(--head); display:flex; align-items:center; gap:4px; line-height:1; }
-  .api-score-display.pending { color:var(--muted); font-size:16px; }
-  .api-score-sep { color:var(--muted); padding:0 2px; }
-  .api-status-badge { font-size:9px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; padding:2px 7px; border-radius:10px; white-space:nowrap; }
-  .api-status-badge.live { background:var(--gold); color:#4a3608; }
-  .api-status-badge.finished { background:var(--green-100); color:var(--green-800); border:1px solid rgba(45,107,21,.15); }
-  .api-status-badge.upcoming { background:var(--bg); color:var(--muted); border:1px solid var(--line); }
-  .api-match-meta { font-size:10px; color:var(--muted); font-weight:500; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .api-minute { font-family:'Oswald'; font-size:11px; font-weight:700; color:var(--gold); }
-  .api-state-box { padding:24px 16px; text-align:center; color:var(--muted); font-size:13px; font-weight:500; }
-  .api-state-box .api-state-icon { font-size:28px; margin-bottom:8px; display:block; }
-  .api-state-box.error { color:#c0392b; }
-  .api-source-note { padding:8px 16px 12px; font-size:10px; color:var(--muted); border-top:1px solid var(--line); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .api-source-note a { color:var(--green-700); text-decoration:none; }
-  .api-section-tabs { display:flex; gap:0; background:var(--bg); border-bottom:1px solid var(--line); }
-  .api-section-tab { flex:1; padding:10px 8px; text-align:center; font-size:12px; font-weight:700; color:var(--muted); cursor:pointer; transition:.12s; border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; -webkit-tap-highlight-color:transparent; }
-  .api-section-tab.on { color:var(--green-700); border-bottom-color:var(--green-500); background:var(--card); }
+  #unpredictedPill {
+    display: none;
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    background: var(--green-700);
+    color: #fff;
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Archivo';
+    box-shadow: 0 4px 20px rgba(20,40,10,.35);
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    transition: transform .2s, opacity .2s;
+    pointer-events: all;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #unpredictedPill:active { transform: translateX(-50%) scale(.96); }
+  #unpredictedPill.hidden { opacity: 0; pointer-events: none; }
+  #unpredictedPill .pill-count {
+    display: inline-block;
+    background: var(--green-500);
+    color: #fff;
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: 13px;
+    font-weight: 900;
+    margin-right: 4px;
+  }
 
   @media(max-width:560px){
     .team-opt{flex:1 1 100%}
@@ -439,40 +769,82 @@
     .lb-pred{display:none}
     .side img{width:40px;height:27px}
     .score-val{font-size:28px;min-width:34px}
+    /* stepper buttons larger touch targets on mobile */
     .stepper button{width:36px;height:30px;font-size:16px}
+    /* match cards more padding room */
     .match{padding:12px}
+    /* hero chip wrap nicely */
     .scorebar{gap:7px}
     .chip{padding:6px 12px;font-size:12px}
+    /* toolbar wrap */
     .toolbar{flex-direction:column;align-items:flex-start;gap:8px}
+    /* filter buttons easier tap */
     .filter button{padding:7px 13px;font-size:12px}
+    /* live banner tightened */
     #liveMatchBanner .lmb-inner{padding:12px 14px;gap:8px 10px}
     #liveMatchBanner .lmb-score{font-size:28px;padding:3px 10px;min-width:40px}
     #liveMatchBanner .lmb-team img{width:28px;height:19px}
     #liveMatchBanner .lmb-team-name{font-size:11px}
+    /* lb rows */
     .lb-row{padding:11px 12px}
+    /* match cards on mobile */
     .match{padding:12px 10px;margin:6px 2px}
     .side img{width:44px;height:30px}
     .side .tname{font-size:10px}
     .score-val{font-size:30px;min-width:36px}
     .score-sep{font-size:20px}
-    #nextMatchCard .nmc-inner{padding:14px;gap:12px;flex-direction:column;align-items:center;text-align:center;}
-    #nextMatchCard .nmc-left{flex:1 1 auto;width:100%;}
-    #nextMatchCard .nmc-title{font-size:13px;}
-    #nextMatchCard .nmc-badge{font-size:9px;}
-    #nextMatchCard .nmc-meta{font-size:10px;}
-    #nextMatchCard .nmc-teams{flex:1 1 100%;width:100%;}
-    #nextMatchCard .nmc-team img{width:38px;height:26px;}
-    #nextMatchCard .nmc-team-name{font-size:11px;}
-    #nextMatchCard .nmc-vs{font-size:16px;}
-    #nextMatchCard .nmc-countdown{flex:1 1 100%;width:100%;order:4;}
-    #nextMatchCard .nmc-countdown-units{justify-content:center;}
-    #nextMatchCard .nmc-num{font-size:18px;min-width:36px;padding:3px 2px;}
-    #nextMatchCard .nmc-unit-label{font-size:8px;}
-    #nextMatchCard .nmc-colon{font-size:16px;padding-bottom:12px;}
-    #nextMatchCard .nmc-predict-btn{flex:1 1 100%;width:100%;padding:10px 16px;font-size:13px;order:5;}
-    .api-match-row{padding:8px 10px;gap:6px;}
-    .api-score-display{font-size:18px;}
-    .api-match-row .api-tname{font-size:11px;}
+
+    #nextMatchCard .nmc-inner { 
+      padding: 14px; 
+      gap: 12px;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    #nextMatchCard .nmc-left { flex: 1 1 auto; width: 100%; }
+    #nextMatchCard .nmc-title {
+      font-size: 13px;
+    }
+    #nextMatchCard .nmc-badge {
+      font-size: 9px;
+    }
+    #nextMatchCard .nmc-meta {
+      font-size: 10px;
+    }
+    #nextMatchCard .nmc-teams {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+    #nextMatchCard .nmc-team img { width: 38px; height: 26px; }
+    #nextMatchCard .nmc-team-name { font-size: 11px; }
+    #nextMatchCard .nmc-vs { font-size: 16px; }
+    #nextMatchCard .nmc-countdown {
+      flex: 1 1 100%;
+      width: 100%;
+      order: 4;
+    }
+    #nextMatchCard .nmc-countdown-units {
+      justify-content: center;
+    }
+    #nextMatchCard .nmc-num { 
+      font-size: 18px; 
+      min-width: 36px;
+      padding: 3px 2px;
+    }
+    #nextMatchCard .nmc-unit-label {
+      font-size: 8px;
+    }
+    #nextMatchCard .nmc-colon {
+      font-size: 16px;
+      padding-bottom: 12px;
+    }
+    #nextMatchCard .nmc-predict-btn {
+      flex: 1 1 100%;
+      width: 100%;
+      padding: 10px 16px;
+      font-size: 13px;
+      order: 5;
+    }
   }
 </style>
 </head>
@@ -507,6 +879,7 @@
 
   <!-- ============ PLAY ============ -->
   <section class="view active" id="view-play">
+    <!-- onboarding -->
     <div id="onboard">
       <div class="panel">
         <h2>Welcome to the ICD World Cup challenge</h2>
@@ -519,14 +892,12 @@
           <label>Your favourite team</label>
           <div class="team-grid" id="teamGrid"></div>
         </div>
-        <button class="btn" id="startBtn" disabled>Start predicting &rarr;</button>
+        <button class="btn" id="startBtn" disabled>Start predicting →</button>
       </div>
     </div>
 
+    <!-- predictions -->
     <div id="predict" style="display:none">
-      <!-- ====== LIVE SCORES API CARD (NEW) ====== -->
-      <div id="apiScoresSection"></div>
-
       <!-- LIVE MATCH BANNER (shown when a game is currently in progress) -->
       <div id="liveMatchBanner"></div>
 
@@ -545,6 +916,7 @@
         <div class="spacer"></div>
         <button class="btn ghost sm" id="switchBtn">Switch player</button>
       </div>
+      <!-- Floating unpredicted-matches pill -->
       <button id="unpredictedPill" onclick="scrollToFirstUnpredicted()"></button>
       <div class="filter-wrap" id="groupFilterWrap">
         <button class="farrow left hidden" id="gfLeft" onclick="scrollFilter('group',-1)" aria-label="Scroll left">&#8249;</button>
@@ -686,36 +1058,59 @@ try {
 
 /* ============================================================
    TIME ZONE UTILITIES
+   Match times in the data are stored as US Eastern Time (ET).
+   We convert them to the viewer's local time automatically.
    ============================================================ */
+
+/**
+ * Parse a match into an exact UTC Date.
+ * The schedule uses ET (America/New_York = UTC-5 in winter / UTC-4 in summer).
+ * June/July = EDT = UTC-4.
+ * We encode each match as "YYYY-MM-DD HH:MM ET" and convert properly.
+ */
 function parseMatchUTC(isoDate, etTimeStr) {
+  // etTimeStr examples: "3:00 PM ET", "10:00 PM ET", "12:00 AM ET"
   const cleaned = etTimeStr.replace(' ET','').trim();
   const [timePart, ampm] = cleaned.split(' ');
   let [h, m] = timePart.split(':').map(Number);
   if (ampm === 'PM' && h !== 12) h += 12;
   if (ampm === 'AM' && h === 12) h = 0;
-  const etOffsetHours = 4; // EDT (June/July)
+  // June 2026: all in EDT = UTC-4
+  // Construct as UTC by adding 4 hours
+  const etOffsetHours = 4; // EDT
   const utcH = h + etOffsetHours;
+  // Build UTC date string
   const base = new Date(isoDate + 'T00:00:00Z');
   base.setUTCHours(utcH, m, 0, 0);
+  // Handle date rollover if UTC hours >= 24 (shouldn't happen) or < 0 (midnight ET = day before UTC?)
+  // 12:00 AM ET = midnight ET = 04:00 UTC same day — fine
   return base;
 }
 
+/**
+ * Format a UTC Date into the user's local time.
+ * Returns e.g. "Thu 11 Jun · 7:00 PM" with tz abbreviation.
+ */
 function fmtLocalTime(utcDate) {
-  return utcDate.toLocaleString('en-US', {
-    weekday:'short', month:'short', day:'numeric',
-    hour:'numeric', minute:'2-digit', hour12:true, timeZoneName:'short'
-  });
+  const opts = {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZoneName: 'short'
+  };
+  return utcDate.toLocaleString('en-US', opts);
 }
 
 function fmtLocalTimeShort(utcDate) {
   return utcDate.toLocaleString('en-US', {
-    weekday:'short', month:'short', day:'numeric',
-    hour:'numeric', minute:'2-digit', hour12:true
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
   });
 }
 
 function getLocalTZ() {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e) { return 'Local'; }
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch(e) { return 'Local'; }
 }
 
 function getTZAbbr() {
@@ -727,29 +1122,44 @@ function getTZAbbr() {
 
 /* ============================================================
    MATCH PHASE / MINUTE CALCULATOR
+   Given a match kick-off UTC time, compute current minute & phase.
+   Half-time: 45+5 min → 15 min break → 2nd half 45+6
    ============================================================ */
 function getMatchPhase(kickoffUTC) {
   const now = Date.now();
   const ko = kickoffUTC.getTime();
   const elapsedMs = now - ko;
   const elapsedMin = elapsedMs / 60000;
-  if (elapsedMin < 0) return null;
+
+  // Thresholds (minutes from kick-off):
+  //  0 – 50     → 1st half (45 min + up to 5 added)
+  //  50 – 65    → Half time
+  //  65 – 116   → 2nd half (45 min + up to 6 added)
+  //  116 – ...  → Full time (within 3 hours of KO, then we stop showing)
+
+  if (elapsedMin < 0) return null; // not started
   if (elapsedMin < 50) {
+    // 1st half
     const min = Math.min(Math.floor(elapsedMin), 45);
     const added = Math.max(0, Math.floor(elapsedMin) - 45);
     const displayMin = added > 0 ? `45+${added}` : `${min}`;
     return { phase: '1st Half', displayMin, phase_code: '1h' };
   }
-  if (elapsedMin < 65) return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht' };
+  if (elapsedMin < 65) {
+    return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht' };
+  }
   if (elapsedMin < 116) {
+    // 2nd half: starts at elapsed 65 min
     const secondHalfMin = elapsedMin - 65;
     const min = 45 + Math.min(Math.floor(secondHalfMin), 45);
     const added = Math.max(0, Math.floor(secondHalfMin) - 45);
     const displayMin = added > 0 ? `90+${added}` : `${min}`;
     return { phase: '2nd Half', displayMin, phase_code: '2h' };
   }
-  if (elapsedMin < 180) return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft' };
-  return null;
+  if (elapsedMin < 180) {
+    return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft' };
+  }
+  return null; // match is long over, hide
 }
 
 /* ============================================================
@@ -1001,28 +1411,65 @@ function toast(msg){
 }
 
 /* ---------- scoring ---------- */
+/* ============================================================
+   FUZZY NAME MATCHING
+   Handles: accents, initials (J. Quiñones), last-name only,
+   reversed order, extra spaces, own-goal variants.
+   ============================================================ */
+
+// Strip diacritics: é→e, ñ→n, ü→u, ø→o, etc.
 function stripAccents(s){
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return s.normalize('NFD').replace(/[̀-ͯ]/g,'');
 }
+
+// Canonical form: lowercase, no accents, collapse whitespace, strip punctuation
 function canon(s){
   return stripAccents(s||'')
     .toLowerCase()
-    .replace(/['.,-]/g,' ')
+    .replace(/['.,-]/g,' ')   // treat punctuation as space
     .replace(/\s+/g,' ')
     .trim();
 }
+
+// Split into tokens, filter short noise
 function tokens(s){ return canon(s).split(' ').filter(t=>t.length>0); }
+
+// "Own goal" synonyms
 const OG_WORDS = ['own','goal','og','own goal','o.g','o.g.'];
 function isOwnGoal(s){ const c=canon(s); return OG_WORDS.some(w=>c===w||c.includes(w)); }
 
+/* nameFuzzyMatch(pred, real) → true if pred plausibly refers to the same player as real
+   
+   Real name format from our data: "Julián Quiñones"  (first last)
+   Pred may be any of:
+     julián quiñones / julian quinones  (exact / no accents)
+     j. quiñones / j quinones           (FIFA initial style)
+     quiñones / quinones                (last name only)
+     quiñones julián                    (reversed)
+     quiñones j.                        (reversed initial)
+*/
 function nameFuzzyMatch(pred, real){
   if(!pred || !real) return false;
+
+  // Own goal special case — accept any variant
   if(isOwnGoal(pred) && isOwnGoal(real)) return true;
-  const pt = tokens(pred);
-  const rt = tokens(real);
+
+  const pt = tokens(pred);   // prediction tokens
+  const rt = tokens(real);   // real-name tokens
+
   if(!pt.length || !rt.length) return false;
+
+  // 1. Exact canonical match (covers accents & case)
   if(canon(pred) === canon(real)) return true;
+
+  // 2. All prediction tokens appear in real tokens (subset match)
+  //    e.g. ["quinones"] ⊆ ["julian","quinones"] → true
+  //    e.g. ["quinones","julian"] ⊆ ["julian","quinones"] → true
   if(pt.every(p => rt.some(r => r === p))) return true;
+
+  // 3. Initial match: pred token is a single letter matching first char of a real token
+  //    e.g. pred=["j","quinones"], real=["julian","quinones"]
+  //    Each pred token must match a distinct real token (exactly or by initial)
   const usedRt = new Set();
   const initialMatch = pt.every(p => {
     const idx = rt.findIndex((r, i) => {
@@ -1034,7 +1481,14 @@ function nameFuzzyMatch(pred, real){
     return true;
   });
   if(initialMatch) return true;
+
+  // 4. Last-name-only: if pred is a single token and matches the LAST token of real
+  //    e.g. pred="quinones", real="julian quinones" → rt.last = "quinones" ✓
   if(pt.length === 1 && rt.length >= 2 && rt[rt.length - 1] === pt[0]) return true;
+
+  // 5. Reversed order with initials
+  //    e.g. pred=["quinones","j"], real=["julian","quinones"]
+  //    Try matching reversed pred against real
   const ptRev = [...pt].reverse();
   const usedRt2 = new Set();
   const revMatch = ptRev.every(p => {
@@ -1047,6 +1501,7 @@ function nameFuzzyMatch(pred, real){
     return true;
   });
   if(revMatch) return true;
+
   return false;
 }
 
@@ -1090,269 +1545,29 @@ function predictedCount(roster){
 }
 
 /* ============================================================
-   WORLDCUP2026 API INTEGRATION
-   Source:   https://github.com/rezarahiminia/worldcup2026
-   Endpoint: GET https://worldcup26.ir/get/games (no auth needed for demo)
-
-   Documented fields consumed (per README response example):
-     id          — match identifier (numeric, maps to our MATCHES[].id)
-     home_score  — integer or 0/null
-     away_score  — integer or 0/null
-     finished    — boolean
-
-   Team names, venue, group come from our embedded MATCHES/TEAMS data.
-   Live/upcoming status is DERIVED from kick-off time (MATCH_UTC) + finished flag.
-   ============================================================ */
-const WC_API = (() => {
-  const BASE = 'https://worldcup26.ir';
-  let _pollTimer  = null;
-  let _apiData    = {};      // { [String(id)]: { home_score, away_score, finished } }
-  let _apiState   = 'idle'; // 'idle' | 'loading' | 'ok' | 'error'
-  let _apiError   = '';
-  let _lastFetch  = 0;
-  let _listeners  = [];
-  let _activeTab  = 'live'; // 'live' | 'upcoming'
-
-  function onUpdate(fn) { _listeners.push(fn); }
-  function _notify()    { _listeners.forEach(fn => { try { fn(); } catch(e) {} }); }
-
-  async function fetchGames() {
-    _apiState = 'loading';
-    _notify();
-    try {
-      const ctrl = new AbortController();
-      const tid  = setTimeout(() => ctrl.abort(), 8000);
-      const res  = await fetch(BASE + '/get/games', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: ctrl.signal
-      });
-      clearTimeout(tid);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const raw = await res.json();
-      // Normalise response — handle array, {data:[...]}, {games:[...]}, {matches:[...]}
-      const arr = Array.isArray(raw)           ? raw
-                : Array.isArray(raw?.data)     ? raw.data
-                : Array.isArray(raw?.games)    ? raw.games
-                : Array.isArray(raw?.matches)  ? raw.matches
-                : Object.values(raw || {}).find(v => Array.isArray(v)) || [];
-      const map = {};
-      arr.forEach(m => {
-        if (!m) return;
-        const id = m.id ?? m._id;
-        if (id == null) return;
-        map[String(id)] = {
-          // Accept camelCase & snake_case variants in case the live API differs from docs
-          home_score: m.home_score  ?? m.homeScore  ?? m.score_home ?? m.home ?? null,
-          away_score: m.away_score  ?? m.awayScore  ?? m.score_away ?? m.away ?? null,
-          finished:   !!(m.finished ?? m.is_finished ?? m.isFinished ?? false)
-        };
-      });
-      _apiData   = map;
-      _apiState  = 'ok';
-      _lastFetch = Date.now();
-      _apiError  = '';
-    } catch(e) {
-      _apiState = 'error';
-      _apiError = e?.name === 'AbortError' ? 'Request timed out' : (e?.message || 'Network error');
-    }
-    _notify();
-  }
-
-  function startPolling(ms = 30000) {
-    stopPolling();
-    fetchGames();                           // immediate first fetch
-    _pollTimer = setInterval(fetchGames, ms);
-  }
-
-  function stopPolling() {
-    if (_pollTimer != null) { clearInterval(_pollTimer); _pollTimer = null; }
-  }
-
-  /* Classify a match.
-     Returns: 'upcoming' | 'live' | 'finished'
-     Uses MATCH_UTC (our authoritative kick-off times) + API finished flag. */
-  function classify(matchId) {
-    const koUTC = MATCH_UTC[matchId];
-    if (!koUTC) return 'unknown';
-    const now = Date.now();
-    const ko  = koUTC.getTime();
-    const d   = _apiData[String(matchId)];
-    if (ko > now) return 'upcoming';
-    if (d?.finished) return 'finished';
-    return (now - ko) < 116 * 60000 ? 'live' : 'finished';
-  }
-
-  function _esc(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  /* Render a single match row */
-  function _renderRow(m, cls) {
-    const d    = _apiData[String(m.id)] || {};
-    const koUTC = MATCH_UTC[m.id];
-    const hasScore = d.home_score != null && d.away_score != null;
-    const phase    = (cls === 'live') ? getMatchPhase(koUTC) : null;
-
-    const scoreHtml = hasScore
-      ? '<div class="api-score-display"><span>' + d.home_score + '</span><span class="api-score-sep">:</span><span>' + d.away_score + '</span></div>'
-      : cls === 'upcoming'
-        ? '<div class="api-score-display pending">vs</div>'
-        : '<div class="api-score-display pending">– : –</div>';
-
-    const badge = cls === 'live'
-      ? '<span class="api-status-badge live">Live</span>'
-      : cls === 'finished'
-        ? '<span class="api-status-badge finished">FT</span>'
-        : '<span class="api-status-badge upcoming">' + fmtLocalTimeShort(koUTC).replace(/^\w+,\s*/, '') + '</span>';
-
-    const minuteHtml = (cls === 'live' && phase)
-      ? '<div class="api-minute">' + phase.displayMin + (phase.phase_code !== 'ht' && phase.phase_code !== 'ft' ? "'" : '') + '</div>'
-      : '';
-
-    const rowCls = cls === 'live' ? ' live-row' : cls === 'finished' ? ' finished-row' : '';
-
-    return '<div class="api-match-row' + rowCls + '">' +
-      '<div class="api-team">' +
-        '<img src="' + teamFlag(m.h) + '" alt="' + _esc(m.h) + '" loading="lazy">' +
-        '<span class="api-tname">' + _esc(m.h) + '</span>' +
-      '</div>' +
-      '<div class="api-center">' +
-        scoreHtml + badge + minuteHtml +
-        '<div class="api-match-meta">Grp ' + m.g + ' · ' + _esc(m.venue.split(',')[0]) + '</div>' +
-      '</div>' +
-      '<div class="api-team right">' +
-        '<img src="' + teamFlag(m.a) + '" alt="' + _esc(m.a) + '" loading="lazy">' +
-        '<span class="api-tname">' + _esc(m.a) + '</span>' +
-      '</div>' +
-    '</div>';
-  }
-
-  /* Build and inject the full scores card into #apiScoresSection */
-  function renderSection() {
-    const el = document.getElementById('apiScoresSection');
-    if (!el) return;
-
-    const now = Date.now();
-    const liveMatches = [], recentFinished = [], upcoming = [];
-
-    MATCHES.forEach(m => {
-      const cls   = classify(m.id);
-      const koMs  = MATCH_UTC[m.id].getTime();
-      if (cls === 'live') {
-        liveMatches.push(m);
-      } else if (cls === 'finished' && now - koMs < 24 * 3600000) {
-        recentFinished.push(m);
-      } else if (cls === 'upcoming') {
-        upcoming.push(m);
-      }
-    });
-
-    liveMatches.sort((a, b)    => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
-    recentFinished.sort((a, b) => MATCH_UTC[b.id] - MATCH_UTC[a.id]);
-    upcoming.sort((a, b)       => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
-
-    const hasLive = liveMatches.length > 0;
-    const hasRecent = recentFinished.length > 0;
-
-    // Auto-switch to upcoming if live tab is empty and api is done loading
-    if (_apiState === 'ok' && !hasLive && !hasRecent && _activeTab === 'live') {
-      _activeTab = 'upcoming';
-    }
-
-    const headerPill = hasLive
-      ? '<span class="api-live-pill"><span class="api-live-dot"></span>Live</span>'
-      : '';
-
-    const spinning = _apiState === 'loading' ? ' spinning' : '';
-    const lastUpdStr = _lastFetch
-      ? 'Updated ' + new Date(_lastFetch).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' })
-      : '';
-    const tzAbbr = getTZAbbr();
-
-    const liveLabel = 'Live' + (hasLive ? ' (' + liveMatches.length + ')' : '') + (hasRecent ? ' & Recent' : '');
-
-    // Body HTML
-    let bodyHtml = '';
-    if (_apiState === 'loading' && Object.keys(_apiData).length === 0) {
-      bodyHtml = '<div class="api-state-box"><span class="api-state-icon">⏳</span>Fetching live scores…</div>';
-    } else if (_apiState === 'error' && Object.keys(_apiData).length === 0) {
-      bodyHtml = '<div class="api-state-box error"><span class="api-state-icon">⚠️</span>' + _esc(_apiError) +
-                 '<br><span style="font-size:11px;color:var(--muted)">Scores unavailable — retrying in 30s</span></div>';
-    } else if (_activeTab === 'live') {
-      const rows = [...liveMatches, ...recentFinished];
-      bodyHtml = rows.length
-        ? '<div class="api-matches-list">' + rows.map(m => _renderRow(m, classify(m.id))).join('') + '</div>'
-        : '<div class="api-state-box"><span class="api-state-icon">🕐</span>No live or recent matches right now</div>';
-    } else {
-      const shown = upcoming.slice(0, 8);
-      bodyHtml = shown.length
-        ? '<div class="api-matches-list">' + shown.map(m => _renderRow(m, 'upcoming')).join('') + '</div>'
-        : '<div class="api-state-box"><span class="api-state-icon">🏆</span>Group stage complete!</div>';
-    }
-
-    const errNote = _apiState === 'error' && _lastFetch
-      ? ' · <span style="color:#c0392b">Error refreshing</span>' : '';
-
-    el.innerHTML =
-      '<div class="api-card">' +
-        '<div class="api-card-head">' +
-          '<div class="ach-left">' + headerPill +
-            '<span class="api-card-title">World Cup 2026 Scores</span>' +
-          '</div>' +
-          '<button class="api-refresh-btn' + spinning + '" onclick="WC_API.manualRefresh(this)" title="Refresh">' +
-            '<span class="refresh-icon">↻</span> Refresh' +
-          '</button>' +
-        '</div>' +
-        '<div class="api-section-tabs">' +
-          '<button class="api-section-tab ' + (_activeTab === 'live' ? 'on' : '') +
-            '" onclick="WC_API.setTab(\'live\')">' + liveLabel + '</button>' +
-          '<button class="api-section-tab ' + (_activeTab === 'upcoming' ? 'on' : '') +
-            '" onclick="WC_API.setTab(\'upcoming\')">Upcoming</button>' +
-        '</div>' +
-        bodyHtml +
-        (lastUpdStr ? '<div class="api-last-updated">' + lastUpdStr + ' ' + tzAbbr + errNote + '</div>' : '') +
-        '<div class="api-source-note">📡 Live data: <a href="https://worldcup26.ir" target="_blank" rel="noopener">worldcup26.ir API</a> · auto-refreshes every 30 s</div>' +
-      '</div>';
-  }
-
-  function manualRefresh(btn) {
-    if (btn) btn.classList.add('spinning');
-    const p = fetchGames();
-    if (p && typeof p.finally === 'function') {
-      p.finally(() => { if (btn) btn.classList.remove('spinning'); });
-    }
-  }
-
-  function setTab(t) { _activeTab = t; _notify(); }
-
-  // Re-render whenever state changes
-  onUpdate(renderSection);
-
-  return { fetchGames, startPolling, stopPolling, onUpdate,
-           getMatchData: id => _apiData[String(id)] ?? null,
-           getState: () => ({ state: _apiState, error: _apiError, lastFetch: _lastFetch }),
-           classify, setTab, manualRefresh, renderSection };
-})();
-
-/* ============================================================
    NEXT MATCH HERO CARD
    ============================================================ */
 function findNextMatch() {
   const now = Date.now();
   const results = DB.results();
+  // Find the next match that hasn't started yet (no result and KO in future)
   const unplayed = MATCHES.filter(m => {
     const r = results[m.id];
     const hasResult = r && r.h != null && r.h !== "";
     return !hasResult && MATCH_UTC[m.id].getTime() > now;
   });
   if (!unplayed.length) return null;
+  // Sort ascending by kick-off
   unplayed.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
   return unplayed[0];
 }
 
 function findLiveMatch() {
   const now = Date.now();
+  // Show banner for any match within its live time window (kick-off to ~116 min = 2nd half + added time).
+  // We intentionally do NOT gate on whether a result has been entered — the banner stays
+  // visible during the game even after the admin enters the score, and disappears only
+  // when the estimated final whistle time is reached.
   const live = MATCHES.filter(m => {
     const ko = MATCH_UTC[m.id].getTime();
     const elapsed = now - ko;
@@ -1366,21 +1581,29 @@ function findLiveMatch() {
 function renderNextMatchCard() {
   const card = document.getElementById('nextMatchCard');
   if (!card) return;
+
   const next = findNextMatch();
   if (!next) { card.style.display = 'none'; return; }
+
   const koUTC = MATCH_UTC[next.id];
   const now = Date.now();
   const diffMs = koUTC.getTime() - now;
+
   if (diffMs < 0) { card.style.display = 'none'; return; }
+
   card.style.display = 'block';
+
   const totalSecs = Math.floor(diffMs / 1000);
   const days  = Math.floor(totalSecs / 86400);
   const hours = Math.floor((totalSecs % 86400) / 3600);
   const mins  = Math.floor((totalSecs % 3600) / 60);
   const secs  = totalSecs % 60;
+
   const tzAbbr = getTZAbbr();
   const localTimeStr = fmtLocalTimeShort(koUTC);
   const soonClass = diffMs < 30 * 60000 ? 'kickoff-soon' : '';
+
+  // Format countdown units
   let countdownHtml = '';
   if (days > 0) {
     countdownHtml += `<div class="nmc-unit"><div class="nmc-num">${String(days).padStart(2,'0')}</div><div class="nmc-unit-label">days</div></div><div class="nmc-colon">:</div>`;
@@ -1391,7 +1614,9 @@ function renderNextMatchCard() {
     <div class="nmc-unit"><div class="nmc-num" id="cd-m">${String(mins).padStart(2,'0')}</div><div class="nmc-unit-label">min</div></div>
     <div class="nmc-colon">:</div>
     <div class="nmc-unit"><div class="nmc-num" id="cd-s">${String(secs).padStart(2,'0')}</div><div class="nmc-unit-label">sec</div></div>`;
+
   card.className = soonClass;
+
   card.innerHTML = `
     <div class="nmc-pitch"></div>
     <div class="nmc-inner">
@@ -1419,29 +1644,36 @@ function renderNextMatchCard() {
         <div class="nmc-countdown-label">Kicks off in</div>
         <div class="nmc-countdown-units" id="cdUnits">${countdownHtml}</div>
       </div>
-      <button class="nmc-predict-btn" onclick="scrollToMatchOrFirst(${next.id})">Predict now &rarr;</button>
+      <button class="nmc-predict-btn" onclick="scrollToMatchOrFirst(${next.id})">Predict now →</button>
     </div>`;
 }
 
 function updateCountdown() {
   const card = document.getElementById('nextMatchCard');
   if (!card || card.style.display === 'none') return;
+
   const next = findNextMatch();
   if (!next) { card.style.display = 'none'; return; }
+
   const koUTC = MATCH_UTC[next.id];
   const diffMs = koUTC.getTime() - Date.now();
-  if (diffMs < 0) { renderNextMatchCard(); return; }
+  if (diffMs < 0) { renderNextMatchCard(); return; } // re-render to hide/show live
+
   const totalSecs = Math.floor(diffMs / 1000);
   const days  = Math.floor(totalSecs / 86400);
   const hours = Math.floor((totalSecs % 86400) / 3600);
   const mins  = Math.floor((totalSecs % 3600) / 60);
   const secs  = totalSecs % 60;
+
+  // Update only the numeric elements if they exist
   const elH = document.getElementById('cd-h');
   const elM = document.getElementById('cd-m');
   const elS = document.getElementById('cd-s');
   if (elH) elH.textContent = String(hours).padStart(2,'0');
   if (elM) elM.textContent = String(mins).padStart(2,'0');
   if (elS) elS.textContent = String(secs).padStart(2,'0');
+
+  // Add pulse class when < 30 min
   if (diffMs < 30 * 60000) card.classList.add('kickoff-soon');
 }
 
@@ -1451,10 +1683,15 @@ function updateCountdown() {
 function renderLiveBanner() {
   const banner = document.getElementById('liveMatchBanner');
   if (!banner) return;
+
   const live = findLiveMatch();
   if (!live) { banner.style.display = 'none'; return; }
+
   const phase = getMatchPhase(MATCH_UTC[live.id]);
+  // If we're past the 116-min window, findLiveMatch already returned null.
+  // But getMatchPhase can return null for very early milliseconds — guard it.
   if (!phase) { banner.style.display = 'none'; return; }
+
   const results = DB.results();
   const r = results[live.id] || {};
   const hasScore = r.h != null && r.h !== '' && r.a != null && r.a !== '';
@@ -1462,8 +1699,12 @@ function renderLiveBanner() {
   const aScore = hasScore ? r.a : '–';
   const isHT = phase.phase_code === 'ht';
   const isFT = phase.phase_code === 'ft';
+
+  // Progress percentage: 0-100 across the full 116-min window
   const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
   const progressPct = Math.min(100, Math.round((elapsedMin / 116) * 100));
+
+  // Build scorers row
   let scorersHtml = '';
   if (r.scorers && r.scorers.length) {
     scorersHtml = `<div class="lmb-scorers">
@@ -1473,9 +1714,14 @@ function renderLiveBanner() {
   } else if (!hasScore) {
     scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
   }
+
+  // Minute display
   const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
-  const minLabel   = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
-  const liveLabel  = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
+  const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
+
+  // Live pill label
+  const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
+
   banner.style.display = 'block';
   banner.innerHTML = `<div class="lmb-inner">
     <div class="lmb-live-dot">
@@ -1511,6 +1757,9 @@ function renderLiveBanner() {
 }
 
 /* ============================================================
+   TICK — runs every second
+   ============================================================ */
+/* ============================================================
    FILTER SCROLL ARROWS
    ============================================================ */
 function scrollFilter(which, dir) {
@@ -1521,12 +1770,18 @@ function scrollFilter(which, dir) {
 }
 
 function updateFilterArrows(which) {
-  const el   = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
+  const el = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
   const lBtn = document.getElementById(which === 'group' ? 'gfLeft' : 'afLeft');
   const rBtn = document.getElementById(which === 'group' ? 'gfRight' : 'afRight');
   if (!el || !lBtn || !rBtn) return;
+
+  // Only show arrows when content actually overflows (desktop)
   const overflows = el.scrollWidth > el.clientWidth + 4;
-  if (!overflows) { lBtn.classList.add('hidden'); rBtn.classList.add('hidden'); return; }
+  if (!overflows) {
+    lBtn.classList.add('hidden');
+    rBtn.classList.add('hidden');
+    return;
+  }
   lBtn.classList.toggle('hidden', el.scrollLeft <= 4);
   rBtn.classList.toggle('hidden', el.scrollLeft >= el.scrollWidth - el.clientWidth - 4);
 }
@@ -1536,6 +1791,7 @@ function initFilterArrows() {
     const el = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
     if (!el) return;
     el.addEventListener('scroll', () => updateFilterArrows(which), { passive: true });
+    // Use ResizeObserver so arrows respond when the viewport resizes
     if (window.ResizeObserver) {
       new ResizeObserver(() => updateFilterArrows(which)).observe(el);
     }
@@ -1543,29 +1799,26 @@ function initFilterArrows() {
   });
 }
 
-/* ============================================================
-   TICK — runs every second
-   ============================================================ */
 let _lastKoCheck = 0;
 function tick() {
   updateCountdown();
   renderLiveBanner();
   updateUnpredictedPill();
-  // Every 30 seconds check if any match just crossed kick-off
+  // Every 30 seconds, check if any match has crossed kick-off since last check
+  // and re-render groups so the card locks visually without requiring a page action.
   const now = Date.now();
   if (now - _lastKoCheck > 30000) {
     _lastKoCheck = now;
     const predictVisible = document.getElementById('predict') &&
                            document.getElementById('predict').style.display !== 'none';
     if (predictVisible) {
+      // Check if any match just tipped past KO in this window
       const justKicked = MATCHES.some(m => {
         const ko = MATCH_UTC[m.id].getTime();
         return ko > (now - 30000) && ko <= now;
       });
       if (justKicked) renderGroups();
     }
-    // Also re-render API section to update minutes
-    WC_API.renderSection();
   }
 }
 
@@ -1618,9 +1871,6 @@ function enterPredict(){
   renderNextMatchCard();
   renderLiveBanner();
   updateUnpredictedPill();
-  // Show the API scores section and start polling if not already started
-  WC_API.renderSection();
-  WC_API.startPolling(30000);
 }
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
@@ -1639,6 +1889,7 @@ function buildGroupFilter(){
   let html=`<button class="${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All groups</button>`;
   for(const g in GROUPS) html+=`<button class="${activeFilter===g?'on':''}" onclick="setFilter('${g}')">Group ${g}</button>`;
   f.innerHTML=html;
+  // Scroll the active button into view and refresh arrows
   setTimeout(()=>{
     const active=f.querySelector('button.on');
     if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
@@ -1648,7 +1899,7 @@ function buildGroupFilter(){
 function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 
 /* ============================================================
-   RENDER MATCHES
+   RENDER MATCHES — now shows local time
    ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
@@ -1659,12 +1910,14 @@ function renderGroups(){
   }
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
+  // Find which group the next upcoming match belongs to — auto-open it
   const nextM = findNextMatch();
   const autoOpenGroup = nextM ? nextM.g : null;
   let html="";
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
     let gpts=0, hasRes=false;
+    // Count unpredicted in this group (for badge)
     let unpredCount=0;
     gm.forEach(m=>{
       const p=scoreMatch(r.predictions[m.id],res[m.id]);
@@ -1703,26 +1956,35 @@ function matchCard(m,roster,result){
   const ph=pred.h, pa=pred.a;
   const koUTC = MATCH_UTC[m.id];
   const now = Date.now();
-  const kicked = koUTC.getTime() <= now;
+  const kicked = koUTC.getTime() <= now;             // kick-off has passed
   const hasResult = result && result.h!=null && result.h!=="" && result.a!=null && result.a!=="";
-  const locked = kicked || hasResult;
+  const locked = kicked || hasResult;                // lock at KO, not just on result
   const earned = hasResult ? scoreMatch(pred,result) : null;
+
+  // Local time display
   const localTime = fmtLocalTimeShort(koUTC);
   const tzAbbr = getTZAbbr();
+
   let winLine="";
   if(ph!=null&&pa!=null){
     if(+ph>+pa) winLine=`Your pick: <b>${m.h} win</b>`;
     else if(+pa>+ph) winLine=`Your pick: <b>${m.a} win</b>`;
     else winLine=`Your pick: <b>Draw</b>`;
   } else winLine=`<span style="color:var(--gold);font-weight:600">⬆ Set your prediction</span>`;
+
   const scorers=pred.scorers||[];
+
+  // Status label in meta bar
   let statusLabel = '';
   if(hasResult){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>';
   } else if(kicked){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto;color:var(--muted)">In progress</span>';
   }
+
+  // Card class — three states: open, kicked (no result yet), scored (result in)
   const cardClass = hasResult ? 'locked scored' : (kicked ? 'locked kicked' : '');
+
   let html=`<div class="match ${cardClass}" id="match-${m.id}">
     <div class="match-meta">
       <span style="flex:0 0 auto">${localTime} ${tzAbbr}</span>
@@ -1744,6 +2006,7 @@ function matchCard(m,roster,result){
       </div>
     </div>
     <div class="winner-line">${winLine}</div>`;
+
   if(!locked){
     html+=`<div class="scorers">
       <div class="slab">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(optional · +3 each)</span></div>
@@ -1760,6 +2023,7 @@ function matchCard(m,roster,result){
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
     </div>`;
   } else {
+    // kicked but no result entered yet
     html+=`<div class="result-strip kicked-strip">
       <span style="color:var(--muted)">⏳ Result pending</span>
       ${(ph!=null&&pa!=null)?`<span style="color:var(--muted);font-size:11px">Your pick: ${ph}–${pa}</span>`:'<span style="color:var(--muted);font-size:11px">No prediction set</span>'}
@@ -1875,11 +2139,13 @@ function renderLeaderboard(){
   const players=Object.keys(rosters).map(n=>({
     name:n, team:rosters[n].team, pts:totalPoints(rosters[n]), pred:predictedCount(rosters[n])
   })).sort((a,b)=> b.pts-a.pts || b.pred-a.pred || a.name.localeCompare(b.name));
+
   const res=DB.results();
   const played=Object.keys(res).filter(id=>res[id]&&res[id].h!=null&&res[id].h!=="").length;
   document.getElementById('stPlayers').textContent=players.length;
   document.getElementById('stPlayed').textContent=played;
   document.getElementById('stTop').textContent=players.length?players[0].pts:0;
+
   const pod=document.getElementById('podium');
   if(players.length===0){ pod.innerHTML=""; }
   else{
@@ -1894,6 +2160,7 @@ function renderLeaderboard(){
         <div style="font-size:11px;color:var(--muted);font-weight:600">points</div>
       </div>`).join('');
   }
+
   const list=document.getElementById('lbList');
   if(players.length===0){
     list.innerHTML=`<div class="empty">No players yet. Be the first — head to <b>Play &amp; Predict</b> and make your picks!</div>`;
@@ -1965,6 +2232,7 @@ function renderAdmin(){
   cont.innerHTML=ms.map(m=>{
     const r=res[m.id]||{};
     const scText=(r.scorers||[]).join(', ');
+    // Show local time in admin view too
     const koUTC = MATCH_UTC[m.id];
     const localTime = fmtLocalTimeShort(koUTC);
     const tzAbbr = getTZAbbr();
@@ -1994,7 +2262,6 @@ function setResult(id,side,val){
   renderScorebar();
   renderLiveBanner();
   renderNextMatchCard();
-  WC_API.renderSection();
 }
 function setResultScorers(id,val){
   const res=DB.results();
@@ -2036,19 +2303,31 @@ document.querySelectorAll('.tab').forEach(tab=>{
 });
 
 /* ============================================================
-   PREDICT NOW / SCROLL
+   PREDICT NOW — Scroll to the match card
    ============================================================ */
 function scrollToMatchOrFirst(matchId) {
+  // Try the specific match first; fall back to the first unpredicted
   const m = MATCHES.find(x => x.id === matchId);
-  if (m) { scrollToMatch(matchId); } else { scrollToFirstUnpredicted(); }
+  if (m) {
+    scrollToMatch(matchId);
+  } else {
+    scrollToFirstUnpredicted();
+  }
 }
 
 function scrollToMatch(matchId) {
+  // Groups are collapsed by default — find which group this match belongs to
+  // then switch to that group filter so the match is rendered in the DOM.
   const m = MATCHES.find(x => x.id === matchId);
   if (!m) return;
+
+  // If we're currently showing "all groups", just ensure the group body is open.
+  // If we're on a different single-group filter, switch to "all" first so we can
+  // find and open the right group.
   const doScroll = () => {
     const matchEl = document.getElementById('match-' + matchId);
     if (!matchEl) return;
+    // Ensure the group body containing this match is expanded
     const groupBody = matchEl.closest('.group-body');
     if (groupBody && !groupBody.classList.contains('open')) {
       groupBody.classList.add('open');
@@ -2059,12 +2338,15 @@ function scrollToMatch(matchId) {
     matchEl.style.animation = 'none';
     setTimeout(() => { matchEl.style.animation = 'highlightPulse .7s ease-out'; }, 30);
   };
+
+  // Switch to the group's filter so we render only that group (fast) and it opens
   if (activeFilter !== m.g && activeFilter !== 'all') {
     activeFilter = 'all';
     buildGroupFilter();
     renderGroups();
     setTimeout(doScroll, 120);
   } else if (activeFilter === 'all') {
+    // Already in all-groups view — open the group and scroll
     doScroll();
   } else {
     doScroll();
@@ -2075,21 +2357,24 @@ function scrollToFirstUnpredicted() {
   const r = getRoster(activeName);
   if (!r) return;
   const results = DB.results();
+  // Find first unplayed, un-predicted match
   const now2 = Date.now();
   const unpred = MATCHES.find(m => {
     const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
     if (hasResult) return false;
-    if (MATCH_UTC[m.id].getTime() <= now2) return false;
+    if (MATCH_UTC[m.id].getTime() <= now2) return false; // already kicked off
     const p = r.predictions[m.id];
     return !p || p.h == null || p.a == null;
   });
   if (!unpred) return;
+  // Open the group if needed
   activeFilter = 'all';
   buildGroupFilter();
   renderGroups();
   setTimeout(() => {
     const el = document.getElementById('match-' + unpred.id);
     if (el) {
+      // Make sure the group body is open
       const groupBody = el.closest('.group-body');
       if (groupBody && !groupBody.classList.contains('open')) {
         groupBody.classList.add('open');
@@ -2113,6 +2398,7 @@ function updateUnpredictedPill() {
   MATCHES.forEach(m => {
     const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
     if (hasResult) return;
+    // Don't count matches that have already kicked off — prediction window closed
     if (MATCH_UTC[m.id].getTime() <= now) return;
     const p = r.predictions[m.id];
     if (!p || p.h == null || p.a == null) count++;
@@ -2121,13 +2407,10 @@ function updateUnpredictedPill() {
     pill.style.display = 'none';
   } else {
     pill.style.display = 'flex';
-    pill.innerHTML = `<span class="pill-count">${count}</span> match${count === 1 ? '' : 'es'} to predict &rarr;`;
+    pill.innerHTML = `<span class="pill-count">${count}</span> match${count === 1 ? '' : 'es'} to predict →`;
   }
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 function init(){
   buildTeamGrid();
   buildDatalists();
@@ -2143,24 +2426,12 @@ function init(){
   if(activeName && getRoster(activeName)){
     enterPredict();
   }
+  // Initialise filter scroll arrows
   initFilterArrows();
-  // Per-second tick for countdown + live banner
+  // Start the per-second tick for countdown + live banner
   setInterval(tick, 1000);
-  // Full re-render of next match card every 30s
+  // Full re-render of next match card every 30s (in case the next match changes)
   setInterval(renderNextMatchCard, 30000);
-  // Cleanup API polling when page unloads
-  window.addEventListener('beforeunload', () => WC_API.stopPolling());
-  window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      WC_API.stopPolling();
-    } else {
-      // Resume polling when tab becomes visible again (if predict is showing)
-      const pr = document.getElementById('predict');
-      if (pr && pr.style.display !== 'none') {
-        WC_API.startPolling(30000);
-      }
-    }
-  });
 }
 init();
 </script>
