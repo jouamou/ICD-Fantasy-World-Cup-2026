@@ -147,34 +147,74 @@
   .btn.sm{padding:9px 16px;font-size:13px;border-radius:8px}
 
   /* ===== GROUP / MATCH ===== */
-  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px}
-  .toolbar .who{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:var(--head)}
-  .toolbar .who img{width:24px;height:17px;border-radius:3px;object-fit:cover}
-  .toolbar .spacer{flex:1}
-  .filter{display:flex;gap:6px;flex-wrap:wrap}
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar .who{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--head);flex:1;min-width:0}
+  .toolbar .who img{width:24px;height:17px;border-radius:3px;object-fit:cover;flex:0 0 auto}
+  .toolbar .who strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toolbar .spacer{flex:0}
+  .filter{
+    display:flex;gap:6px;flex-wrap:nowrap;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding-bottom:2px;
+  }
+  .filter::-webkit-scrollbar{display:none}
   .filter button{
     border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:30px;
-    padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;transition:.12s
+    padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:.12s;
+    flex:0 0 auto;white-space:nowrap;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;
   }
   .filter button:hover{border-color:var(--green-500);color:var(--green-700)}
   .filter button.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
 
-  .group-block{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+  .group-block{
+    margin-bottom:10px;border:1px solid var(--line);border-radius:13px;
+    overflow:hidden;background:var(--card);box-shadow:var(--shadow);
+  }
   .group-head{
-    display:flex;align-items:center;gap:11px;padding:14px 18px;cursor:pointer;
-    background:linear-gradient(90deg,var(--green-100),#fff);border-bottom:1px solid transparent
+    display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;
+    background:linear-gradient(90deg,var(--green-100) 0%,rgba(234,243,222,.4) 50%,#fff 100%);
+    border-bottom:1px solid transparent;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    min-height:58px; /* consistent height prevents jumping */
   }
   .group-head.open{border-bottom-color:var(--line)}
   .group-tag{
     font-family:'Archivo';font-weight:900;font-size:13px;color:#fff;background:var(--green-700);
-    width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center
+    width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    flex:0 0 32px;
   }
-  .group-head .gname{font-family:'Archivo';font-weight:800;font-size:15px;color:var(--head)}
-  .group-head .gteams{font-size:12px;color:var(--muted);margin-top:1px}
-  .group-head .chev{margin-left:auto;color:var(--muted);font-size:13px;transition:.2s;font-weight:700}
+  /* info column — takes available space, clips if needed */
+  .group-head .ginfo{flex:1 1 0;min-width:0;overflow:hidden}
+  .group-head .gname{font-family:'Archivo';font-weight:800;font-size:14px;color:var(--head);white-space:nowrap}
+  .group-head .gteams{
+    font-size:11px;color:var(--muted);margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  /* right cluster — pts pill + optional badge + chevron, never shrinks */
+  .group-head .gright{
+    flex:0 0 auto;display:flex;align-items:center;gap:7px;margin-left:6px;
+  }
+  .group-head .gpts{
+    font-family:'Oswald';font-weight:700;font-size:14px;
+    color:var(--green-700);background:var(--green-100);
+    padding:3px 10px;border-radius:20px;white-space:nowrap;
+    border:1px solid rgba(45,107,21,.12);
+  }
+  /* small orange dot showing N unpredicted matches */
+  .group-head .gunpred{
+    font-family:'Archivo';font-weight:800;font-size:11px;
+    color:#fff;background:var(--gold);
+    width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    flex:0 0 22px;
+  }
+  .group-head .chev{
+    color:var(--muted);font-size:11px;transition:.2s;font-weight:700;
+    opacity:.7;
+  }
   .group-head.open .chev{transform:rotate(180deg)}
-  .group-head .gpts{font-family:'Oswald';font-weight:700;font-size:15px;color:var(--green-700);background:var(--green-100);padding:3px 10px;border-radius:20px;margin-left:8px}
-  .group-body{display:none;padding:8px}
+  .group-body{display:none;padding:6px 8px 8px}
   .group-body.open{display:block}
 
   .match{
@@ -187,15 +227,23 @@
   .score-val{transition:color .12s}
   .match.scored{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 60%)}
   .match.locked{opacity:.96}
-  .match-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:11px;flex-wrap:wrap}
+  .match-meta{
+    display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+    font-weight:600;margin-bottom:10px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  /* on very narrow screens, let venue drop off */
+  .match-meta .venue{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
   .match-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--muted);opacity:.5}
   .match-meta .live{color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 
-  .vs-row{display:flex;align-items:center;gap:8px}
-  .side{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
-  .side img{width:48px;height:33px;border-radius:4px;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
-  .side .tname{font-size:12px;font-weight:700;color:var(--head);line-height:1.2}
-  .score-pick{display:flex;align-items:center;gap:4px}
+  .vs-row{display:flex;align-items:center;gap:6px;width:100%}
+  .side{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-width:0}
+  .side img{width:52px;height:36px;border-radius:5px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  .side .tname{font-size:11px;font-weight:700;color:var(--head);line-height:1.3;
+    word-break:break-word; /* allow long names to break cleanly */
+  }
+  .score-pick{display:flex;align-items:center;gap:6px;flex:0 0 auto}
   .stepper{display:flex;flex-direction:column;align-items:center}
   .stepper button{
     width:36px;height:30px;border:1px solid var(--line);background:#fafbf8;color:var(--green-700);
@@ -212,7 +260,10 @@
     min-width:42px;text-align:center;line-height:1
   }
   .score-sep{font-family:'Oswald';font-size:24px;color:var(--muted);padding:0 2px}
-  .winner-line{text-align:center;font-size:12px;font-weight:700;margin-top:10px;color:var(--muted);min-height:18px}
+  .winner-line{
+    text-align:center;font-size:12px;font-weight:700;margin-top:10px;
+    color:var(--muted);min-height:20px;padding:4px 0;
+  }
   .winner-line b{color:var(--green-700)}
 
   .scorers{margin-top:12px;border-top:1px dashed var(--line);padding-top:11px}
@@ -640,6 +691,14 @@
     #liveMatchBanner .lmb-team-name{font-size:11px}
     /* lb rows */
     .lb-row{padding:11px 12px}
+    /* match cards on mobile */
+    .match{padding:12px 10px;margin:6px 2px}
+    .side img{width:44px;height:30px}
+    .side .tname{font-size:10px}
+    .score-val{font-size:30px;min-width:36px}
+    .score-sep{font-size:20px}
+    /* group filter — make it full bleed so it scrolls edge to edge */
+    #groupFilter{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
     #nextMatchCard .nmc-inner { 
       padding: 14px; 
       gap: 12px;
@@ -1388,7 +1447,7 @@ function renderNextMatchCard() {
         <div class="nmc-countdown-label">Kicks off in</div>
         <div class="nmc-countdown-units" id="cdUnits">${countdownHtml}</div>
       </div>
-      <button class="nmc-predict-btn" onclick="scrollToMatch(${next.id})">Predict now →</button>
+      <button class="nmc-predict-btn" onclick="scrollToMatchOrFirst(${next.id})">Predict now →</button>
     </div>`;
 }
 
@@ -1591,21 +1650,34 @@ function renderGroups(){
   }
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
+  // Find which group the next upcoming match belongs to — auto-open it
+  const nextM = findNextMatch();
+  const autoOpenGroup = nextM ? nextM.g : null;
   let html="";
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
     let gpts=0, hasRes=false;
-    gm.forEach(m=>{ const p=scoreMatch(r.predictions[m.id],res[m.id]); if(p!=null){gpts+=p;hasRes=true;} });
-    const open = activeFilter!=='all';
+    // Count unpredicted in this group (for badge)
+    let unpredCount=0;
+    gm.forEach(m=>{
+      const p=scoreMatch(r.predictions[m.id],res[m.id]);
+      if(p!=null){gpts+=p;hasRes=true;}
+      const hasResult=res[m.id]&&res[m.id].h!=null&&res[m.id].h!=="";
+      if(!hasResult){ const pr=r.predictions[m.id]; if(!pr||pr.h==null||pr.a==null) unpredCount++; }
+    });
+    const open = activeFilter!=='all' || g===autoOpenGroup;
     html+=`<div class="group-block">
       <div class="group-head ${open?'open':''}" onclick="toggleGroup(this)">
         <div class="group-tag">${g}</div>
-        <div>
+        <div class="ginfo">
           <div class="gname">Group ${g}</div>
-          <div class="gteams">${GROUPS[g].join(' · ')}</div>
+          <div class="gteams">${GROUPS[g].map(t=>t.replace('Bosnia & Herzegovina','Bosnia &amp; Herz.').replace('Korea Republic','Korea Rep.')).join(' · ')}</div>
         </div>
-        ${hasRes?`<div class="gpts">${gpts} pts</div>`:''}
-        <div class="chev">▼</div>
+        <div class="gright">
+          ${hasRes?`<div class="gpts">${gpts}<span>pts</span></div>`:''}
+          ${(!hasRes&&unpredCount>0)?`<div class="gunpred">${unpredCount}</div>`:''}
+          <div class="chev">▼</div>
+        </div>
       </div>
       <div class="group-body ${open?'open':''}">`;
     gm.forEach(m=>{ html+=matchCard(m,r,res[m.id]); });
@@ -1641,10 +1713,10 @@ function matchCard(m,roster,result){
 
   let html=`<div class="match ${locked?'locked':''} ${hasResult?'scored':''}" id="match-${m.id}">
     <div class="match-meta">
-      <span>${localTime} ${tzAbbr}</span>
+      <span style="flex:0 0 auto">${localTime} ${tzAbbr}</span>
       <span class="dot"></span>
-      <span>${m.venue}</span>
-      ${locked?'<span class="dot"></span><span class="live">Result in · locked</span>':''}
+      <span class="venue">${m.venue.split(',')[0]}</span>
+      ${locked?'<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>':''}
     </div>
     <div class="vs-row">
       <div class="side">
@@ -1948,14 +2020,51 @@ document.querySelectorAll('.tab').forEach(tab=>{
 /* ============================================================
    PREDICT NOW — Scroll to the match card
    ============================================================ */
+function scrollToMatchOrFirst(matchId) {
+  // Try the specific match first; fall back to the first unpredicted
+  const m = MATCHES.find(x => x.id === matchId);
+  if (m) {
+    scrollToMatch(matchId);
+  } else {
+    scrollToFirstUnpredicted();
+  }
+}
+
 function scrollToMatch(matchId) {
-  const matchEl = document.getElementById('match-' + matchId);
-  if (matchEl) {
+  // Groups are collapsed by default — find which group this match belongs to
+  // then switch to that group filter so the match is rendered in the DOM.
+  const m = MATCHES.find(x => x.id === matchId);
+  if (!m) return;
+
+  // If we're currently showing "all groups", just ensure the group body is open.
+  // If we're on a different single-group filter, switch to "all" first so we can
+  // find and open the right group.
+  const doScroll = () => {
+    const matchEl = document.getElementById('match-' + matchId);
+    if (!matchEl) return;
+    // Ensure the group body containing this match is expanded
+    const groupBody = matchEl.closest('.group-body');
+    if (groupBody && !groupBody.classList.contains('open')) {
+      groupBody.classList.add('open');
+      const groupHead = groupBody.previousElementSibling;
+      if (groupHead) groupHead.classList.add('open');
+    }
     matchEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     matchEl.style.animation = 'none';
-    setTimeout(() => {
-      matchEl.style.animation = 'highlightPulse .6s ease-out';
-    }, 10);
+    setTimeout(() => { matchEl.style.animation = 'highlightPulse .7s ease-out'; }, 30);
+  };
+
+  // Switch to the group's filter so we render only that group (fast) and it opens
+  if (activeFilter !== m.g && activeFilter !== 'all') {
+    activeFilter = 'all';
+    buildGroupFilter();
+    renderGroups();
+    setTimeout(doScroll, 120);
+  } else if (activeFilter === 'all') {
+    // Already in all-groups view — open the group and scroll
+    doScroll();
+  } else {
+    doScroll();
   }
 }
 
