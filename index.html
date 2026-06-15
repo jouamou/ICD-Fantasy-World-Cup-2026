@@ -152,12 +152,51 @@
   .toolbar .who img{width:24px;height:17px;border-radius:3px;object-fit:cover;flex:0 0 auto}
   .toolbar .who strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .toolbar .spacer{flex:0}
-  .filter{
-    display:flex;gap:6px;flex-wrap:nowrap;
-    overflow-x:auto;-webkit-overflow-scrolling:touch;
-    scrollbar-width:none;padding-bottom:2px;
+  /* Filter wrapper — scroll arrows on desktop, swipe on mobile */
+  .filter-wrap{
+    position:relative;
+    margin-bottom:16px;
   }
-  .filter::-webkit-scrollbar{display:none}
+  .filter-wrap .farrow{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:32px;height:32px;border-radius:50%;
+    background:#fff;border:1.5px solid var(--line);
+    color:var(--head);cursor:pointer;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 6px rgba(0,0,0,.1);
+    transition:.15s;z-index:2;
+    line-height:1;
+  }
+  .filter-wrap .farrow:hover{background:var(--green-100);border-color:var(--green-500);color:var(--green-700)}
+  .filter-wrap .farrow.left{left:0}
+  .filter-wrap .farrow.right{right:0}
+  .filter-wrap .farrow.hidden{opacity:0;pointer-events:none}
+  .filter-wrap .fscroll{
+    /* desktop: natural wrap, no arrows needed when it fits */
+    display:flex;gap:6px;flex-wrap:wrap;
+    padding:2px 0;
+  }
+  .filter-wrap .fscroll button,.filter button{
+    border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:30px;
+    padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:.12s;
+    flex:0 0 auto;white-space:nowrap;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  }
+  .filter-wrap .fscroll button:hover,.filter button:hover{border-color:var(--green-500);color:var(--green-700)}
+  .filter-wrap .fscroll button.on,.filter button.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+
+  @media(max-width:700px){
+    /* on mobile: single row, horizontal swipe, hide arrows */
+    .filter-wrap .fscroll{
+      flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;padding-bottom:2px;
+    }
+    .filter-wrap .fscroll::-webkit-scrollbar{display:none}
+    .filter-wrap .farrow{display:none}
+  }
+
+  /* keep the .filter class working for non-wrapped usages (sample section etc) */
+  .filter{display:flex;gap:6px;flex-wrap:wrap;}
   .filter button{
     border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:30px;
     padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:.12s;
@@ -261,10 +300,23 @@
   .match{
     border:1px solid var(--line);border-radius:11px;padding:14px;margin:8px 4px;background:#fff;
     transition:border-color .15s, box-shadow .15s;
-    /* Touch press feel */
     -webkit-tap-highlight-color:transparent;
   }
   .match:not(.locked):active{background:var(--green-100)}
+  /* Kicked off but no result yet — muted, slightly indented feel */
+  .match.kicked{
+    background:#fafafa;
+    border-color:#e0e0db;
+    opacity:.88;
+  }
+  .kicked-strip{
+    margin-top:11px;
+    background:#f5f5f2;
+    border-radius:8px;padding:9px 12px;
+    display:flex;align-items:center;gap:10px;
+    font-size:12px;font-weight:600;
+    flex-wrap:wrap;border:1px solid var(--line);
+  }
   .score-val{transition:color .12s}
   .match.scored{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 60%)}
   .match.locked{opacity:.96}
@@ -738,8 +790,7 @@
     .side .tname{font-size:10px}
     .score-val{font-size:30px;min-width:36px}
     .score-sep{font-size:20px}
-    /* group filter — make it full bleed so it scrolls edge to edge */
-    #groupFilter{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+
     #nextMatchCard .nmc-inner { 
       padding: 14px; 
       gap: 12px;
@@ -864,7 +915,11 @@
       </div>
       <!-- Floating unpredicted-matches pill -->
       <button id="unpredictedPill" onclick="scrollToFirstUnpredicted()"></button>
-      <div class="filter" id="groupFilter" style="margin-bottom:16px"></div>
+      <div class="filter-wrap" id="groupFilterWrap">
+        <button class="farrow left hidden" id="gfLeft" onclick="scrollFilter('group',-1)" aria-label="Scroll left">&#8249;</button>
+        <div class="fscroll" id="groupFilter"></div>
+        <button class="farrow right hidden" id="gfRight" onclick="scrollFilter('group',1)" aria-label="Scroll right">&#8250;</button>
+      </div>
       <div id="groupsContainer" style="padding-top:2px"></div>
     </div>
   </section>
@@ -899,7 +954,7 @@
       </div>
       <div class="rule-card">
         <div class="rhead"><div class="rico">⏱️</div><h3>Editing predictions</h3></div>
-        <p>Predict as early as you like and change your mind freely. Once the official result for a match is entered, that match locks and your points are calculated automatically. Nothing to submit, everything saves as you go.</p>
+        <p>Predict as early as you like and change your mind freely. Predictions lock automatically at kick-off — you can no longer edit a match once it starts. Once the official result is entered, your points are calculated automatically. Nothing to submit, everything saves as you go.</p>
       </div>
       <div class="rule-card">
         <div class="rhead"><div class="rico">⚽</div><h3>Goalscorers</h3></div>
@@ -944,13 +999,17 @@
     </div>
     <div id="adminPanel" style="display:none">
       <div class="admin-note">
-        <b>Organiser mode.</b> Enter the final score and (optionally) the goalscorers for each match as it's played. Leave a match blank until it's finished. Everyone's points are calculated automatically and any match with a result becomes locked for players. Results are saved in this browser, so enter them from one consistent device.
+        <b>Organiser mode.</b> Enter the final score and (optionally) the goalscorers for each match as it's played. Players' predictions lock automatically at kick-off. Once you enter a result, points are calculated instantly. Results are saved to Firebase and shared live across all devices.
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
           <button class="btn sm" onclick="forceSyncToCloud()" style="background:#7fbb42;color:#fff">↑ Force sync staff data to cloud</button>
           <div style="font-size:11px;color:var(--muted);margin-top:6px">Use this if staff filled predictions before rules were published. Syncs all local data to Firebase instantly.</div>
         </div>
       </div>
-      <div class="filter" id="adminFilter" style="margin-bottom:16px"></div>
+      <div class="filter-wrap" id="adminFilterWrap">
+        <button class="farrow left hidden" id="afLeft" onclick="scrollFilter('admin',-1)" aria-label="Scroll left">&#8249;</button>
+        <div class="fscroll" id="adminFilter"></div>
+        <button class="farrow right hidden" id="afRight" onclick="scrollFilter('admin',1)" aria-label="Scroll right">&#8250;</button>
+      </div>
       <div id="adminContainer"></div>
     </div>
   </section>
@@ -1603,10 +1662,67 @@ function renderLiveBanner() {
 /* ============================================================
    TICK — runs every second
    ============================================================ */
+/* ============================================================
+   FILTER SCROLL ARROWS
+   ============================================================ */
+function scrollFilter(which, dir) {
+  const el = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
+  if (!el) return;
+  el.scrollBy({ left: dir * 160, behavior: 'smooth' });
+  setTimeout(() => updateFilterArrows(which), 200);
+}
+
+function updateFilterArrows(which) {
+  const el = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
+  const lBtn = document.getElementById(which === 'group' ? 'gfLeft' : 'afLeft');
+  const rBtn = document.getElementById(which === 'group' ? 'gfRight' : 'afRight');
+  if (!el || !lBtn || !rBtn) return;
+
+  // Only show arrows when content actually overflows (desktop)
+  const overflows = el.scrollWidth > el.clientWidth + 4;
+  if (!overflows) {
+    lBtn.classList.add('hidden');
+    rBtn.classList.add('hidden');
+    return;
+  }
+  lBtn.classList.toggle('hidden', el.scrollLeft <= 4);
+  rBtn.classList.toggle('hidden', el.scrollLeft >= el.scrollWidth - el.clientWidth - 4);
+}
+
+function initFilterArrows() {
+  ['group', 'admin'].forEach(which => {
+    const el = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
+    if (!el) return;
+    el.addEventListener('scroll', () => updateFilterArrows(which), { passive: true });
+    // Use ResizeObserver so arrows respond when the viewport resizes
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => updateFilterArrows(which)).observe(el);
+    }
+    updateFilterArrows(which);
+  });
+}
+
+let _lastKoCheck = 0;
 function tick() {
   updateCountdown();
   renderLiveBanner();
   updateUnpredictedPill();
+  // Every 30 seconds, check if any match has crossed kick-off since last check
+  // and re-render groups so the card locks visually without requiring a page action.
+  const now = Date.now();
+  if (now - _lastKoCheck > 30000) {
+    _lastKoCheck = now;
+    const predictVisible = document.getElementById('predict') &&
+                           document.getElementById('predict').style.display !== 'none';
+    if (predictVisible) {
+      // Check if any match just tipped past KO in this window
+      const justKicked = MATCHES.some(m => {
+        const ko = MATCH_UTC[m.id].getTime();
+        return ko > (now - 30000) && ko <= now;
+      });
+      if (justKicked) renderGroups();
+    }
+  }
 }
 
 /* ============================================================
@@ -1676,6 +1792,12 @@ function buildGroupFilter(){
   let html=`<button class="${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All groups</button>`;
   for(const g in GROUPS) html+=`<button class="${activeFilter===g?'on':''}" onclick="setFilter('${g}')">Group ${g}</button>`;
   f.innerHTML=html;
+  // Scroll the active button into view and refresh arrows
+  setTimeout(()=>{
+    const active=f.querySelector('button.on');
+    if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    updateFilterArrows('group');
+  },50);
 }
 function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 
@@ -1704,7 +1826,8 @@ function renderGroups(){
       const p=scoreMatch(r.predictions[m.id],res[m.id]);
       if(p!=null){gpts+=p;hasRes=true;}
       const hasResult=res[m.id]&&res[m.id].h!=null&&res[m.id].h!=="";
-      if(!hasResult){ const pr=r.predictions[m.id]; if(!pr||pr.h==null||pr.a==null) unpredCount++; }
+      const koGone = MATCH_UTC[m.id].getTime() <= Date.now();
+      if(!hasResult&&!koGone){ const pr=r.predictions[m.id]; if(!pr||pr.h==null||pr.a==null) unpredCount++; }
     });
     const open = activeFilter!=='all' || g===autoOpenGroup;
     html+=`<div class="group-block">
@@ -1734,12 +1857,14 @@ function toggleGroup(head){
 function matchCard(m,roster,result){
   const pred=roster.predictions[m.id]||{};
   const ph=pred.h, pa=pred.a;
+  const koUTC = MATCH_UTC[m.id];
+  const now = Date.now();
+  const kicked = koUTC.getTime() <= now;             // kick-off has passed
   const hasResult = result && result.h!=null && result.h!=="" && result.a!=null && result.a!=="";
-  const locked=hasResult;
+  const locked = kicked || hasResult;                // lock at KO, not just on result
   const earned = hasResult ? scoreMatch(pred,result) : null;
 
   // Local time display
-  const koUTC = MATCH_UTC[m.id];
   const localTime = fmtLocalTimeShort(koUTC);
   const tzAbbr = getTZAbbr();
 
@@ -1752,12 +1877,23 @@ function matchCard(m,roster,result){
 
   const scorers=pred.scorers||[];
 
-  let html=`<div class="match ${locked?'locked':''} ${hasResult?'scored':''}" id="match-${m.id}">
+  // Status label in meta bar
+  let statusLabel = '';
+  if(hasResult){
+    statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>';
+  } else if(kicked){
+    statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto;color:var(--muted)">In progress</span>';
+  }
+
+  // Card class — three states: open, kicked (no result yet), scored (result in)
+  const cardClass = hasResult ? 'locked scored' : (kicked ? 'locked kicked' : '');
+
+  let html=`<div class="match ${cardClass}" id="match-${m.id}">
     <div class="match-meta">
       <span style="flex:0 0 auto">${localTime} ${tzAbbr}</span>
       <span class="dot"></span>
       <span class="venue">${m.venue.split(',')[0]}</span>
-      ${locked?'<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>':''}
+      ${statusLabel}
     </div>
     <div class="vs-row">
       <div class="side">
@@ -1782,12 +1918,18 @@ function matchCard(m,roster,result){
     html+=`</div>
       <button class="add-scorer" onclick="addScorer(${m.id})">＋ Add goalscorer</button>
     </div>`;
-  } else {
+  } else if(hasResult){
     html+=`<div class="result-strip">
       <span>Final result:</span>
       <span class="actual">${m.h} ${result.h} – ${result.a} ${m.a}</span>
       ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.join(', ')}</span>`:''}
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
+    </div>`;
+  } else {
+    // kicked but no result entered yet
+    html+=`<div class="result-strip kicked-strip">
+      <span style="color:var(--muted)">⏳ Result pending</span>
+      ${(ph!=null&&pa!=null)?`<span style="color:var(--muted);font-size:11px">Your pick: ${ph}–${pa}</span>`:'<span style="color:var(--muted);font-size:11px">No prediction set</span>'}
     </div>`;
   }
   html+=`</div>`;
@@ -1979,6 +2121,11 @@ function buildAdminFilter(){
   let html=`<button class="${adminFilter==='all'?'on':''}" onclick="setAdminFilter('all')">All groups</button>`;
   for(const g in GROUPS) html+=`<button class="${adminFilter===g?'on':''}" onclick="setAdminFilter('${g}')">Group ${g}</button>`;
   f.innerHTML=html;
+  setTimeout(()=>{
+    const active=f.querySelector('button.on');
+    if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    updateFilterArrows('admin');
+  },50);
 }
 function setAdminFilter(g){ adminFilter=g; buildAdminFilter(); renderAdmin(); }
 function renderAdmin(){
@@ -2114,9 +2261,11 @@ function scrollToFirstUnpredicted() {
   if (!r) return;
   const results = DB.results();
   // Find first unplayed, un-predicted match
+  const now2 = Date.now();
   const unpred = MATCHES.find(m => {
     const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
     if (hasResult) return false;
+    if (MATCH_UTC[m.id].getTime() <= now2) return false; // already kicked off
     const p = r.predictions[m.id];
     return !p || p.h == null || p.a == null;
   });
@@ -2148,9 +2297,12 @@ function updateUnpredictedPill() {
   if (!r) { pill.style.display='none'; return; }
   const results = DB.results();
   let count = 0;
+  const now = Date.now();
   MATCHES.forEach(m => {
     const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
     if (hasResult) return;
+    // Don't count matches that have already kicked off — prediction window closed
+    if (MATCH_UTC[m.id].getTime() <= now) return;
     const p = r.predictions[m.id];
     if (!p || p.h == null || p.a == null) count++;
   });
@@ -2177,6 +2329,8 @@ function init(){
   if(activeName && getRoster(activeName)){
     enterPredict();
   }
+  // Initialise filter scroll arrows
+  initFilterArrows();
   // Start the per-second tick for countdown + live banner
   setInterval(tick, 1000);
   // Full re-render of next match card every 30s (in case the next match changes)
