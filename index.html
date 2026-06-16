@@ -1067,6 +1067,10 @@ try {
  * The schedule uses ET (America/New_York = UTC-5 in winter / UTC-4 in summer).
  * June/July = EDT = UTC-4.
  * We encode each match as "YYYY-MM-DD HH:MM ET" and convert properly.
+ *
+ * IMPORTANT: Dates in the MATCHES array are the ET calendar date of the kickoff.
+ * For midnight ET kickoffs (12:00 AM ET), the date is already the ET date of that
+ * midnight — i.e. the day the clock reads midnight in Eastern time.
  */
 function parseMatchUTC(isoDate, etTimeStr) {
   // etTimeStr examples: "3:00 PM ET", "10:00 PM ET", "12:00 AM ET"
@@ -1082,8 +1086,6 @@ function parseMatchUTC(isoDate, etTimeStr) {
   // Build UTC date string
   const base = new Date(isoDate + 'T00:00:00Z');
   base.setUTCHours(utcH, m, 0, 0);
-  // Handle date rollover if UTC hours >= 24 (shouldn't happen) or < 0 (midnight ET = day before UTC?)
-  // 12:00 AM ET = midnight ET = 04:00 UTC same day — fine
   return base;
 }
 
@@ -1122,8 +1124,6 @@ function getTZAbbr() {
 
 /* ============================================================
    MATCH PHASE / MINUTE CALCULATOR
-   Given a match kick-off UTC time, compute current minute & phase.
-   Half-time: 45+5 min → 15 min break → 2nd half 45+6
    ============================================================ */
 function getMatchPhase(kickoffUTC) {
   const now = Date.now();
@@ -1131,15 +1131,8 @@ function getMatchPhase(kickoffUTC) {
   const elapsedMs = now - ko;
   const elapsedMin = elapsedMs / 60000;
 
-  // Thresholds (minutes from kick-off):
-  //  0 – 50     → 1st half (45 min + up to 5 added)
-  //  50 – 65    → Half time
-  //  65 – 116   → 2nd half (45 min + up to 6 added)
-  //  116 – ...  → Full time (within 3 hours of KO, then we stop showing)
-
-  if (elapsedMin < 0) return null; // not started
+  if (elapsedMin < 0) return null;
   if (elapsedMin < 50) {
-    // 1st half
     const min = Math.min(Math.floor(elapsedMin), 45);
     const added = Math.max(0, Math.floor(elapsedMin) - 45);
     const displayMin = added > 0 ? `45+${added}` : `${min}`;
@@ -1149,7 +1142,6 @@ function getMatchPhase(kickoffUTC) {
     return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht' };
   }
   if (elapsedMin < 116) {
-    // 2nd half: starts at elapsed 65 min
     const secondHalfMin = elapsedMin - 65;
     const min = 45 + Math.min(Math.floor(secondHalfMin), 45);
     const added = Math.max(0, Math.floor(secondHalfMin) - 45);
@@ -1159,7 +1151,7 @@ function getMatchPhase(kickoffUTC) {
   if (elapsedMin < 180) {
     return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft' };
   }
-  return null; // match is long over, hide
+  return null;
 }
 
 /* ============================================================
@@ -1249,6 +1241,15 @@ const REAL_PLAYERS = {
 };
 
 const M = (id,g,h,a,date,time,venue)=>({id,g,h,a,date,time,venue});
+
+/* ============================================================
+   MATCH DATA
+   NOTE ON MIDNIGHT KICKOFFS (12:00 AM ET):
+   These matches kick off at 9 PM Pacific / midnight Eastern.
+   The date stored here is the ET calendar date of that midnight —
+   i.e. the day the clock reads 12:00 AM in Eastern time.
+   parseMatchUTC() converts correctly: 12:00 AM ET → 04:00 UTC same date.
+   ============================================================ */
 const MATCHES = [
   M(1,"A","Mexico","South Africa","2026-06-11","3:00 PM ET","Estadio Azteca, Mexico City"),
   M(2,"A","Korea Republic","Czechia","2026-06-11","10:00 PM ET","Estadio Akron, Guadalajara"),
@@ -1269,7 +1270,7 @@ const MATCHES = [
   M(17,"C","Scotland","Brazil","2026-06-24","6:00 PM ET","Hard Rock Stadium, Miami"),
   M(18,"C","Morocco","Haiti","2026-06-24","6:00 PM ET","Mercedes-Benz Stadium, Atlanta"),
   M(19,"D","United States","Paraguay","2026-06-12","9:00 PM ET","SoFi Stadium, Inglewood"),
-  M(20,"D","Australia","Türkiye","2026-06-13","12:00 AM ET","BC Place, Vancouver"),
+  M(20,"D","Australia","Türkiye","2026-06-14","12:00 AM ET","BC Place, Vancouver"),
   M(21,"D","United States","Australia","2026-06-19","3:00 PM ET","Lumen Field, Seattle"),
   M(22,"D","Türkiye","Paraguay","2026-06-19","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(23,"D","Türkiye","United States","2026-06-25","10:00 PM ET","SoFi Stadium, Inglewood"),
@@ -1283,7 +1284,7 @@ const MATCHES = [
   M(31,"F","Netherlands","Japan","2026-06-14","4:00 PM ET","AT&T Stadium, Arlington"),
   M(32,"F","Sweden","Tunisia","2026-06-14","10:00 PM ET","Estadio BBVA, Monterrey"),
   M(33,"F","Netherlands","Sweden","2026-06-20","1:00 PM ET","NRG Stadium, Houston"),
-  M(34,"F","Tunisia","Japan","2026-06-20","12:00 AM ET","Estadio BBVA, Monterrey"),
+  M(34,"F","Tunisia","Japan","2026-06-21","12:00 AM ET","Estadio BBVA, Monterrey"),
   M(35,"F","Japan","Sweden","2026-06-25","7:00 PM ET","AT&T Stadium, Arlington"),
   M(36,"F","Tunisia","Netherlands","2026-06-25","7:00 PM ET","Arrowhead Stadium, Kansas City"),
   M(37,"G","Belgium","Egypt","2026-06-15","3:00 PM ET","Lumen Field, Seattle"),
@@ -1305,7 +1306,7 @@ const MATCHES = [
   M(53,"I","Norway","France","2026-06-26","3:00 PM ET","Gillette Stadium, Foxboro"),
   M(54,"I","Senegal","Iraq","2026-06-26","3:00 PM ET","BMO Field, Toronto"),
   M(55,"J","Argentina","Algeria","2026-06-16","9:00 PM ET","Arrowhead Stadium, Kansas City"),
-  M(56,"J","Austria","Jordan","2026-06-16","12:00 AM ET","Levi's Stadium, Santa Clara"),
+  M(56,"J","Austria","Jordan","2026-06-17","12:00 AM ET","Levi's Stadium, Santa Clara"),
   M(57,"J","Argentina","Austria","2026-06-22","1:00 PM ET","AT&T Stadium, Arlington"),
   M(58,"J","Jordan","Algeria","2026-06-22","11:00 PM ET","Levi's Stadium, Santa Clara"),
   M(59,"J","Jordan","Argentina","2026-06-27","10:00 PM ET","AT&T Stadium, Arlington"),
@@ -1411,65 +1412,28 @@ function toast(msg){
 }
 
 /* ---------- scoring ---------- */
-/* ============================================================
-   FUZZY NAME MATCHING
-   Handles: accents, initials (J. Quiñones), last-name only,
-   reversed order, extra spaces, own-goal variants.
-   ============================================================ */
-
-// Strip diacritics: é→e, ñ→n, ü→u, ø→o, etc.
 function stripAccents(s){
   return s.normalize('NFD').replace(/[̀-ͯ]/g,'');
 }
-
-// Canonical form: lowercase, no accents, collapse whitespace, strip punctuation
 function canon(s){
   return stripAccents(s||'')
     .toLowerCase()
-    .replace(/['.,-]/g,' ')   // treat punctuation as space
+    .replace(/['.,-]/g,' ')
     .replace(/\s+/g,' ')
     .trim();
 }
-
-// Split into tokens, filter short noise
 function tokens(s){ return canon(s).split(' ').filter(t=>t.length>0); }
-
-// "Own goal" synonyms
 const OG_WORDS = ['own','goal','og','own goal','o.g','o.g.'];
 function isOwnGoal(s){ const c=canon(s); return OG_WORDS.some(w=>c===w||c.includes(w)); }
 
-/* nameFuzzyMatch(pred, real) → true if pred plausibly refers to the same player as real
-   
-   Real name format from our data: "Julián Quiñones"  (first last)
-   Pred may be any of:
-     julián quiñones / julian quinones  (exact / no accents)
-     j. quiñones / j quinones           (FIFA initial style)
-     quiñones / quinones                (last name only)
-     quiñones julián                    (reversed)
-     quiñones j.                        (reversed initial)
-*/
 function nameFuzzyMatch(pred, real){
   if(!pred || !real) return false;
-
-  // Own goal special case — accept any variant
   if(isOwnGoal(pred) && isOwnGoal(real)) return true;
-
-  const pt = tokens(pred);   // prediction tokens
-  const rt = tokens(real);   // real-name tokens
-
+  const pt = tokens(pred);
+  const rt = tokens(real);
   if(!pt.length || !rt.length) return false;
-
-  // 1. Exact canonical match (covers accents & case)
   if(canon(pred) === canon(real)) return true;
-
-  // 2. All prediction tokens appear in real tokens (subset match)
-  //    e.g. ["quinones"] ⊆ ["julian","quinones"] → true
-  //    e.g. ["quinones","julian"] ⊆ ["julian","quinones"] → true
   if(pt.every(p => rt.some(r => r === p))) return true;
-
-  // 3. Initial match: pred token is a single letter matching first char of a real token
-  //    e.g. pred=["j","quinones"], real=["julian","quinones"]
-  //    Each pred token must match a distinct real token (exactly or by initial)
   const usedRt = new Set();
   const initialMatch = pt.every(p => {
     const idx = rt.findIndex((r, i) => {
@@ -1481,14 +1445,7 @@ function nameFuzzyMatch(pred, real){
     return true;
   });
   if(initialMatch) return true;
-
-  // 4. Last-name-only: if pred is a single token and matches the LAST token of real
-  //    e.g. pred="quinones", real="julian quinones" → rt.last = "quinones" ✓
   if(pt.length === 1 && rt.length >= 2 && rt[rt.length - 1] === pt[0]) return true;
-
-  // 5. Reversed order with initials
-  //    e.g. pred=["quinones","j"], real=["julian","quinones"]
-  //    Try matching reversed pred against real
   const ptRev = [...pt].reverse();
   const usedRt2 = new Set();
   const revMatch = ptRev.every(p => {
@@ -1501,7 +1458,6 @@ function nameFuzzyMatch(pred, real){
     return true;
   });
   if(revMatch) return true;
-
   return false;
 }
 
@@ -1550,24 +1506,18 @@ function predictedCount(roster){
 function findNextMatch() {
   const now = Date.now();
   const results = DB.results();
-  // Find the next match that hasn't started yet (no result and KO in future)
   const unplayed = MATCHES.filter(m => {
     const r = results[m.id];
     const hasResult = r && r.h != null && r.h !== "";
     return !hasResult && MATCH_UTC[m.id].getTime() > now;
   });
   if (!unplayed.length) return null;
-  // Sort ascending by kick-off
   unplayed.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
   return unplayed[0];
 }
 
 function findLiveMatch() {
   const now = Date.now();
-  // Show banner for any match within its live time window (kick-off to ~116 min = 2nd half + added time).
-  // We intentionally do NOT gate on whether a result has been entered — the banner stays
-  // visible during the game even after the admin enters the score, and disappears only
-  // when the estimated final whistle time is reached.
   const live = MATCHES.filter(m => {
     const ko = MATCH_UTC[m.id].getTime();
     const elapsed = now - ko;
@@ -1603,7 +1553,6 @@ function renderNextMatchCard() {
   const localTimeStr = fmtLocalTimeShort(koUTC);
   const soonClass = diffMs < 30 * 60000 ? 'kickoff-soon' : '';
 
-  // Format countdown units
   let countdownHtml = '';
   if (days > 0) {
     countdownHtml += `<div class="nmc-unit"><div class="nmc-num">${String(days).padStart(2,'0')}</div><div class="nmc-unit-label">days</div></div><div class="nmc-colon">:</div>`;
@@ -1657,7 +1606,7 @@ function updateCountdown() {
 
   const koUTC = MATCH_UTC[next.id];
   const diffMs = koUTC.getTime() - Date.now();
-  if (diffMs < 0) { renderNextMatchCard(); return; } // re-render to hide/show live
+  if (diffMs < 0) { renderNextMatchCard(); return; }
 
   const totalSecs = Math.floor(diffMs / 1000);
   const days  = Math.floor(totalSecs / 86400);
@@ -1665,7 +1614,6 @@ function updateCountdown() {
   const mins  = Math.floor((totalSecs % 3600) / 60);
   const secs  = totalSecs % 60;
 
-  // Update only the numeric elements if they exist
   const elH = document.getElementById('cd-h');
   const elM = document.getElementById('cd-m');
   const elS = document.getElementById('cd-s');
@@ -1673,7 +1621,6 @@ function updateCountdown() {
   if (elM) elM.textContent = String(mins).padStart(2,'0');
   if (elS) elS.textContent = String(secs).padStart(2,'0');
 
-  // Add pulse class when < 30 min
   if (diffMs < 30 * 60000) card.classList.add('kickoff-soon');
 }
 
@@ -1688,8 +1635,6 @@ function renderLiveBanner() {
   if (!live) { banner.style.display = 'none'; return; }
 
   const phase = getMatchPhase(MATCH_UTC[live.id]);
-  // If we're past the 116-min window, findLiveMatch already returned null.
-  // But getMatchPhase can return null for very early milliseconds — guard it.
   if (!phase) { banner.style.display = 'none'; return; }
 
   const results = DB.results();
@@ -1700,11 +1645,9 @@ function renderLiveBanner() {
   const isHT = phase.phase_code === 'ht';
   const isFT = phase.phase_code === 'ft';
 
-  // Progress percentage: 0-100 across the full 116-min window
   const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
   const progressPct = Math.min(100, Math.round((elapsedMin / 116) * 100));
 
-  // Build scorers row
   let scorersHtml = '';
   if (r.scorers && r.scorers.length) {
     scorersHtml = `<div class="lmb-scorers">
@@ -1715,11 +1658,8 @@ function renderLiveBanner() {
     scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
   }
 
-  // Minute display
   const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
-
-  // Live pill label
   const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
 
   banner.style.display = 'block';
@@ -1757,9 +1697,6 @@ function renderLiveBanner() {
 }
 
 /* ============================================================
-   TICK — runs every second
-   ============================================================ */
-/* ============================================================
    FILTER SCROLL ARROWS
    ============================================================ */
 function scrollFilter(which, dir) {
@@ -1774,8 +1711,6 @@ function updateFilterArrows(which) {
   const lBtn = document.getElementById(which === 'group' ? 'gfLeft' : 'afLeft');
   const rBtn = document.getElementById(which === 'group' ? 'gfRight' : 'afRight');
   if (!el || !lBtn || !rBtn) return;
-
-  // Only show arrows when content actually overflows (desktop)
   const overflows = el.scrollWidth > el.clientWidth + 4;
   if (!overflows) {
     lBtn.classList.add('hidden');
@@ -1791,7 +1726,6 @@ function initFilterArrows() {
     const el = document.getElementById(which === 'group' ? 'groupFilter' : 'adminFilter');
     if (!el) return;
     el.addEventListener('scroll', () => updateFilterArrows(which), { passive: true });
-    // Use ResizeObserver so arrows respond when the viewport resizes
     if (window.ResizeObserver) {
       new ResizeObserver(() => updateFilterArrows(which)).observe(el);
     }
@@ -1799,20 +1733,20 @@ function initFilterArrows() {
   });
 }
 
+/* ============================================================
+   TICK
+   ============================================================ */
 let _lastKoCheck = 0;
 function tick() {
   updateCountdown();
   renderLiveBanner();
   updateUnpredictedPill();
-  // Every 30 seconds, check if any match has crossed kick-off since last check
-  // and re-render groups so the card locks visually without requiring a page action.
   const now = Date.now();
   if (now - _lastKoCheck > 30000) {
     _lastKoCheck = now;
     const predictVisible = document.getElementById('predict') &&
                            document.getElementById('predict').style.display !== 'none';
     if (predictVisible) {
-      // Check if any match just tipped past KO in this window
       const justKicked = MATCHES.some(m => {
         const ko = MATCH_UTC[m.id].getTime();
         return ko > (now - 30000) && ko <= now;
@@ -1889,7 +1823,6 @@ function buildGroupFilter(){
   let html=`<button class="${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All groups</button>`;
   for(const g in GROUPS) html+=`<button class="${activeFilter===g?'on':''}" onclick="setFilter('${g}')">Group ${g}</button>`;
   f.innerHTML=html;
-  // Scroll the active button into view and refresh arrows
   setTimeout(()=>{
     const active=f.querySelector('button.on');
     if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
@@ -1899,7 +1832,7 @@ function buildGroupFilter(){
 function setFilter(g){ activeFilter=g; buildGroupFilter(); renderGroups(); }
 
 /* ============================================================
-   RENDER MATCHES — now shows local time
+   RENDER MATCHES
    ============================================================ */
 function renderGroups(){
   const cont=document.getElementById('groupsContainer');
@@ -1910,14 +1843,12 @@ function renderGroups(){
   }
   const res=DB.results();
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
-  // Find which group the next upcoming match belongs to — auto-open it
   const nextM = findNextMatch();
   const autoOpenGroup = nextM ? nextM.g : null;
   let html="";
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
     let gpts=0, hasRes=false;
-    // Count unpredicted in this group (for badge)
     let unpredCount=0;
     gm.forEach(m=>{
       const p=scoreMatch(r.predictions[m.id],res[m.id]);
@@ -1956,12 +1887,11 @@ function matchCard(m,roster,result){
   const ph=pred.h, pa=pred.a;
   const koUTC = MATCH_UTC[m.id];
   const now = Date.now();
-  const kicked = koUTC.getTime() <= now;             // kick-off has passed
+  const kicked = koUTC.getTime() <= now;
   const hasResult = result && result.h!=null && result.h!=="" && result.a!=null && result.a!=="";
-  const locked = kicked || hasResult;                // lock at KO, not just on result
+  const locked = kicked || hasResult;
   const earned = hasResult ? scoreMatch(pred,result) : null;
 
-  // Local time display
   const localTime = fmtLocalTimeShort(koUTC);
   const tzAbbr = getTZAbbr();
 
@@ -1974,7 +1904,6 @@ function matchCard(m,roster,result){
 
   const scorers=pred.scorers||[];
 
-  // Status label in meta bar
   let statusLabel = '';
   if(hasResult){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>';
@@ -1982,7 +1911,6 @@ function matchCard(m,roster,result){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto;color:var(--muted)">In progress</span>';
   }
 
-  // Card class — three states: open, kicked (no result yet), scored (result in)
   const cardClass = hasResult ? 'locked scored' : (kicked ? 'locked kicked' : '');
 
   let html=`<div class="match ${cardClass}" id="match-${m.id}">
@@ -2023,7 +1951,6 @@ function matchCard(m,roster,result){
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
     </div>`;
   } else {
-    // kicked but no result entered yet
     html+=`<div class="result-strip kicked-strip">
       <span style="color:var(--muted)">⏳ Result pending</span>
       ${(ph!=null&&pa!=null)?`<span style="color:var(--muted);font-size:11px">Your pick: ${ph}–${pa}</span>`:'<span style="color:var(--muted);font-size:11px">No prediction set</span>'}
@@ -2232,7 +2159,6 @@ function renderAdmin(){
   cont.innerHTML=ms.map(m=>{
     const r=res[m.id]||{};
     const scText=(r.scorers||[]).join(', ');
-    // Show local time in admin view too
     const koUTC = MATCH_UTC[m.id];
     const localTime = fmtLocalTimeShort(koUTC);
     const tzAbbr = getTZAbbr();
@@ -2303,10 +2229,9 @@ document.querySelectorAll('.tab').forEach(tab=>{
 });
 
 /* ============================================================
-   PREDICT NOW — Scroll to the match card
+   SCROLL TO MATCH
    ============================================================ */
 function scrollToMatchOrFirst(matchId) {
-  // Try the specific match first; fall back to the first unpredicted
   const m = MATCHES.find(x => x.id === matchId);
   if (m) {
     scrollToMatch(matchId);
@@ -2316,18 +2241,11 @@ function scrollToMatchOrFirst(matchId) {
 }
 
 function scrollToMatch(matchId) {
-  // Groups are collapsed by default — find which group this match belongs to
-  // then switch to that group filter so the match is rendered in the DOM.
   const m = MATCHES.find(x => x.id === matchId);
   if (!m) return;
-
-  // If we're currently showing "all groups", just ensure the group body is open.
-  // If we're on a different single-group filter, switch to "all" first so we can
-  // find and open the right group.
   const doScroll = () => {
     const matchEl = document.getElementById('match-' + matchId);
     if (!matchEl) return;
-    // Ensure the group body containing this match is expanded
     const groupBody = matchEl.closest('.group-body');
     if (groupBody && !groupBody.classList.contains('open')) {
       groupBody.classList.add('open');
@@ -2338,15 +2256,12 @@ function scrollToMatch(matchId) {
     matchEl.style.animation = 'none';
     setTimeout(() => { matchEl.style.animation = 'highlightPulse .7s ease-out'; }, 30);
   };
-
-  // Switch to the group's filter so we render only that group (fast) and it opens
   if (activeFilter !== m.g && activeFilter !== 'all') {
     activeFilter = 'all';
     buildGroupFilter();
     renderGroups();
     setTimeout(doScroll, 120);
   } else if (activeFilter === 'all') {
-    // Already in all-groups view — open the group and scroll
     doScroll();
   } else {
     doScroll();
@@ -2357,24 +2272,21 @@ function scrollToFirstUnpredicted() {
   const r = getRoster(activeName);
   if (!r) return;
   const results = DB.results();
-  // Find first unplayed, un-predicted match
   const now2 = Date.now();
   const unpred = MATCHES.find(m => {
     const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
     if (hasResult) return false;
-    if (MATCH_UTC[m.id].getTime() <= now2) return false; // already kicked off
+    if (MATCH_UTC[m.id].getTime() <= now2) return false;
     const p = r.predictions[m.id];
     return !p || p.h == null || p.a == null;
   });
   if (!unpred) return;
-  // Open the group if needed
   activeFilter = 'all';
   buildGroupFilter();
   renderGroups();
   setTimeout(() => {
     const el = document.getElementById('match-' + unpred.id);
     if (el) {
-      // Make sure the group body is open
       const groupBody = el.closest('.group-body');
       if (groupBody && !groupBody.classList.contains('open')) {
         groupBody.classList.add('open');
@@ -2398,7 +2310,6 @@ function updateUnpredictedPill() {
   MATCHES.forEach(m => {
     const hasResult = results[m.id] && results[m.id].h != null && results[m.id].h !== '';
     if (hasResult) return;
-    // Don't count matches that have already kicked off — prediction window closed
     if (MATCH_UTC[m.id].getTime() <= now) return;
     const p = r.predictions[m.id];
     if (!p || p.h == null || p.a == null) count++;
@@ -2426,11 +2337,8 @@ function init(){
   if(activeName && getRoster(activeName)){
     enterPredict();
   }
-  // Initialise filter scroll arrows
   initFilterArrows();
-  // Start the per-second tick for countdown + live banner
   setInterval(tick, 1000);
-  // Full re-render of next match card every 30s (in case the next match changes)
   setInterval(renderNextMatchCard, 30000);
 }
 init();
