@@ -1307,7 +1307,38 @@ function getTZAbbr() {
 
 /* ============================================================
    MATCH PHASE / MINUTE CALCULATOR
+   Each half includes one fixed 3-minute hydration break, taken once the
+   on-pitch clock reaches minute 22 of that half (i.e. match-minute 22 in
+   the 1st half, match-minute 67 — 22 mins into the 2nd half). The break
+   freezes the displayed match minute for 3 real minutes; everything after
+   it (rest of the half, half time, 2nd half, full time) is pushed back by
+   3 real minutes per break — 6 minutes total across the match — so the
+   live estimate of when the match finishes always accounts for both.
    ============================================================ */
+const HYDRATION_BREAK_MIN = 3;          // fixed length of each hydration break
+const HALF_BREAK_AT_MIN = 22;           // break occurs at minute 22 of each half
+const HALF_LENGTH_MIN = 45;             // standard half length (before stoppage)
+const STOPPAGE_BUFFER_1H = 4;           // typical added-time buffer we display for 1H
+const STOPPAGE_BUFFER_2H = 6;           // typical added-time buffer we display for 2H
+const HALF_TIME_DURATION_MIN = 15;      // halftime interval
+
+// Real-time elapsed minutes at which each phase boundary falls, accounting
+// for both hydration breaks. Used here and by the live-match window/progress
+// bar so every part of the UI agrees on when the match actually finishes.
+const T_FIRST_BREAK_START = HALF_BREAK_AT_MIN;                                   // 22
+const T_FIRST_BREAK_END   = T_FIRST_BREAK_START + HYDRATION_BREAK_MIN;           // 25
+const T_FIRST_HALF_END    = T_FIRST_BREAK_END + (HALF_LENGTH_MIN - HALF_BREAK_AT_MIN); // 48 (clock hits 45')
+const T_HT_START           = T_FIRST_HALF_END + STOPPAGE_BUFFER_1H;             // 52 (after 45+4 stoppage)
+const T_HT_END              = T_HT_START + HALF_TIME_DURATION_MIN;              // 67 (2nd half kicks off)
+const T_SECOND_BREAK_START = T_HT_END + (HALF_BREAK_AT_MIN);                     // 89 (clock hits 67')
+const T_SECOND_BREAK_END   = T_SECOND_BREAK_START + HYDRATION_BREAK_MIN;        // 92
+const T_SECOND_HALF_END     = T_SECOND_BREAK_END + (HALF_LENGTH_MIN - HALF_BREAK_AT_MIN); // 115 (clock hits 90')
+const T_FULL_TIME_START     = T_SECOND_HALF_END + STOPPAGE_BUFFER_2H;           // 121 (after 90+6 stoppage)
+// How long we keep showing "Full Time" before treating the match as over —
+// mirrors the original model's ~64-minute FT display window.
+const FT_DISPLAY_WINDOW_MIN = 64;
+const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            // used by findLiveMatches()
+
 function getMatchPhase(kickoffUTC) {
   const now = Date.now();
   const ko = kickoffUTC.getTime();
@@ -1315,23 +1346,57 @@ function getMatchPhase(kickoffUTC) {
   const elapsedMin = elapsedMs / 60000;
 
   if (elapsedMin < 0) return null;
-  if (elapsedMin < 50) {
-    const min = Math.min(Math.floor(elapsedMin), 45);
-    const added = Math.max(0, Math.floor(elapsedMin) - 45);
-    const displayMin = added > 0 ? `45+${added}` : `${min}`;
+
+  // ---- 1st half, before the hydration break ----
+  if (elapsedMin < T_FIRST_BREAK_START) {
+    return { phase: '1st Half', displayMin: `${Math.floor(elapsedMin)}`, phase_code: '1h' };
+  }
+  // ---- 1st half hydration break (clock frozen at 22') ----
+  if (elapsedMin < T_FIRST_BREAK_END) {
+    return { phase: 'Hydration Break', displayMin: `${HALF_BREAK_AT_MIN}'`, phase_code: '1h-break' };
+  }
+  // ---- 1st half, resumed after the break, up to 45' ----
+  if (elapsedMin < T_FIRST_HALF_END) {
+    const matchMin = Math.floor(elapsedMin - HYDRATION_BREAK_MIN);
+    const min = Math.min(matchMin, HALF_LENGTH_MIN);
+    const displayMin = `${min}`;
     return { phase: '1st Half', displayMin, phase_code: '1h' };
   }
-  if (elapsedMin < 65) {
+  // ---- 1st half stoppage time (45+) ----
+  if (elapsedMin < T_HT_START) {
+    const matchMin = Math.floor(elapsedMin - HYDRATION_BREAK_MIN);
+    const added = Math.max(0, matchMin - HALF_LENGTH_MIN);
+    return { phase: '1st Half', displayMin: `45+${added}`, phase_code: '1h' };
+  }
+  // ---- Half time ----
+  if (elapsedMin < T_HT_END) {
     return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht' };
   }
-  if (elapsedMin < 116) {
-    const secondHalfMin = elapsedMin - 65;
-    const min = 45 + Math.min(Math.floor(secondHalfMin), 45);
-    const added = Math.max(0, Math.floor(secondHalfMin) - 45);
-    const displayMin = added > 0 ? `90+${added}` : `${min}`;
-    return { phase: '2nd Half', displayMin, phase_code: '2h' };
+  // ---- 2nd half, before the hydration break ----
+  if (elapsedMin < T_SECOND_BREAK_START) {
+    const secondHalfMin = elapsedMin - T_HT_END;
+    const min = HALF_LENGTH_MIN + Math.floor(secondHalfMin);
+    return { phase: '2nd Half', displayMin: `${min}`, phase_code: '2h' };
   }
-  if (elapsedMin < 180) {
+  // ---- 2nd half hydration break (clock frozen at 67') ----
+  if (elapsedMin < T_SECOND_BREAK_END) {
+    const frozenMin = HALF_LENGTH_MIN + HALF_BREAK_AT_MIN; // 67
+    return { phase: 'Hydration Break', displayMin: `${frozenMin}'`, phase_code: '2h-break' };
+  }
+  // ---- 2nd half, resumed after the break, up to 90' ----
+  if (elapsedMin < T_SECOND_HALF_END) {
+    const secondHalfMin = elapsedMin - T_HT_END - HYDRATION_BREAK_MIN;
+    const min = HALF_LENGTH_MIN + Math.min(Math.floor(secondHalfMin), HALF_LENGTH_MIN);
+    return { phase: '2nd Half', displayMin: `${min}`, phase_code: '2h' };
+  }
+  // ---- 2nd half stoppage time (90+) ----
+  if (elapsedMin < T_FULL_TIME_START) {
+    const secondHalfMin = elapsedMin - T_HT_END - HYDRATION_BREAK_MIN;
+    const added = Math.max(0, Math.floor(secondHalfMin) - HALF_LENGTH_MIN);
+    return { phase: '2nd Half', displayMin: `90+${added}`, phase_code: '2h' };
+  }
+  // ---- Full time ----
+  if (elapsedMin < MATCH_OVER_AT_MIN) {
     return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft' };
   }
   return null;
@@ -2111,14 +2176,15 @@ function updateCountdown() {
    LIVE MATCH BANNER(S)
    ============================================================ */
 /** Returns every match currently in progress (kicked off, not yet past the
- *  116-minute window we treat as "match over"). Sorted by kickoff then group
- *  so simultaneous live games appear in a stable order. */
+ *  MATCH_OVER_AT_MIN window we treat as "match over" — this already accounts
+ *  for both 3-minute hydration breaks). Sorted by kickoff then group so
+ *  simultaneous live games appear in a stable order. */
 function findLiveMatches() {
   const now = Date.now();
   const live = MATCHES.filter(m => {
     const ko = MATCH_UTC[m.id].getTime();
     const elapsed = now - ko;
-    return elapsed > 0 && elapsed < 116 * 60000;
+    return elapsed > 0 && elapsed < MATCH_OVER_AT_MIN * 60000;
   });
   live.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id] || a.g.localeCompare(b.g));
   return live;
@@ -2142,7 +2208,7 @@ function liveMatchSlideHtml(live) {
   const isFT = phase.phase_code === 'ft';
 
   const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
-  const progressPct = Math.min(100, Math.round((elapsedMin / 116) * 100));
+  const progressPct = Math.min(100, Math.round((elapsedMin / T_FULL_TIME_START) * 100));
 
   let scorersHtml = '';
   if (r.scorers && r.scorers.length) {
