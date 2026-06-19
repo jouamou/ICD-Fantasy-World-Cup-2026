@@ -813,71 +813,6 @@
     transform: scale(.98);
   }
 
-  /* ===== PREDICTED SCORERS (read-only, shown when locked) ===== */
-  .my-scorers{
-    margin-top:10px;padding:9px 12px;
-    background:#f7f8f4;border:1px dashed var(--line);border-radius:8px;
-  }
-  .my-scorers .ms-label{
-    font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-    color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:5px;
-  }
-  .my-scorers .ms-list{display:flex;flex-wrap:wrap;gap:5px}
-  .my-scorers .ms-chip{
-    display:inline-flex;align-items:center;gap:4px;
-    background:#fff;border:1px solid var(--line);border-radius:6px;
-    padding:4px 10px;font-size:12px;font-weight:600;color:var(--head);
-  }
-  .my-scorers .ms-chip.matched{
-    background:var(--green-100);border-color:var(--green-500);color:var(--green-700);
-  }
-  .my-scorers .ms-chip .ms-icon{font-size:11px}
-  .my-scorers .ms-none{font-size:12px;color:var(--muted);font-style:italic}
-
-  /* ===== CUSTOM AUTOCOMPLETE DROPDOWN ===== */
-  .scorer-row{position:relative}
-  .ac-wrap{flex:1;position:relative}
-  .ac-wrap input{width:100%}
-  .ac-drop{
-    display:none;
-    position:absolute;left:0;right:0;top:100%;
-    z-index:40;
-    background:#fff;
-    border:1.5px solid var(--green-500);
-    border-top:none;
-    border-radius:0 0 9px 9px;
-    max-height:200px;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-    box-shadow:0 8px 24px rgba(20,40,10,.15);
-  }
-  .ac-drop.open{display:block}
-  .ac-drop .ac-item{
-    padding:11px 12px;
-    font-size:14px;
-    font-weight:500;
-    color:var(--head);
-    cursor:pointer;
-    border-bottom:1px solid var(--line);
-    -webkit-tap-highlight-color:transparent;
-    touch-action:manipulation;
-  }
-  .ac-drop .ac-item:last-child{border-bottom:none}
-  .ac-drop .ac-item:active,
-  .ac-drop .ac-item:hover{background:var(--green-100);color:var(--green-700)}
-  .ac-drop .ac-item .ac-team{
-    font-size:10px;color:var(--muted);font-weight:600;margin-left:6px;
-  }
-  .ac-drop .ac-hint{
-    padding:10px 12px;font-size:12px;color:var(--muted);font-weight:500;
-    text-align:center;
-  }
-  /* on mobile make items larger */
-  @media(max-width:700px){
-    .ac-drop .ac-item{padding:13px 12px;font-size:15px}
-    .ac-drop{max-height:240px}
-  }
-
   @keyframes highlightPulse {
     0% { background-color: rgba(127,187,66,.3) !important; }
     100% { background-color: #fff !important; }
@@ -2387,28 +2322,13 @@ function matchCard(m,roster,result){
       ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.join(', ')}</span>`:''}
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
     </div>`;
-    html+=predictedScorersHtml(scorers, result);
   } else {
     html+=`<div class="result-strip kicked-strip">
       <span style="color:var(--muted)">⏳ Result pending</span>
       ${(ph!=null&&pa!=null)?`<span style="color:var(--muted);font-size:11px">Your pick: ${ph}–${pa}</span>`:'<span style="color:var(--muted);font-size:11px">No prediction set</span>'}
     </div>`;
-    html+=predictedScorersHtml(scorers, null);
   }
   html+=`</div>`;
-  return html;
-}
-
-function predictedScorersHtml(scorers, result){
-  const filled = (scorers||[]).filter(s=>s&&s.trim());
-  if(!filled.length) return '';
-  const realSc = (result&&result.scorers)||[];
-  let html = `<div class="my-scorers"><div class="ms-label">🎯 Your predicted scorers</div><div class="ms-list">`;
-  filled.forEach(s=>{
-    const matched = realSc.length>0 && realSc.some(r=>nameFuzzyMatch(s,r));
-    html+=`<span class="ms-chip ${matched?'matched':''}"><span class="ms-icon">${matched?'✅':'⚽'}</span>${esc(s)}</span>`;
-  });
-  html+=`</div></div>`;
   return html;
 }
 
@@ -2438,76 +2358,22 @@ function bump(id,side,delta){
 }
 
 function scorerRow(m,val,idx){
+  const listId=`pl-${m.id}`;
   return `<div class="scorer-row">
-    <div class="ac-wrap">
-      <input value="${(val||'').replace(/"/g,'&quot;')}" placeholder="Type player name…"
-        autocomplete="off" autocorrect="off" spellcheck="false"
-        onfocus="acOpen(this,${m.id})" oninput="acFilter(this,${m.id},${idx})"
-        onblur="setTimeout(()=>acClose(this),180)">
-      <div class="ac-drop" id="acd-${m.id}-${idx}"></div>
-    </div>
+    <input list="${listId}" value="${(val||'').replace(/"/g,'&quot;')}" placeholder="Player name…"
+      oninput="updateScorer(${m.id},${idx},this.value)">
     <button class="rm" onclick="removeScorer(${m.id},${idx})">✕</button>
   </div>`;
 }
 function buildDatalists(){
-  // Build per-match player lists for the custom autocomplete
-  window._matchPlayers = {};
+  let html="";
   MATCHES.forEach(m=>{
-    const homePlayers = (REAL_PLAYERS[m.h]||[]).map(p=>({name:p,team:m.h}));
-    const awayPlayers = (REAL_PLAYERS[m.a]||[]).map(p=>({name:p,team:m.a}));
-    window._matchPlayers[m.id] = [...homePlayers,...awayPlayers,{name:'Own goal',team:''}];
+    const opts=[...(REAL_PLAYERS[m.h]||[]),...(REAL_PLAYERS[m.a]||[]),"Own goal"];
+    html+=`<datalist id="pl-${m.id}">`+opts.map(o=>`<option value="${o.replace(/"/g,'&quot;')}">`).join('')+`</datalist>`;
   });
-}
-/** Open the autocomplete dropdown showing all players */
-function acOpen(input,matchId){
-  const wrap = input.closest('.ac-wrap');
-  const drop = wrap.querySelector('.ac-drop');
-  if(!drop) return;
-  acRender(drop, matchId, input.value);
-  drop.classList.add('open');
-}
-function acClose(input){
-  const wrap = input.closest('.ac-wrap');
-  const drop = wrap.querySelector('.ac-drop');
-  if(drop) drop.classList.remove('open');
-}
-function acFilter(input,matchId,idx){
-  updateScorer(matchId,idx,input.value);
-  const wrap = input.closest('.ac-wrap');
-  const drop = wrap.querySelector('.ac-drop');
-  if(!drop) return;
-  acRender(drop, matchId, input.value);
-  drop.classList.add('open');
-}
-function acRender(drop,matchId,query){
-  const players = window._matchPlayers[matchId] || [];
-  const q = canon(query);
-  let filtered = players;
-  if(q.length>0){
-    filtered = players.filter(p=>{
-      const c = canon(p.name);
-      return c.includes(q) || tokens(p.name).some(t=>t.startsWith(q));
-    });
-  }
-  if(filtered.length===0){
-    drop.innerHTML = `<div class="ac-hint">${q.length?'No match — type freely or pick from list':'Start typing a player name'}</div>`;
-    return;
-  }
-  // Limit visible to 30 for performance
-  const shown = filtered.slice(0,30);
-  drop.innerHTML = shown.map(p=>`<div class="ac-item" onmousedown="acPick(this,'${p.name.replace(/'/g,"\\'")}')">${esc(p.name)}${p.team?`<span class="ac-team">${esc(p.team)}</span>`:''}</div>`).join('');
-}
-function acPick(el,name){
-  const row = el.closest('.scorer-row');
-  const input = row.querySelector('input');
-  input.value = name;
-  // find match id and idx from the drop id
-  const drop = el.closest('.ac-drop');
-  drop.classList.remove('open');
-  // extract matchId and idx from drop.id = "acd-{matchId}-{idx}"
-  const parts = drop.id.replace('acd-','').split('-');
-  const matchId = +parts[0], idx = +parts[1];
-  updateScorer(matchId,idx,name);
+  let dc=document.getElementById('datalists');
+  if(!dc){ dc=document.createElement('div'); dc.id='datalists'; document.body.appendChild(dc); }
+  dc.innerHTML=html;
 }
 function addScorer(id){
   const r=getRoster(activeName);
