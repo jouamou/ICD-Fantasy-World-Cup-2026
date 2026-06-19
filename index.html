@@ -1645,6 +1645,22 @@ function nameFuzzyMatch(pred, real){
   return false;
 }
 
+/** Returns which of the predicted scorers (by original index into pred.scorers,
+ *  trimmed/non-empty entries only) earned points — i.e. matched a not-yet-used
+ *  real scorer, within the first-3 cap. Mirrors scoreMatch()'s exact logic so
+ *  the UI tick marks always agree with the points actually awarded. */
+function matchedScorerIndexes(pred, res){
+  const predSc=(pred && pred.scorers || []).map(s=>(s||'').trim()).filter(Boolean);
+  const realSc=(res && res.scorers || []).map(s=>(s||'').trim()).filter(Boolean);
+  const hit=new Set();
+  if(!predSc.length || !realSc.length) return hit;
+  const used=[];
+  predSc.slice(0,3).forEach((p,i)=>{
+    const idx=realSc.findIndex((r,ri)=>!used.includes(ri) && nameFuzzyMatch(p, r));
+    if(idx>-1){ used.push(idx); hit.add(i); }
+  });
+  return hit;
+}
 function scoreMatch(pred, res){
   if(!res || res.h===""||res.h==null||res.a===""||res.a==null) return null;
   if(!pred || pred.h==null || pred.a==null) return 0;
@@ -1655,14 +1671,7 @@ function scoreMatch(pred, res){
     const ps=Math.sign(ph-pa), rs=Math.sign(rh-ra);
     if(ps===rs) pts+=5;
   }
-  const predSc=(pred.scorers||[]).map(s=>s.trim()).filter(Boolean);
-  const realSc=(res.scorers||[]).map(s=>s.trim()).filter(Boolean);
-  let matched=0;
-  const used=[];
-  predSc.slice(0,3).forEach(p=>{
-    const idx=realSc.findIndex((r,i)=>!used.includes(i) && nameFuzzyMatch(p, r));
-    if(idx>-1){ used.push(idx); matched++; }
-  });
+  const matched=matchedScorerIndexes(pred, res).size;
   pts+=matched*3;
   return pts;
 }
@@ -2316,16 +2325,25 @@ function matchCard(m,roster,result){
       <button class="add-scorer" onclick="addScorer(${m.id})">＋ Add goalscorer</button>
     </div>`;
   } else if(hasResult){
+    const predScorers=(scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
+    const hitSet=matchedScorerIndexes(pred, result);
+    const predScorersHtml = predScorers.map((s,i)=>{
+      const ok = hitSet.has(i);
+      return `<span style="color:${ok?'var(--green-700)':'var(--muted)'};font-weight:${ok?700:500}">${ok?'✓':'✕'} ${esc(s)}</span>`;
+    }).join(', ');
     html+=`<div class="result-strip">
       <span>Final result:</span>
       <span class="actual">${m.h} ${result.h} – ${result.a} ${m.a}</span>
-      ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.join(', ')}</span>`:''}
+      ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.map(esc).join(', ')}</span>`:''}
+      ${predScorers.length?`<span style="font-size:11px">You said: ${predScorersHtml}</span>`:''}
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
     </div>`;
   } else {
+    const predScorers=(scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
     html+=`<div class="result-strip kicked-strip">
       <span style="color:var(--muted)">⏳ Result pending</span>
       ${(ph!=null&&pa!=null)?`<span style="color:var(--muted);font-size:11px">Your pick: ${ph}–${pa}</span>`:'<span style="color:var(--muted);font-size:11px">No prediction set</span>'}
+      ${predScorers.length?`<span style="color:var(--muted);font-size:11px">⚽ ${predScorers.map(esc).join(', ')}</span>`:''}
     </div>`;
   }
   html+=`</div>`;
