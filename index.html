@@ -412,6 +412,9 @@
   .lb-name small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
   .lb-pred{font-size:12px;color:var(--muted);font-weight:600;text-align:right}
   .lb-pts{font-family:'Oswald';font-weight:700;font-size:22px;color:var(--head)}
+  .lb-detail{display:none;padding:10px 14px 6px;background:rgba(127,187,66,.05);border-top:1px dashed rgba(45,107,21,.12);border-radius:0 0 11px 11px;font-size:11.5px}
+  .lb-scorer-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(45,107,21,.08)}
+  .lb-scorer-row:last-child{border-bottom:none}
   .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
 
   /* ===== RULES ===== */
@@ -2316,16 +2319,29 @@ function matchCard(m,roster,result){
       <button class="add-scorer" onclick="addScorer(${m.id})">＋ Add goalscorer</button>
     </div>`;
   } else if(hasResult){
+    const predScorersList2 = (pred.scorers||[]).filter(s=>s.trim());
     html+=`<div class="result-strip">
       <span>Final result:</span>
       <span class="actual">${m.h} ${result.h} – ${result.a} ${m.a}</span>
-      ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.join(', ')}</span>`:''}
+      ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ Actual: ${result.scorers.join(', ')}</span>`:''}
       <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
-    </div>`;
+    </div>
+    ${predScorersList2.length ? `<div style="margin-top:7px;padding:7px 12px;background:rgba(127,187,66,.08);border-radius:7px;border:1px dashed rgba(45,107,21,.18);font-size:11.5px;color:var(--green-800);font-weight:600">
+      <span style="color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:10px">Your scorers:&nbsp;</span>${predScorersList2.map(s=>{
+        const realSc=(result.scorers||[]).map(x=>x.trim().toLowerCase());
+        const hit=realSc.some(r=>r.includes(s.trim().toLowerCase())||s.trim().toLowerCase().includes(r));
+        return hit ? \`<span style="color:var(--green-700);font-weight:700">\${s.trim()} ✓</span>\` : \`<span style="color:var(--muted)">\${s.trim()}</span>\`;
+      }).join('<span style="color:var(--muted)"> · </span>')}
+    </div>\` : ''}`;
   } else {
+    const predScorersList = scorers.filter(s=>s.trim());
+    const scorersLine = predScorersList.length
+      ? `<span style="color:var(--green-800);font-size:11px;font-weight:600">⚽ Your scorers: ${predScorersList.map(s=>s.trim()).join(', ')}</span>`
+      : '';
     html+=`<div class="result-strip kicked-strip">
       <span style="color:var(--muted)">⏳ Result pending</span>
       ${(ph!=null&&pa!=null)?`<span style="color:var(--muted);font-size:11px">Your pick: ${ph}–${pa}</span>`:'<span style="color:var(--muted);font-size:11px">No prediction set</span>'}
+      ${scorersLine}
     </div>`;
   }
   html+=`</div>`;
@@ -2465,16 +2481,64 @@ function renderLeaderboard(){
     list.innerHTML=`<div class="empty">No players yet. Be the first — head to <b>Play &amp; Predict</b> and make your picks!</div>`;
     return;
   }
-  list.innerHTML=players.map((p,i)=>`
-    <div class="lb-row ${p.name===activeName?'me':''}">
+  // Build scorer summary per player
+  const rosterData = DB.rosters();
+  list.innerHTML=players.map((p,i)=>{
+    const roster = rosterData[p.name] || {};
+    const predictions = roster.predictions || {};
+    // Collect all scorer predictions across matches (only matches where scorers were named)
+    const scorerMatches = MATCHES.filter(m=>{
+      const pred = predictions[m.id] || {};
+      return (pred.scorers||[]).filter(s=>s.trim()).length > 0;
+    });
+    const totalScorers = scorerMatches.reduce((acc,m)=>{
+      return acc + (predictions[m.id].scorers||[]).filter(s=>s.trim()).length;
+    }, 0);
+    const isMe = p.name===activeName;
+    const detailId = `lb-detail-${i}`;
+    let scorerDetail = '';
+    if(scorerMatches.length > 0){
+      const scorerRows = scorerMatches.map(m=>{
+        const pred = predictions[m.id] || {};
+        const sc = (pred.scorers||[]).filter(s=>s.trim());
+        const res = (DB.results()||{})[m.id];
+        const hasRes = res && res.h!=null && res.h!=="";
+        return `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(45,107,21,.08);font-size:11.5px">
+          <img src="${teamFlag(m.h)}" alt="" style="width:16px;height:11px;border-radius:2px;object-fit:cover;flex:0 0 auto;margin-top:2px">
+          <span style="color:var(--muted);flex:0 0 auto">vs</span>
+          <img src="${teamFlag(m.a)}" alt="" style="width:16px;height:11px;border-radius:2px;object-fit:cover;flex:0 0 auto;margin-top:2px">
+          <span style="font-weight:600;color:var(--head);flex:1;min-width:0">${sc.map(s=>{
+            if(!hasRes) return \`<span style="color:var(--head)">\${esc(s.trim())}</span>\`;
+            const realSc=(res.scorers||[]).map(x=>x.trim().toLowerCase());
+            const hit=realSc.some(r=>r.includes(s.trim().toLowerCase())||s.trim().toLowerCase().includes(r));
+            return hit ? \`<span style="color:var(--green-700);font-weight:700">\${esc(s.trim())} ✓</span>\` : \`<span style="color:var(--muted);text-decoration:line-through">\${esc(s.trim())}</span>\`;
+          }).join(' · ')}</span>
+        </div>`;
+      }).join('');
+      scorerDetail = `<div id="${detailId}" style="display:none;padding:8px 12px 4px;background:rgba(127,187,66,.05);border-top:1px dashed rgba(45,107,21,.12);font-size:11.5px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">⚽ Scorer predictions (${totalScorers} total)</div>
+        ${scorerRows}
+      </div>`;
+    }
+    const hasScorers = scorerMatches.length > 0;
+    return `<div class="lb-row ${isMe?'me':''}" style="${hasScorers?'cursor:pointer':''};" ${hasScorers?`onclick="toggleLbDetail('${detailId}', this)"`:''}">
       <div class="lb-rank">${i+1}</div>
       <div class="lb-who">
         <img src="${teamFlag(p.team)}" alt="">
-        <div class="lb-name">${esc(p.name)}${p.name===activeName?' <small>you</small>':`<small>${esc(p.team)}</small>`}</div>
+        <div class="lb-name">${esc(p.name)}${isMe?' <small>you</small>':`<small>${esc(p.team)}</small>`}</div>
       </div>
-      <div class="lb-pred">${p.pred}/72<br>predicted</div>
-      <div class="lb-pts">${p.pts}</div>
-    </div>`).join('');
+      <div class="lb-pred">${p.pred}/72<br>predicted${hasScorers?`<br><span style="color:var(--green-700);font-weight:700">${totalScorers} scorer${totalScorers===1?'':'s'}</span>`:''}</div>
+      <div class="lb-pts">${p.pts}${hasScorers?`<div style="font-size:9px;color:var(--muted);font-weight:600;margin-top:2px">tap to view</div>`:''}</div>
+    </div>${scorerDetail}`;
+  }).join('');
+}
+
+function toggleLbDetail(detailId, rowEl){
+  const detail = document.getElementById(detailId);
+  if(!detail) return;
+  const isOpen = detail.style.display !== 'none';
+  detail.style.display = isOpen ? 'none' : 'block';
+  rowEl.style.borderRadius = isOpen ? '' : '11px 11px 0 0';
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
