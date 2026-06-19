@@ -557,9 +557,31 @@
   }
   .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
-  /* ===== NEXT MATCH HERO CARD ===== */
+  /* ===== NEXT MATCH HERO CARD(S) ===== */
+  /* Outer wrapper: holds 1+ slides. With exactly one match it behaves like a
+     plain block (no scroll chrome); with 2+ it becomes a snap-scroll carousel
+     so simultaneous kickoffs are never hidden from the player. */
   #nextMatchCard {
     margin-bottom: 22px;
+  }
+  .nmc-row.multi {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .nmc-row.multi::-webkit-scrollbar{display:none}
+  .nmc-row.multi .nmc-slide {
+    flex: 0 0 92%;
+    scroll-snap-align: start;
+  }
+  @media(min-width:760px){
+    .nmc-row.multi .nmc-slide { flex: 0 0 calc(50% - 6px); }
+  }
+  .nmc-slide {
     border-radius: 16px;
     overflow: hidden;
     background: linear-gradient(135deg, var(--green-900) 0%, #1a3d0c 100%);
@@ -567,11 +589,24 @@
     box-shadow: 0 4px 20px rgba(20,40,10,.18);
     position: relative;
   }
-  #nextMatchCard .nmc-pitch {
+  /* simultaneous-kickoff indicator strip above the carousel */
+  .nmc-multi-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; font-weight: 700; color: var(--green-800);
+    margin-bottom: 8px;
+  }
+  .nmc-multi-label .cnt {
+    background: var(--green-700); color:#fff; border-radius: 20px;
+    font-size: 10px; font-weight: 800; padding: 2px 9px;
+  }
+  .nmc-multi-hint {
+    font-size: 10.5px; color: var(--muted); font-weight: 600;
+  }
+  .nmc-slide .nmc-pitch {
     position: absolute; inset: 0; opacity: .06; pointer-events: none;
     background: repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 80px);
   }
-  #nextMatchCard .nmc-inner {
+  .nmc-slide .nmc-inner {
     position: relative;
     padding: 20px 24px;
     display: flex;
@@ -638,7 +673,7 @@
     font-family: 'Oswald'; font-size: 22px; font-weight: 700;
     color: rgba(255,255,255,.3); padding-bottom: 18px;
   }
-  #nextMatchCard.kickoff-soon .nmc-num { color: var(--green-500); border-color: rgba(127,187,66,.4); }
+  .nmc-slide.kickoff-soon .nmc-num { color: var(--green-500); border-color: rgba(127,187,66,.4); }
   #nextMatchCard .nmc-left { flex: 1 1 180px; }
   #nextMatchCard .nmc-title {
     font-family: 'Archivo'; font-weight: 900; font-size: 15px; color: #fff; line-height: 1.2;
@@ -651,10 +686,32 @@
     border-radius: 4px; padding: 2px 6px;
   }
 
-  /* ===== LIVE MATCH BANNER — mobile-first ===== */
+  /* ===== LIVE MATCH BANNER(S) — mobile-first ===== */
+  /* Outer wrapper holds 1+ live-match slides. Single live match: plain block
+     (unchanged from before). Multiple simultaneous live matches: snap-scroll
+     carousel so no live game is ever hidden. */
   #liveMatchBanner {
     display: none;
     margin-bottom: 16px;
+  }
+  .lmb-row.multi {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .lmb-row.multi::-webkit-scrollbar{display:none}
+  .lmb-row.multi .lmb-slide {
+    flex: 0 0 92%;
+    scroll-snap-align: start;
+  }
+  @media(min-width:760px){
+    .lmb-row.multi .lmb-slide { flex: 0 0 calc(50% - 6px); }
+  }
+  .lmb-slide {
     border-radius: 14px;
     overflow: hidden;
     border: 1.5px solid var(--gold);
@@ -662,6 +719,19 @@
     box-shadow: 0 4px 20px rgba(224,168,46,.22);
     animation: livePulse 3s ease-in-out infinite;
     position: relative;
+  }
+  /* simultaneous-live indicator strip above the carousel */
+  .lmb-multi-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; font-weight: 700; color: #a07000;
+    margin-bottom: 8px;
+  }
+  .lmb-multi-label .cnt {
+    background: var(--gold); color:#3a2a00; border-radius: 20px;
+    font-size: 10px; font-weight: 800; padding: 2px 9px;
+  }
+  .lmb-multi-hint {
+    font-size: 10.5px; color: var(--muted); font-weight: 600;
   }
   @keyframes livePulse {
     0%,100%{box-shadow:0 4px 20px rgba(224,168,46,.22)}
@@ -779,11 +849,11 @@
     text-align: center; letter-spacing: .3px;
   }
   /* Progress bar — bottom of the card, shows estimated match progress */
-  #liveMatchBanner .lmb-progress {
+  .lmb-slide .lmb-progress {
     position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
     background: rgba(255,255,255,.08); border-radius: 0 0 14px 14px; overflow: hidden;
   }
-  #liveMatchBanner .lmb-progress-fill {
+  .lmb-slide .lmb-progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--gold), #f5c842);
     border-radius: 0 0 14px 14px;
@@ -1882,9 +1952,14 @@ function getKoParticipants(matchId){
 }
 
 /* ============================================================
-   NEXT MATCH HERO CARD
+   NEXT MATCH HERO CARD(S)
    ============================================================ */
-function findNextMatch() {
+/** Returns every upcoming, unplayed match that shares the *soonest* kickoff
+ *  time (within a 60s tolerance, to absorb any clock/render jitter) — so
+ *  simultaneous kickoffs (common on each group's final matchday) are all
+ *  surfaced together instead of just the first one found. Sorted by group
+ *  letter for a stable, predictable order. */
+function findNextMatches() {
   const now = Date.now();
   const results = DB.results();
   const unplayed = MATCHES.filter(m => {
@@ -1892,39 +1967,25 @@ function findNextMatch() {
     const hasResult = r && r.h != null && r.h !== "";
     return !hasResult && MATCH_UTC[m.id].getTime() > now;
   });
-  if (!unplayed.length) return null;
+  if (!unplayed.length) return [];
   unplayed.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
-  return unplayed[0];
+  const soonest = MATCH_UTC[unplayed[0].id].getTime();
+  const TOLERANCE_MS = 60000;
+  return unplayed
+    .filter(m => MATCH_UTC[m.id].getTime() - soonest < TOLERANCE_MS)
+    .sort((a,b) => a.g.localeCompare(b.g) || a.id - b.id);
+}
+// Back-compat alias: some helpers historically used the singular form to mean
+// "the immediately upcoming fixture" — kept pointing at the first of the group.
+function findNextMatch() {
+  const arr = findNextMatches();
+  return arr.length ? arr[0] : null;
 }
 
-function findLiveMatch() {
-  const now = Date.now();
-  const live = MATCHES.filter(m => {
-    const ko = MATCH_UTC[m.id].getTime();
-    const elapsed = now - ko;
-    return elapsed > 0 && elapsed < 116 * 60000;
-  });
-  if (!live.length) return null;
-  live.sort((a,b) => MATCH_UTC[b.id] - MATCH_UTC[a.id]);
-  return live[0];
-}
-
-function renderNextMatchCard() {
-  const card = document.getElementById('nextMatchCard');
-  if (!card) return;
-
-  const next = findNextMatch();
-  if (!next) { card.style.display = 'none'; return; }
-
+function nextMatchSlideHtml(next) {
   const koUTC = MATCH_UTC[next.id];
-  const now = Date.now();
-  const diffMs = koUTC.getTime() - now;
-
-  if (diffMs < 0) { card.style.display = 'none'; return; }
-
-  card.style.display = 'block';
-
-  const totalSecs = Math.floor(diffMs / 1000);
+  const diffMs = koUTC.getTime() - Date.now();
+  const totalSecs = Math.max(0, Math.floor(diffMs / 1000));
   const days  = Math.floor(totalSecs / 86400);
   const hours = Math.floor((totalSecs % 86400) / 3600);
   const mins  = Math.floor((totalSecs % 3600) / 60);
@@ -1936,18 +1997,16 @@ function renderNextMatchCard() {
 
   let countdownHtml = '';
   if (days > 0) {
-    countdownHtml += `<div class="nmc-unit"><div class="nmc-num">${String(days).padStart(2,'0')}</div><div class="nmc-unit-label">days</div></div><div class="nmc-colon">:</div>`;
+    countdownHtml += `<div class="nmc-unit"><div class="nmc-num" id="cd-d-${next.id}">${String(days).padStart(2,'0')}</div><div class="nmc-unit-label">days</div></div><div class="nmc-colon">:</div>`;
   }
   countdownHtml += `
-    <div class="nmc-unit"><div class="nmc-num" id="cd-h">${String(hours).padStart(2,'0')}</div><div class="nmc-unit-label">hrs</div></div>
+    <div class="nmc-unit"><div class="nmc-num" id="cd-h-${next.id}">${String(hours).padStart(2,'0')}</div><div class="nmc-unit-label">hrs</div></div>
     <div class="nmc-colon">:</div>
-    <div class="nmc-unit"><div class="nmc-num" id="cd-m">${String(mins).padStart(2,'0')}</div><div class="nmc-unit-label">min</div></div>
+    <div class="nmc-unit"><div class="nmc-num" id="cd-m-${next.id}">${String(mins).padStart(2,'0')}</div><div class="nmc-unit-label">min</div></div>
     <div class="nmc-colon">:</div>
-    <div class="nmc-unit"><div class="nmc-num" id="cd-s">${String(secs).padStart(2,'0')}</div><div class="nmc-unit-label">sec</div></div>`;
+    <div class="nmc-unit"><div class="nmc-num" id="cd-s-${next.id}">${String(secs).padStart(2,'0')}</div><div class="nmc-unit-label">sec</div></div>`;
 
-  card.className = soonClass;
-
-  card.innerHTML = `
+  return `<div class="nmc-slide ${soonClass}" id="nmc-slide-${next.id}">
     <div class="nmc-pitch"></div>
     <div class="nmc-inner">
       <div class="nmc-left">
@@ -1972,51 +2031,107 @@ function renderNextMatchCard() {
       </div>
       <div class="nmc-countdown">
         <div class="nmc-countdown-label">Kicks off in</div>
-        <div class="nmc-countdown-units" id="cdUnits">${countdownHtml}</div>
+        <div class="nmc-countdown-units" id="cdUnits-${next.id}">${countdownHtml}</div>
       </div>
       <button class="nmc-predict-btn" onclick="scrollToMatchOrFirst(${next.id})">Predict now →</button>
-    </div>`;
+    </div>
+  </div>`;
+}
+
+function renderNextMatchCard() {
+  const card = document.getElementById('nextMatchCard');
+  if (!card) return;
+
+  const nextList = findNextMatches();
+  if (!nextList.length) {
+    card.style.display = 'none';
+    card.innerHTML = '';
+    delete card.dataset.nmcIds;
+    return;
+  }
+
+  card.style.display = 'block';
+  card.dataset.nmcIds = nextList.map(m => m.id).sort().join(',');
+
+  const slidesHtml = nextList.map(nextMatchSlideHtml).join('');
+  const isMulti = nextList.length > 1;
+
+  const labelHtml = isMulti ? `
+    <div class="nmc-multi-label">
+      <span class="cnt">${nextList.length} matches</span>
+      <span>kicking off together</span>
+      <span class="nmc-multi-hint">· swipe to see all →</span>
+    </div>` : '';
+
+  card.innerHTML = `${labelHtml}<div class="nmc-row${isMulti ? ' multi' : ''}">${slidesHtml}</div>`;
 }
 
 function updateCountdown() {
   const card = document.getElementById('nextMatchCard');
   if (!card || card.style.display === 'none') return;
 
-  const next = findNextMatch();
-  if (!next) { card.style.display = 'none'; return; }
+  const nextList = findNextMatches();
+  if (!nextList.length) { card.style.display = 'none'; return; }
 
-  const koUTC = MATCH_UTC[next.id];
-  const diffMs = koUTC.getTime() - Date.now();
-  if (diffMs < 0) { renderNextMatchCard(); return; }
+  // If the set of matches we should be showing has changed (one kicked off,
+  // a new simultaneous one appeared, etc.), do a full re-render. Otherwise
+  // just tick every visible card's numbers down — cheap, no flicker.
+  const currentIds = nextList.map(m => m.id).sort().join(',');
+  if (card.dataset.nmcIds !== currentIds) {
+    card.dataset.nmcIds = currentIds;
+    renderNextMatchCard();
+    return;
+  }
 
-  const totalSecs = Math.floor(diffMs / 1000);
-  const days  = Math.floor(totalSecs / 86400);
-  const hours = Math.floor((totalSecs % 86400) / 3600);
-  const mins  = Math.floor((totalSecs % 3600) / 60);
-  const secs  = totalSecs % 60;
+  nextList.forEach(next => {
+    const koUTC = MATCH_UTC[next.id];
+    const diffMs = koUTC.getTime() - Date.now();
+    if (diffMs < 0) { renderNextMatchCard(); return; }
 
-  const elH = document.getElementById('cd-h');
-  const elM = document.getElementById('cd-m');
-  const elS = document.getElementById('cd-s');
-  if (elH) elH.textContent = String(hours).padStart(2,'0');
-  if (elM) elM.textContent = String(mins).padStart(2,'0');
-  if (elS) elS.textContent = String(secs).padStart(2,'0');
+    const totalSecs = Math.floor(diffMs / 1000);
+    const hours = Math.floor((totalSecs % 86400) / 3600);
+    const mins  = Math.floor((totalSecs % 3600) / 60);
+    const secs  = totalSecs % 60;
 
-  if (diffMs < 30 * 60000) card.classList.add('kickoff-soon');
+    const elH = document.getElementById(`cd-h-${next.id}`);
+    const elM = document.getElementById(`cd-m-${next.id}`);
+    const elS = document.getElementById(`cd-s-${next.id}`);
+    if (elH) elH.textContent = String(hours).padStart(2,'0');
+    if (elM) elM.textContent = String(mins).padStart(2,'0');
+    if (elS) elS.textContent = String(secs).padStart(2,'0');
+
+    if (diffMs < 30 * 60000) {
+      const slideEl = document.getElementById(`nmc-slide-${next.id}`);
+      if (slideEl) slideEl.classList.add('kickoff-soon');
+    }
+  });
 }
 
 /* ============================================================
-   LIVE MATCH BANNER
+   LIVE MATCH BANNER(S)
    ============================================================ */
-function renderLiveBanner() {
-  const banner = document.getElementById('liveMatchBanner');
-  if (!banner) return;
+/** Returns every match currently in progress (kicked off, not yet past the
+ *  116-minute window we treat as "match over"). Sorted by kickoff then group
+ *  so simultaneous live games appear in a stable order. */
+function findLiveMatches() {
+  const now = Date.now();
+  const live = MATCHES.filter(m => {
+    const ko = MATCH_UTC[m.id].getTime();
+    const elapsed = now - ko;
+    return elapsed > 0 && elapsed < 116 * 60000;
+  });
+  live.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id] || a.g.localeCompare(b.g));
+  return live;
+}
+// Back-compat alias used by any older call sites expecting a single match.
+function findLiveMatch() {
+  const arr = findLiveMatches();
+  return arr.length ? arr[arr.length - 1] : null;
+}
 
-  const live = findLiveMatch();
-  if (!live) { banner.style.display = 'none'; return; }
-
+function liveMatchSlideHtml(live) {
   const phase = getMatchPhase(MATCH_UTC[live.id]);
-  if (!phase) { banner.style.display = 'none'; return; }
+  if (!phase) return '';
 
   const results = DB.results();
   const r = results[live.id] || {};
@@ -2043,38 +2158,61 @@ function renderLiveBanner() {
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
   const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
 
-  banner.style.display = 'block';
-  banner.innerHTML = `<div class="lmb-inner">
-    <div class="lmb-live-dot">
-      ${(!isFT && !isHT) ? '<div class="dot-pulse"></div>' : ''}
-      ${liveLabel}
+  return `<div class="lmb-slide" id="lmb-slide-${live.id}">
+    <div class="lmb-inner">
+      <div class="lmb-live-dot">
+        ${(!isFT && !isHT) ? '<div class="dot-pulse"></div>' : ''}
+        ${liveLabel}
+      </div>
+      <div class="lmb-phase">Group ${live.g}</div>
+      ${!isFT ? `<div class="lmb-minute">
+        <div class="lmb-min-val">${minDisplay}</div>
+        <div class="lmb-min-label">${minLabel}</div>
+      </div>` : `<div class="lmb-minute">
+        <div class="lmb-min-val" style="color:rgba(255,255,255,.5)">FT</div>
+        <div class="lmb-min-label">Full time</div>
+      </div>`}
+      <div class="lmb-teams">
+        <div class="lmb-team">
+          <img src="${teamFlag(live.h)}" alt="${live.h}">
+          <div class="lmb-team-name">${live.h}</div>
+        </div>
+        <div class="lmb-scoreboard">
+          <div class="lmb-score ${!hasScore ? 'pending' : ''}">${hScore}</div>
+          <div class="lmb-sep">:</div>
+          <div class="lmb-score ${!hasScore ? 'pending' : ''}">${aScore}</div>
+        </div>
+        <div class="lmb-team right">
+          <img src="${teamFlag(live.a)}" alt="${live.a}">
+          <div class="lmb-team-name">${live.a}</div>
+        </div>
+      </div>
+      ${scorersHtml}
+      <div class="lmb-progress"><div class="lmb-progress-fill" style="width:${progressPct}%"></div></div>
     </div>
-    <div class="lmb-phase">Group ${live.g}</div>
-    ${!isFT ? `<div class="lmb-minute">
-      <div class="lmb-min-val">${minDisplay}</div>
-      <div class="lmb-min-label">${minLabel}</div>
-    </div>` : `<div class="lmb-minute">
-      <div class="lmb-min-val" style="color:rgba(255,255,255,.5)">FT</div>
-      <div class="lmb-min-label">Full time</div>
-    </div>`}
-    <div class="lmb-teams">
-      <div class="lmb-team">
-        <img src="${teamFlag(live.h)}" alt="${live.h}">
-        <div class="lmb-team-name">${live.h}</div>
-      </div>
-      <div class="lmb-scoreboard">
-        <div class="lmb-score ${!hasScore ? 'pending' : ''}">${hScore}</div>
-        <div class="lmb-sep">:</div>
-        <div class="lmb-score ${!hasScore ? 'pending' : ''}">${aScore}</div>
-      </div>
-      <div class="lmb-team right">
-        <img src="${teamFlag(live.a)}" alt="${live.a}">
-        <div class="lmb-team-name">${live.a}</div>
-      </div>
-    </div>
-    ${scorersHtml}
-    <div class="lmb-progress"><div class="lmb-progress-fill" style="width:${progressPct}%"></div></div>
   </div>`;
+}
+
+function renderLiveBanner() {
+  const banner = document.getElementById('liveMatchBanner');
+  if (!banner) return;
+
+  const liveList = findLiveMatches().filter(m => getMatchPhase(MATCH_UTC[m.id]));
+  if (!liveList.length) { banner.style.display = 'none'; banner.innerHTML = ''; return; }
+
+  banner.style.display = 'block';
+
+  const slidesHtml = liveList.map(liveMatchSlideHtml).join('');
+  const isMulti = liveList.length > 1;
+
+  const labelHtml = isMulti ? `
+    <div class="lmb-multi-label">
+      <span class="cnt">${liveList.length} live now</span>
+      <span>matches in progress</span>
+      <span class="lmb-multi-hint">· swipe to see all →</span>
+    </div>` : '';
+
+  banner.innerHTML = `${labelHtml}<div class="lmb-row${isMulti ? ' multi' : ''}">${slidesHtml}</div>`;
 }
 
 /* ============================================================
