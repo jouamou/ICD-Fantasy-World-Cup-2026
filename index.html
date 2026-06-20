@@ -1239,6 +1239,7 @@ let db = null;
 let firebaseReady = false;
 window._rosterCache = {};
 window._resultsCache = {};
+window._liveStatusCache = {};
 
 try {
   if (typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
@@ -1365,11 +1366,17 @@ function getMatchPhase(kickoffUTC, matchId) {
   if (elapsedMin < 0) return null;
 
   // ---- Prefer the real broadcast status from football-data.org, if we
-  // have a fresh reading for this match. Their status model has no concept
-  // of a hydration break, so IN_PLAY still uses our clock-based minute
-  // (which already accounts for both breaks) — only PAUSED (= their HT
-  // signal) and FINISHED short-circuit straight to those phases regardless
-  // of what the clock estimate would otherwise say. ----
+  // have a fresh reading for this match. PAUSED (their halftime signal) and
+  // FINISHED short-circuit straight to those phases regardless of what the
+  // clock estimate would otherwise say — those two are unambiguous. For
+  // IN_PLAY, use their reported `minute` directly when it's present and
+  // plausible: our clock model assumes fixed stoppage-time and halftime
+  // lengths that won't match every real match exactly, so the real minute
+  // from the broadcast is always more trustworthy than our guess once we
+  // have it. Their status model has no concept of a hydration break, so a
+  // minute in the low-to-mid 20s or 60s might already include time we'd
+  // otherwise treat as "paused" — that's fine, it's still more accurate
+  // than compounding our own fixed assumptions on top of theirs. ----
   const liveStatus = matchId != null ? getLiveApiStatus(matchId) : null;
   if (liveStatus) {
     if (liveStatus.status === 'PAUSED') {
@@ -1378,9 +1385,19 @@ function getMatchPhase(kickoffUTC, matchId) {
     if (liveStatus.status === 'FINISHED') {
       return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft', source: 'live' };
     }
-    // IN_PLAY (or AWARDED/SUSPENDED edge cases) — fall through to the clock
-    // estimate below for the minute number, but tag the result as confirmed
-    // live so the UI can show a "Live" indicator instead of "Est.".
+    if (liveStatus.status === 'IN_PLAY' && typeof liveStatus.minute === 'number' && liveStatus.minute >= 0 && liveStatus.minute <= 130) {
+      const min = liveStatus.minute;
+      if (min <= HALF_LENGTH_MIN) {
+        return { phase: '1st Half', displayMin: `${min}`, phase_code: '1h', source: 'live' };
+      }
+      if (min <= HALF_LENGTH_MIN * 2) {
+        return { phase: '2nd Half', displayMin: `${min}`, phase_code: '2h', source: 'live' };
+      }
+      // Beyond 90 without a FINISHED/PAUSED status yet — still 2nd half stoppage.
+      return { phase: '2nd Half', displayMin: `90+${min - HALF_LENGTH_MIN * 2}`, phase_code: '2h', source: 'live' };
+    }
+    // IN_PLAY but their minute field is missing/implausible — fall through
+    // to the clock estimate below for the number, tagged as confirmed live.
   }
 
   const clockPhase = getMatchPhaseFromClock(elapsedMin);
@@ -1769,6 +1786,22 @@ const DB = {
     if(firebaseReady){
       db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
     }
+  },
+  // Real broadcast status (status/minute) pulled from football-data.org by
+  // whoever is running the sync. Shared the same way as results, so every
+  // player's device sees the same "Live"/HT/FT state — without this, the
+  // cache only ever existed in the organiser's own browser tab memory, and
+  // everyone else's live banner silently fell back to the clock estimate.
+  liveStatus(){
+    return firebaseReady ? (window._liveStatusCache || {})
+                         : JSON.parse(localStorage.getItem("ffwc26_livestatus")||"{}");
+  },
+  saveLiveStatus(s){
+    window._liveStatusCache = s;
+    localStorage.setItem("ffwc26_livestatus", JSON.stringify(s));
+    if(firebaseReady){
+      db.ref('liveStatus').set(s).catch(err => console.error('Cloud save (liveStatus) failed:', err));
+    }
   }
 };
 
@@ -1795,6 +1828,12 @@ if(firebaseReady){
     localStorage.setItem("ffwc26_results", JSON.stringify(window._resultsCache));
     if(isInitialized) refreshAll();
   }, err => console.error('results listener error:', err));
+
+  db.ref('liveStatus').on('value', snap => {
+    window._liveStatusCache = snap.val() || {};
+    localStorage.setItem("ffwc26_livestatus", JSON.stringify(window._liveStatusCache));
+    if(isInitialized){ renderLiveBanner(); renderNextMatchCard(); }
+  }, err => console.error('liveStatus listener error:', err));
 }
 
 let activeName = DB.current();
@@ -3285,29 +3324,37 @@ function extractScoreFromApiMatch(apiMatch){
   return { h: home, a: away, status: s };
 }
 
-// Caches the real status/minute football-data.org reports for each local
-// match id, refreshed every time fetchLiveScoresFromAPI() runs. getMatchPhase()
-// consults this first so "HT"/"FT" badges reflect the real broadcast state
-// instead of our clock-based guess — the guess is only used as a fallback
-// (sync disabled, or the match hasn't appeared in the API response yet).
-// Their status model has no concept of a mid-half hydration break, so we
-// still use our own clock for the *minute number* during active play —
-// only PAUSED (their halftime signal) and FINISHED are trusted outright.
-window._liveApiStatus = window._liveApiStatus || {}; // { [matchId]: {status, minute, fetchedAt} }
+// Real status/minute football-data.org reports for each local match id is
+// persisted via DB.liveStatus()/saveLiveStatus() — same Firebase + localStorage
+// pattern as results — so every connected device sees the same real-world
+// status the organiser's sync pulled, not just the device that ran the fetch.
+// getMatchPhase() consults this first so "HT"/"FT" badges reflect the real
+// broadcast state instead of our clock-based guess — the guess is only used
+// as a fallback (sync never run, or the match hasn't appeared in the API
+// response yet). Their status model has no concept of a mid-half hydration
+// break, so we still use our own clock for the *minute number* during active
+// play — only PAUSED (their halftime signal) and FINISHED are trusted outright.
 
-function cacheLiveApiStatus(localId, apiMatch){
-  window._liveApiStatus[localId] = {
+/** Records the real status/minute for a match into the given statusMap
+ *  (the caller batches these and saves once via DB.saveLiveStatus, the same
+ *  way fetchLiveScoresFromAPI batches result updates before one DB.saveResults
+ *  call) — avoids one Firebase write per match on every poll. */
+function recordLiveApiStatus(statusMap, localId, apiMatch){
+  statusMap[localId] = {
     status: apiMatch.status,
     minute: apiMatch.minute != null ? apiMatch.minute : null,
     fetchedAt: Date.now(),
   };
 }
 
-/** Returns the cached real-world status for a match if we have one and it's
+/** Returns the shared real-world status for a match if we have one and it's
  *  fresh enough to trust, otherwise null (caller should fall back to the
- *  clock estimate). */
+ *  clock estimate). Reads from the same Firebase-backed store every device
+ *  shares, so this returns the same answer regardless of which device ran
+ *  the actual sync. */
 function getLiveApiStatus(matchId){
-  const cached = window._liveApiStatus && window._liveApiStatus[matchId];
+  const all = DB.liveStatus();
+  const cached = all && all[matchId];
   if(!cached) return null;
   if(Date.now() - cached.fetchedAt > LIVE_API_STATUS_MAX_AGE_MS) return null;
   return cached;
@@ -3339,17 +3386,21 @@ async function fetchLiveScoresFromAPI(opts){
     const data = await res.json();
     const apiMatches = data.matches || [];
     const results = DB.results();
+    const liveStatusMap = DB.liveStatus(); // start from what's already shared, so matches not in this response keep their last known status until it goes stale
     let updatedCount = 0;
     let skippedOverridden = 0;
+    let statusChanged = false;
 
     apiMatches.forEach(apiMatch => {
       const local = findLocalMatchForApiMatch(apiMatch);
       if(!local) return;
 
-      // Always cache the real status/minute, even if the score itself is
+      // Always record the real status/minute, even if the score itself is
       // admin-overridden or unchanged — the live banner's HT/FT display
       // should reflect reality regardless of who "owns" the score numbers.
-      cacheLiveApiStatus(local.id, apiMatch);
+      const prevStatus = liveStatusMap[local.id] && liveStatusMap[local.id].status;
+      recordLiveApiStatus(liveStatusMap, local.id, apiMatch);
+      if(prevStatus !== apiMatch.status) statusChanged = true;
 
       if(window._liveSyncOverridden[local.id]){ skippedOverridden++; return; }
       const score = extractScoreFromApiMatch(apiMatch);
@@ -3368,8 +3419,12 @@ async function fetchLiveScoresFromAPI(opts){
       }
     });
 
+    DB.saveLiveStatus(liveStatusMap); // always persist — keeps fetchedAt fresh for matches still live even with no other changes
+
     if(updatedCount > 0){
       DB.saveResults(results);
+    }
+    if(updatedCount > 0 || statusChanged){
       renderScorebar();
       renderLiveBanner();
       renderNextMatchCard();
