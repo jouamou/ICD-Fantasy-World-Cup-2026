@@ -750,8 +750,8 @@
   #liveMatchBanner .lmb-live-dot {
     grid-column: 1; grid-row: 1;
     justify-self: start;
-    width: fit-content;
-    display: flex; align-items: center; gap: 5px;
+    align-self: start;
+    display: inline-flex; align-items: center; gap: 5px;
     font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
     color: var(--gold);
     background: rgba(224,168,46,.15);
@@ -759,6 +759,7 @@
     border-radius: 20px;
     padding: 3px 9px;
     white-space: nowrap;
+    max-width: max-content;
   }
   #liveMatchBanner .dot-pulse {
     width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
