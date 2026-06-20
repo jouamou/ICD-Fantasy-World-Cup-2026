@@ -1334,9 +1334,10 @@ const T_SECOND_BREAK_START = T_HT_END + (HALF_BREAK_AT_MIN);                    
 const T_SECOND_BREAK_END   = T_SECOND_BREAK_START + HYDRATION_BREAK_MIN;        // 92
 const T_SECOND_HALF_END     = T_SECOND_BREAK_END + (HALF_LENGTH_MIN - HALF_BREAK_AT_MIN); // 115 (clock hits 90')
 const T_FULL_TIME_START     = T_SECOND_HALF_END + STOPPAGE_BUFFER_2H;           // 121 (after 90+6 stoppage)
-// How long we keep showing "Full Time" before treating the match as over —
-// mirrors the original model's ~64-minute FT display window.
-const FT_DISPLAY_WINDOW_MIN = 64;
+// How long we keep showing "Full Time" in the live section before it drops
+// out entirely — a short grace window so players can see the final score
+// land, without finished matches lingering in the live area indefinitely.
+const FT_DISPLAY_WINDOW_MIN = 5;
 const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            // used by findLiveMatches()
 
 function getMatchPhase(kickoffUTC) {
@@ -2226,17 +2227,17 @@ function liveMatchSlideHtml(live) {
 
   return `<div class="lmb-slide" id="lmb-slide-${live.id}">
     <div class="lmb-inner">
-      <div class="lmb-live-dot">
+      <div class="lmb-live-dot" data-f="live-dot">
         ${(!isFT && !isHT) ? '<div class="dot-pulse"></div>' : ''}
-        ${liveLabel}
+        <span data-f="live-label">${liveLabel}</span>
       </div>
       <div class="lmb-phase">Group ${live.g}</div>
-      ${!isFT ? `<div class="lmb-minute">
-        <div class="lmb-min-val">${minDisplay}</div>
-        <div class="lmb-min-label">${minLabel}</div>
-      </div>` : `<div class="lmb-minute">
-        <div class="lmb-min-val" style="color:rgba(255,255,255,.5)">FT</div>
-        <div class="lmb-min-label">Full time</div>
+      ${!isFT ? `<div class="lmb-minute" data-f="minute-block">
+        <div class="lmb-min-val" data-f="min-val">${minDisplay}</div>
+        <div class="lmb-min-label" data-f="min-label">${minLabel}</div>
+      </div>` : `<div class="lmb-minute" data-f="minute-block">
+        <div class="lmb-min-val" style="color:rgba(255,255,255,.5)" data-f="min-val">FT</div>
+        <div class="lmb-min-label" data-f="min-label">Full time</div>
       </div>`}
       <div class="lmb-teams">
         <div class="lmb-team">
@@ -2244,19 +2245,90 @@ function liveMatchSlideHtml(live) {
           <div class="lmb-team-name">${live.h}</div>
         </div>
         <div class="lmb-scoreboard">
-          <div class="lmb-score ${!hasScore ? 'pending' : ''}">${hScore}</div>
+          <div class="lmb-score ${!hasScore ? 'pending' : ''}" data-f="score-h">${hScore}</div>
           <div class="lmb-sep">:</div>
-          <div class="lmb-score ${!hasScore ? 'pending' : ''}">${aScore}</div>
+          <div class="lmb-score ${!hasScore ? 'pending' : ''}" data-f="score-a">${aScore}</div>
         </div>
         <div class="lmb-team right">
           <img src="${teamFlag(live.a)}" alt="${live.a}">
           <div class="lmb-team-name">${live.a}</div>
         </div>
       </div>
-      ${scorersHtml}
-      <div class="lmb-progress"><div class="lmb-progress-fill" style="width:${progressPct}%"></div></div>
+      <div data-f="scorers-block">${scorersHtml}</div>
+      <div class="lmb-progress"><div class="lmb-progress-fill" data-f="progress-fill" style="width:${progressPct}%"></div></div>
     </div>
   </div>`;
+}
+
+/** Patches an already-rendered live slide's dynamic bits (minute, score,
+ *  scorers, progress) in place, without touching the slide element itself.
+ *  Used by renderLiveBanner()'s per-second refresh so the carousel's scroll
+ *  container is never recreated — recreating it was resetting scrollLeft to
+ *  0 every tick, which made mobile swipes between simultaneous live matches
+ *  snap straight back to the first slide. */
+function patchLiveSlide(live) {
+  const slideEl = document.getElementById(`lmb-slide-${live.id}`);
+  if (!slideEl) return false;
+
+  const phase = getMatchPhase(MATCH_UTC[live.id]);
+  if (!phase) return false;
+
+  const results = DB.results();
+  const r = results[live.id] || {};
+  const hasScore = r.h != null && r.h !== '' && r.a != null && r.a !== '';
+  const hScore = hasScore ? r.h : '–';
+  const aScore = hasScore ? r.a : '–';
+  const isHT = phase.phase_code === 'ht';
+  const isFT = phase.phase_code === 'ft';
+
+  const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
+  const progressPct = Math.min(100, Math.round((elapsedMin / T_FULL_TIME_START) * 100));
+
+  const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
+  const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
+  const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
+
+  const liveLabelEl = slideEl.querySelector('[data-f="live-label"]');
+  if (liveLabelEl) liveLabelEl.textContent = liveLabel;
+
+  const dotEl = slideEl.querySelector('[data-f="live-dot"] .dot-pulse');
+  const shouldPulse = !isFT && !isHT;
+  if (shouldPulse && !dotEl) {
+    const liveDot = slideEl.querySelector('[data-f="live-dot"]');
+    if (liveDot) liveDot.insertAdjacentHTML('afterbegin', '<div class="dot-pulse"></div>');
+  } else if (!shouldPulse && dotEl) {
+    dotEl.remove();
+  }
+
+  const minValEl = slideEl.querySelector('[data-f="min-val"]');
+  if (minValEl) {
+    minValEl.textContent = minDisplay;
+    minValEl.style.color = isFT ? 'rgba(255,255,255,.5)' : '';
+  }
+  const minLabelEl = slideEl.querySelector('[data-f="min-label"]');
+  if (minLabelEl) minLabelEl.textContent = minLabel;
+
+  const scoreHEl = slideEl.querySelector('[data-f="score-h"]');
+  if (scoreHEl) { scoreHEl.textContent = hScore; scoreHEl.classList.toggle('pending', !hasScore); }
+  const scoreAEl = slideEl.querySelector('[data-f="score-a"]');
+  if (scoreAEl) { scoreAEl.textContent = aScore; scoreAEl.classList.toggle('pending', !hasScore); }
+
+  let scorersHtml = '';
+  if (r.scorers && r.scorers.length) {
+    scorersHtml = `<div class="lmb-scorers">
+      <span class="lmb-scorers-label">⚽ Goals</span>
+      <span class="lmb-scorers-names">${r.scorers.join(' · ')}</span>
+    </div>`;
+  } else if (!hasScore) {
+    scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
+  }
+  const scorersBlockEl = slideEl.querySelector('[data-f="scorers-block"]');
+  if (scorersBlockEl) scorersBlockEl.innerHTML = scorersHtml;
+
+  const progressEl = slideEl.querySelector('[data-f="progress-fill"]');
+  if (progressEl) progressEl.style.width = progressPct + '%';
+
+  return true;
 }
 
 function renderLiveBanner() {
@@ -2264,9 +2336,21 @@ function renderLiveBanner() {
   if (!banner) return;
 
   const liveList = findLiveMatches().filter(m => getMatchPhase(MATCH_UTC[m.id]));
-  if (!liveList.length) { banner.style.display = 'none'; banner.innerHTML = ''; return; }
+  if (!liveList.length) { banner.style.display = 'none'; banner.innerHTML = ''; delete banner.dataset.lmbIds; return; }
 
   banner.style.display = 'block';
+
+  // If the same set of matches is already rendered, just patch each slide's
+  // numbers in place — never touch the scroll container, so a finger mid-swipe
+  // (or a just-completed swipe) isn't reset back to the first slide.
+  const currentIds = liveList.map(m => m.id).sort((a,b)=>a-b).join(',');
+  if (banner.dataset.lmbIds === currentIds) {
+    let allPatched = true;
+    liveList.forEach(live => { if (!patchLiveSlide(live)) allPatched = false; });
+    if (allPatched) return;
+    // fall through to a full rebuild if a slide element was unexpectedly missing
+  }
+  banner.dataset.lmbIds = currentIds;
 
   const slidesHtml = liveList.map(liveMatchSlideHtml).join('');
   const isMulti = liveList.length > 1;
