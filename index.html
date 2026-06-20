@@ -1193,6 +1193,14 @@
           <button class="btn sm" onclick="forceSyncToCloud()" style="background:#7fbb42;color:#fff">↑ Force sync staff data to cloud</button>
           <div style="font-size:11px;color:var(--muted);margin-top:6px">Use this if staff filled predictions before rules were published. Syncs all local data to Firebase instantly.</div>
         </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <button class="btn sm" onclick="fetchLiveScoresFromAPI()" style="background:var(--gold);color:#4a3608">⚡ Sync live scores now</button>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--green-800);font-weight:600;cursor:pointer">
+            <input type="checkbox" id="liveSyncToggle" onchange="setLiveSyncPolling(this.checked)" style="width:16px;height:16px;cursor:pointer">
+            Auto-refresh every minute while this tab is open
+          </label>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Pulls live home/away scores from the football-data.org API for matches in progress or finished. <b>Goalscorers always stay manual</b> — the free score feed doesn't include them, so keep typing those in below. A score you edit by hand here won't be overwritten by the next sync.</div>
       </div>
       <div class="filter-wrap" id="adminFilterWrap">
         <button class="farrow left hidden" id="afLeft" onclick="scrollFilter('admin',-1)" aria-label="Scroll left">&#8249;</button>
@@ -1206,6 +1214,7 @@
 
 <footer class="footer">
   Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). Times shown in your local timezone.
+  <br>Live scores provided by the <a href="https://www.football-data.org" target="_blank" rel="noopener" style="color:inherit">Football-Data.org API</a>.
   <br><span id="syncStatus" style="font-size:11px;display:inline-block;margin-top:6px"></span>
 </footer>
 
@@ -1342,8 +1351,12 @@ const T_FULL_TIME_START     = T_SECOND_HALF_END + STOPPAGE_BUFFER_2H;           
 // land, without finished matches lingering in the live area indefinitely.
 const FT_DISPLAY_WINDOW_MIN = 5;
 const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            // used by findLiveMatches()
+// How long a cached real-world status from football-data.org stays trusted
+// before getMatchPhase() falls back to the clock-only estimate again (covers
+// sync being paused/disabled, or a match temporarily dropping off the feed).
+const LIVE_API_STATUS_MAX_AGE_MS = 3 * 60000; // stale after roughly 3 missed polls
 
-function getMatchPhase(kickoffUTC) {
+function getMatchPhase(kickoffUTC, matchId) {
   const now = Date.now();
   const ko = kickoffUTC.getTime();
   const elapsedMs = now - ko;
@@ -1351,6 +1364,40 @@ function getMatchPhase(kickoffUTC) {
 
   if (elapsedMin < 0) return null;
 
+  // ---- Prefer the real broadcast status from football-data.org, if we
+  // have a fresh reading for this match. Their status model has no concept
+  // of a hydration break, so IN_PLAY still uses our clock-based minute
+  // (which already accounts for both breaks) — only PAUSED (= their HT
+  // signal) and FINISHED short-circuit straight to those phases regardless
+  // of what the clock estimate would otherwise say. ----
+  const liveStatus = matchId != null ? getLiveApiStatus(matchId) : null;
+  if (liveStatus) {
+    if (liveStatus.status === 'PAUSED') {
+      return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht', source: 'live' };
+    }
+    if (liveStatus.status === 'FINISHED') {
+      return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft', source: 'live' };
+    }
+    // IN_PLAY (or AWARDED/SUSPENDED edge cases) — fall through to the clock
+    // estimate below for the minute number, but tag the result as confirmed
+    // live so the UI can show a "Live" indicator instead of "Est.".
+  }
+
+  const clockPhase = getMatchPhaseFromClock(elapsedMin);
+  if (clockPhase && liveStatus && liveStatus.status === 'IN_PLAY') {
+    clockPhase.source = 'live';
+  } else if (clockPhase) {
+    clockPhase.source = 'estimate';
+  }
+  return clockPhase;
+}
+
+/** Pure clock-based phase estimate (the original model): assumes a standard
+ *  45+45 minute match with two fixed 3-minute hydration breaks and a 15
+ *  minute half time. Used whenever we don't have a fresh real-world status
+ *  for the match (live sync off, or the match hasn't shown up in the feed
+ *  response yet). */
+function getMatchPhaseFromClock(elapsedMin) {
   // ---- 1st half, before the hydration break ----
   if (elapsedMin < T_FIRST_BREAK_START) {
     return { phase: '1st Half', displayMin: `${Math.floor(elapsedMin)}`, phase_code: '1h' };
@@ -1582,6 +1629,48 @@ const MATCH_UTC = {};
 MATCHES.forEach(m => { MATCH_UTC[m.id] = parseMatchUTC(m.date, m.time); });
 
 const ADMIN_PASS = "icd2026";
+
+/* ============================================================
+   LIVE SCORE SYNC — football-data.org (free tier)
+   Fetches live/finished scores for the World Cup competition (code "WC")
+   and auto-fills the admin score fields. Goalscorers are NOT covered by
+   the free tier's match data, so they always stay manual entry.
+   Attribution required by their terms: "Football data provided by the
+   Football-Data.org API" — included in the page footer.
+   ============================================================ */
+const FOOTBALL_DATA_API_KEY = "77e8e87238044e2fb4047bbbf7e2be3b";
+const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
+
+// football-data.org's official team names for this tournament differ from
+// ours in a few cases (e.g. "Korea Republic" vs "South Korea", "Côte d'Ivoire"
+// vs "Ivory Coast"). Map their name -> our name so matches line up correctly.
+// Names not listed here are assumed identical between the two sources.
+const FOOTBALL_DATA_NAME_MAP = {
+  "South Korea": "Korea Republic",
+  "Korea Republic": "Korea Republic",
+  "Czech Republic": "Czechia",
+  "Czechia": "Czechia",
+  "Bosnia and Herzegovina": "Bosnia & Herzegovina",
+  "Côte d'Ivoire": "Ivory Coast",
+  "Ivory Coast": "Ivory Coast",
+  "IR Iran": "Iran",
+  "Iran": "Iran",
+  "United States": "United States",
+  "USA": "United States",
+  "Turkey": "Türkiye",
+  "Türkiye": "Türkiye",
+  "Saudi Arabia": "Saudi Arabia",
+  "DR Congo": "DR Congo",
+  "Congo DR": "DR Congo",
+  "Republic of Ireland": "Ireland",
+  "Cabo Verde": "Cape Verde",
+  "Cape Verde": "Cape Verde",
+  "Curacao": "Curaçao",
+  "Curaçao": "Curaçao",
+};
+function normaliseFootballDataName(name){
+  return FOOTBALL_DATA_NAME_MAP[name] || name;
+}
 
 /* ============================================================
    KNOCKOUT STAGE — OFFICIAL FIFA 2026 BRACKET (48-team format)
@@ -2200,7 +2289,7 @@ function findLiveMatch() {
 }
 
 function liveMatchSlideHtml(live) {
-  const phase = getMatchPhase(MATCH_UTC[live.id]);
+  const phase = getMatchPhase(MATCH_UTC[live.id], live.id);
   if (!phase) return '';
 
   const results = DB.results();
@@ -2227,6 +2316,10 @@ function liveMatchSlideHtml(live) {
   const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
   const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
+  const isEstimated = phase.source === 'estimate';
+  const sourceTag = isEstimated
+    ? `<div class="lmb-min-label" style="font-size:8.5px;opacity:.6;margin-top:1px" data-f="min-source">estimated</div>`
+    : '';
 
   return `<div class="lmb-slide" id="lmb-slide-${live.id}">
     <div class="lmb-inner">
@@ -2238,6 +2331,7 @@ function liveMatchSlideHtml(live) {
       ${!isFT ? `<div class="lmb-minute" data-f="minute-block">
         <div class="lmb-min-val" data-f="min-val">${minDisplay}</div>
         <div class="lmb-min-label" data-f="min-label">${minLabel}</div>
+        ${sourceTag}
       </div>` : `<div class="lmb-minute" data-f="minute-block">
         <div class="lmb-min-val" style="color:rgba(255,255,255,.5)" data-f="min-val">FT</div>
         <div class="lmb-min-label" data-f="min-label">Full time</div>
@@ -2273,7 +2367,7 @@ function patchLiveSlide(live) {
   const slideEl = document.getElementById(`lmb-slide-${live.id}`);
   if (!slideEl) return false;
 
-  const phase = getMatchPhase(MATCH_UTC[live.id]);
+  const phase = getMatchPhase(MATCH_UTC[live.id], live.id);
   if (!phase) return false;
 
   const results = DB.results();
@@ -2290,6 +2384,7 @@ function patchLiveSlide(live) {
   const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
   const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
+  const isEstimated = phase.source === 'estimate';
 
   const liveLabelEl = slideEl.querySelector('[data-f="live-label"]');
   if (liveLabelEl) liveLabelEl.textContent = liveLabel;
@@ -2310,6 +2405,17 @@ function patchLiveSlide(live) {
   }
   const minLabelEl = slideEl.querySelector('[data-f="min-label"]');
   if (minLabelEl) minLabelEl.textContent = minLabel;
+
+  // "estimated" qualifier — add/remove/leave alone depending on source,
+  // without touching the rest of the minute block.
+  const minuteBlockEl = slideEl.querySelector('[data-f="minute-block"]');
+  let sourceEl = slideEl.querySelector('[data-f="min-source"]');
+  if (!isFT && isEstimated && !sourceEl && minuteBlockEl) {
+    minuteBlockEl.insertAdjacentHTML('beforeend',
+      `<div class="lmb-min-label" style="font-size:8.5px;opacity:.6;margin-top:1px" data-f="min-source">estimated</div>`);
+  } else if ((isFT || !isEstimated) && sourceEl) {
+    sourceEl.remove();
+  }
 
   const scoreHEl = slideEl.querySelector('[data-f="score-h"]');
   if (scoreHEl) { scoreHEl.textContent = hScore; scoreHEl.classList.toggle('pending', !hasScore); }
@@ -2338,7 +2444,7 @@ function renderLiveBanner() {
   const banner = document.getElementById('liveMatchBanner');
   if (!banner) return;
 
-  const liveList = findLiveMatches().filter(m => getMatchPhase(MATCH_UTC[m.id]));
+  const liveList = findLiveMatches().filter(m => getMatchPhase(MATCH_UTC[m.id], m.id));
   if (!liveList.length) { banner.style.display = 'none'; banner.innerHTML = ''; delete banner.dataset.lmbIds; return; }
 
   banner.style.display = 'block';
@@ -2986,6 +3092,10 @@ function checkAdmin(){
     document.getElementById('adminGate').style.display='none';
     document.getElementById('adminPanel').style.display='block';
     buildAdminFilter(); renderAdmin();
+    const wantsAutoSync = localStorage.getItem('ffwc26_livesync_enabled') === '1';
+    const toggle = document.getElementById('liveSyncToggle');
+    if(toggle) toggle.checked = wantsAutoSync;
+    if(wantsAutoSync) setLiveSyncPolling(true);
   } else { toast("Incorrect passcode"); }
 }
 function buildAdminFilter(){
@@ -3012,6 +3122,10 @@ function renderAdmin(){
     const koUTC = MATCH_UTC[m.id];
     const localTime = fmtLocalTimeShort(koUTC);
     const tzAbbr = getTZAbbr();
+    const isLiveSynced = window._liveSyncApplied && window._liveSyncApplied[m.id] && !window._liveSyncOverridden[m.id];
+    const liveBadge = isLiveSynced
+      ? `<span style="font-size:9px;font-weight:800;color:#fff;background:var(--gold);border-radius:5px;padding:2px 6px;margin-left:4px;letter-spacing:.3px">⚡ LIVE SYNC</span>`
+      : '';
     return `<div class="admin-match">
       <span class="am-grp">${m.g}</span>
       <div class="am-teams">
@@ -3019,6 +3133,7 @@ function renderAdmin(){
         <span style="color:var(--muted)">vs</span>
         ${m.a}<img src="${teamFlag(m.a)}" alt="">
         <span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:4px">${localTime} ${tzAbbr}</span>
+        ${liveBadge}
       </div>
       <div class="am-score">
         <input type="number" min="0" max="20" value="${r.h!=null?r.h:''}" onchange="setResult(${m.id},'h',this.value)">
@@ -3104,6 +3219,7 @@ function setResult(id,side,val){
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id][side]= val===''?null:Math.max(0,+val);
   DB.saveResults(res);
+  markMatchOverridden(id);
   toast("Result saved");
   renderScorebar();
   renderLiveBanner();
@@ -3117,6 +3233,184 @@ function setResultScorers(id,val){
   DB.saveResults(res);
   toast("Scorers saved");
   renderLiveBanner();
+}
+
+/* ============================================================
+   LIVE SCORE SYNC — football-data.org
+   ============================================================ */
+let _liveSyncPollTimer = null;
+let _liveSyncLastRun = 0;
+let _liveSyncInFlight = false;
+// Per-match record of which result fields came from the API, so the admin UI
+// can show a "live" badge and so a manual edit on that match can override it
+// without the next poll silently stomping the organiser's correction.
+window._liveSyncApplied = window._liveSyncApplied || {}; // { [matchId]: true }
+window._liveSyncOverridden = window._liveSyncOverridden || {}; // { [matchId]: true } — admin edited manually after an auto-fill
+
+/** Finds the MATCHES entry that corresponds to a football-data.org match
+ *  object, by normalised team names first, falling back to closest kickoff
+ *  date if names alone are ambiguous. Returns null if no confident match. */
+function findLocalMatchForApiMatch(apiMatch){
+  const apiHome = normaliseFootballDataName(apiMatch.homeTeam && apiMatch.homeTeam.name);
+  const apiAway = normaliseFootballDataName(apiMatch.awayTeam && apiMatch.awayTeam.name);
+  if(!apiHome || !apiAway) return null;
+
+  const candidates = MATCHES.filter(m =>
+    (m.h === apiHome && m.a === apiAway) || (m.h === apiAway && m.a === apiHome)
+  );
+  if(candidates.length === 0) return null;
+  if(candidates.length === 1) return candidates[0];
+
+  // Same two teams meet more than once across the tournament (rare in groups,
+  // more likely in knockouts) — disambiguate by whichever fixture's kickoff
+  // is closest to the API's utcDate.
+  const apiDate = new Date(apiMatch.utcDate).getTime();
+  candidates.sort((a,b) => Math.abs(MATCH_UTC[a.id] - apiDate) - Math.abs(MATCH_UTC[b.id] - apiDate));
+  return candidates[0];
+}
+
+/** Maps a football-data.org match status to our result shape. Returns null
+ *  if the match hasn't produced a usable score yet (e.g. still SCHEDULED). */
+function extractScoreFromApiMatch(apiMatch){
+  const s = apiMatch.status;
+  const usableStatus = ['IN_PLAY','PAUSED','FINISHED'].includes(s);
+  if(!usableStatus) return null;
+  const ft = apiMatch.score && apiMatch.score.fullTime;
+  const ht = apiMatch.score && apiMatch.score.halfTime;
+  // Prefer fullTime once available (covers IN_PLAY running score too — the
+  // API reports the current score live in fullTime while a match is on).
+  const home = ft && ft.home != null ? ft.home : (ht && ht.home);
+  const away = ft && ft.away != null ? ft.away : (ht && ht.away);
+  if(home == null || away == null) return null;
+  return { h: home, a: away, status: s };
+}
+
+// Caches the real status/minute football-data.org reports for each local
+// match id, refreshed every time fetchLiveScoresFromAPI() runs. getMatchPhase()
+// consults this first so "HT"/"FT" badges reflect the real broadcast state
+// instead of our clock-based guess — the guess is only used as a fallback
+// (sync disabled, or the match hasn't appeared in the API response yet).
+// Their status model has no concept of a mid-half hydration break, so we
+// still use our own clock for the *minute number* during active play —
+// only PAUSED (their halftime signal) and FINISHED are trusted outright.
+window._liveApiStatus = window._liveApiStatus || {}; // { [matchId]: {status, minute, fetchedAt} }
+
+function cacheLiveApiStatus(localId, apiMatch){
+  window._liveApiStatus[localId] = {
+    status: apiMatch.status,
+    minute: apiMatch.minute != null ? apiMatch.minute : null,
+    fetchedAt: Date.now(),
+  };
+}
+
+/** Returns the cached real-world status for a match if we have one and it's
+ *  fresh enough to trust, otherwise null (caller should fall back to the
+ *  clock estimate). */
+function getLiveApiStatus(matchId){
+  const cached = window._liveApiStatus && window._liveApiStatus[matchId];
+  if(!cached) return null;
+  if(Date.now() - cached.fetchedAt > LIVE_API_STATUS_MAX_AGE_MS) return null;
+  return cached;
+}
+
+/** Pulls current World Cup match data from football-data.org and merges
+ *  scores into local results. Goalscorers are never touched — the free tier
+ *  doesn't provide them, and even if it did, scorer entry stays manual per
+ *  the agreed design. A match already overridden by the organiser (edited
+ *  by hand after an auto-fill) is skipped on subsequent polls so a manual
+ *  correction always wins. */
+async function fetchLiveScoresFromAPI(opts){
+  const silent = opts && opts.silent;
+  if(_liveSyncInFlight) return;
+  _liveSyncInFlight = true;
+  if(!silent) toast("Checking live scores…");
+  try {
+    const res = await fetch(`${FOOTBALL_DATA_BASE}/competitions/WC/matches`, {
+      headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY }
+    });
+    if(!res.ok){
+      if(res.status === 429){
+        if(!silent) toast("Live score API rate-limited — try again in a minute");
+      } else {
+        if(!silent) toast(`Live score fetch failed (${res.status})`);
+      }
+      return;
+    }
+    const data = await res.json();
+    const apiMatches = data.matches || [];
+    const results = DB.results();
+    let updatedCount = 0;
+    let skippedOverridden = 0;
+
+    apiMatches.forEach(apiMatch => {
+      const local = findLocalMatchForApiMatch(apiMatch);
+      if(!local) return;
+
+      // Always cache the real status/minute, even if the score itself is
+      // admin-overridden or unchanged — the live banner's HT/FT display
+      // should reflect reality regardless of who "owns" the score numbers.
+      cacheLiveApiStatus(local.id, apiMatch);
+
+      if(window._liveSyncOverridden[local.id]){ skippedOverridden++; return; }
+      const score = extractScoreFromApiMatch(apiMatch);
+      if(!score) return;
+
+      const existing = results[local.id];
+      const changed = !existing || existing.h !== score.h || existing.a !== score.a;
+      if(changed){
+        results[local.id] = {
+          h: score.h,
+          a: score.a,
+          scorers: (existing && existing.scorers) || [],
+        };
+        window._liveSyncApplied[local.id] = true;
+        updatedCount++;
+      }
+    });
+
+    if(updatedCount > 0){
+      DB.saveResults(results);
+      renderScorebar();
+      renderLiveBanner();
+      renderNextMatchCard();
+      if(document.getElementById('adminPanel').style.display !== 'none') renderAdmin();
+      if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
+    }
+
+    if(!silent){
+      if(updatedCount > 0) toast(`✓ ${updatedCount} score${updatedCount===1?'':'s'} updated from live feed`);
+      else if(skippedOverridden > 0) toast("No new scores — some matches use your manual edits");
+      else toast("No live score changes");
+    }
+    _liveSyncLastRun = Date.now();
+  } catch(e){
+    console.error('Live score sync failed:', e);
+    if(!silent) toast("Live score sync failed — check connection");
+  } finally {
+    _liveSyncInFlight = false;
+  }
+}
+
+/** Starts/stops automatic polling of the live score feed every 60 seconds
+ *  while the admin has the Results tab open. football-data.org's free tier
+ *  allows 10 requests/minute, so one request per 60s comfortably fits. */
+function setLiveSyncPolling(enabled){
+  localStorage.setItem('ffwc26_livesync_enabled', enabled ? '1' : '0');
+  if(_liveSyncPollTimer){ clearInterval(_liveSyncPollTimer); _liveSyncPollTimer = null; }
+  if(enabled){
+    fetchLiveScoresFromAPI({ silent: true });
+    _liveSyncPollTimer = setInterval(() => fetchLiveScoresFromAPI({ silent: true }), 60000);
+  }
+  const toggle = document.getElementById('liveSyncToggle');
+  if(toggle) toggle.checked = enabled;
+}
+
+/** Called when the admin manually edits a score/scorer field for a match
+ *  that was previously auto-filled — marks it as overridden so future polls
+ *  leave it alone, and clears the "live" badge. */
+function markMatchOverridden(id){
+  window._liveSyncOverridden[id] = true;
+  delete window._liveSyncApplied[id];
 }
 
 /* ============================================================
@@ -3146,6 +3440,11 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.getElementById('view-'+v).classList.add('active');
     if(v==='leaderboard') renderLeaderboard();
     if(v==='standings') renderStandingsTab();
+    if(v!=='admin' && _liveSyncPollTimer){ clearInterval(_liveSyncPollTimer); _liveSyncPollTimer = null; }
+    if(v==='admin' && document.getElementById('adminPanel').style.display!=='none' &&
+       localStorage.getItem('ffwc26_livesync_enabled')==='1' && !_liveSyncPollTimer){
+      setLiveSyncPolling(true);
+    }
     window.scrollTo({top:0,behavior:'smooth'});
   });
 });
