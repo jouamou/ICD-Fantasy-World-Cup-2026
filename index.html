@@ -745,6 +745,7 @@
     grid-template-rows: auto auto;
     gap: 10px 12px;
     align-items: center;
+    position: relative;
   }
   /* LIVE pill — top-left */
   #liveMatchBanner .lmb-live-dot {
@@ -783,12 +784,18 @@
     font-size: 9px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
     color: rgba(255,255,255,.35); margin-top: 1px;
   }
-  /* group tag — top center (sits between pill and minute) */
+  /* group tag — true center of the whole card, independent of how wide the
+     LIVE pill or minute/phase block on either side happen to be */
   #liveMatchBanner .lmb-phase {
-    grid-column: 2; grid-row: 1;
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 10px; font-weight: 700;
     color: rgba(255,255,255,.45); letter-spacing: .4px;
     text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
   }
   /* teams + score row — full width, second row */
   #liveMatchBanner .lmb-teams {
@@ -1197,10 +1204,10 @@
           <button class="btn sm" onclick="fetchLiveScoresFromAPI()" style="background:var(--gold);color:#4a3608">⚡ Sync live scores now</button>
           <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--green-800);font-weight:600;cursor:pointer">
             <input type="checkbox" id="liveSyncToggle" onchange="setLiveSyncPolling(this.checked)" style="width:16px;height:16px;cursor:pointer">
-            Auto-refresh every minute while this tab is open
+            Faster refresh (every minute) while I'm on this tab
           </label>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">Pulls live home/away scores from the football-data.org API for matches in progress or finished. <b>Goalscorers always stay manual</b> — the free score feed doesn't include them, so keep typing those in below. A score you edit by hand here won't be overwritten by the next sync.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Live scores now sync automatically for everyone — any player with the page open keeps the shared score/status fresh while a match is in progress, no admin tab required. <b>Goalscorers always stay manual</b> — the free score feed doesn't include them, so keep typing those in below. A score you edit by hand here won't be overwritten by the next sync.</div>
       </div>
       <div class="filter-wrap" id="adminFilterWrap">
         <button class="farrow left hidden" id="afLeft" onclick="scrollFilter('admin',-1)" aria-label="Scroll left">&#8249;</button>
@@ -2554,6 +2561,8 @@ function initFilterArrows() {
    TICK
    ============================================================ */
 let _lastKoCheck = 0;
+let _lastBackgroundSyncCheck = 0;
+const BACKGROUND_SYNC_INTERVAL_MS = 60000; // football-data.org free tier allows 10 req/min — one shared poll per minute is comfortably within that even with many visitors, since each browser tab only fires this when it personally hasn't synced recently
 function tick() {
   updateCountdown();
   renderLiveBanner();
@@ -2571,6 +2580,39 @@ function tick() {
       if (justKicked) renderGroups();
     }
   }
+  maybeRunBackgroundLiveSync(now);
+}
+
+/** Keeps the shared live status/scores fresh for EVERY visitor's open tab,
+ *  not just the organiser's — the sync function itself has no admin gate
+ *  (writing to results/liveStatus doesn't require the admin password), so
+ *  it's safe for any player's browser to act as a relay. Previously this
+ *  only ran while the organiser specifically had the Results tab open with
+ *  the auto-refresh toggle on; if that tab was ever closed, every other
+ *  viewer's live banner silently fell back to the clock estimate. Now it
+ *  runs automatically, on any tab, for any visitor — but only while a match
+ *  is actually within its live window, so it doesn't poll needlessly between
+ *  matches or burn through the free-tier rate limit for no reason.
+ *
+ *  Before firing, it also checks whether another visitor's tab has already
+ *  refreshed the shared status recently: with many staff viewing the page
+ *  at once, each tab polling independently every 60s could collectively
+ *  exceed the free tier's 10-requests/minute cap. Skipping when someone
+ *  else clearly just synced keeps total request volume low regardless of
+ *  how many tabs are open. */
+async function maybeRunBackgroundLiveSync(now){
+  if (now - _lastBackgroundSyncCheck < BACKGROUND_SYNC_INTERVAL_MS) return;
+  _lastBackgroundSyncCheck = now;
+  if (!findLiveMatches().length) return; // nothing live right now — no point polling
+
+  const shared = DB.liveStatus();
+  const freshestFetch = Object.values(shared || {}).reduce(
+    (max, entry) => Math.max(max, entry && entry.fetchedAt || 0), 0
+  );
+  const SKIP_IF_FRESHER_THAN_MS = 45000;
+  if (freshestFetch && now - freshestFetch < SKIP_IF_FRESHER_THAN_MS) return; // someone else's tab just synced
+
+  return fetchLiveScoresFromAPI({ silent: true });
 }
 
 /* ============================================================
@@ -3446,9 +3488,12 @@ async function fetchLiveScoresFromAPI(opts){
   }
 }
 
-/** Starts/stops automatic polling of the live score feed every 60 seconds
- *  while the admin has the Results tab open. football-data.org's free tier
- *  allows 10 requests/minute, so one request per 60s comfortably fits. */
+/** Starts/stops a tighter 60-second auto-refresh while the organiser is
+ *  actively entering results on the admin Results tab. This is on top of
+ *  the always-on background sync (see maybeRunBackgroundLiveSync) that now
+ *  runs for every visitor automatically — this toggle just gives the person
+ *  entering results a guaranteed, immediate refresh cadence without having
+ *  to wait on the shared dedup window. */
 function setLiveSyncPolling(enabled){
   localStorage.setItem('ffwc26_livesync_enabled', enabled ? '1' : '0');
   if(_liveSyncPollTimer){ clearInterval(_liveSyncPollTimer); _liveSyncPollTimer = null; }
