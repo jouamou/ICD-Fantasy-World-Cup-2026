@@ -1207,7 +1207,7 @@
             Faster refresh (every minute) while I'm on this tab
           </label>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">Live scores now sync automatically for everyone — any player with the page open keeps the shared score/status fresh while a match is in progress, no admin tab required. <b>Goalscorers always stay manual</b> — the free score feed doesn't include them, so keep typing those in below. A score you edit by hand here won't be overwritten by the next sync.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Scores <b>and goalscorers</b> now sync automatically from ESPN for everyone — any visitor with the page open keeps the shared score, clock and scorers fresh while a match is in progress, no admin tab required. You only need to touch a match if ESPN is wrong: a score or scorer you edit by hand here is locked as your manual override and won't be overwritten by the next sync.</div>
       </div>
       <div class="filter-wrap" id="adminFilterWrap">
         <button class="farrow left hidden" id="afLeft" onclick="scrollFilter('admin',-1)" aria-label="Scroll left">&#8249;</button>
@@ -1221,7 +1221,7 @@
 
 <footer class="footer">
   Built for <b>ICD</b> staff &middot; Fantasy World Cup 2026 &middot; Fixtures from the official FIFA draw (5 Dec 2025). Times shown in your local timezone.
-  <br>Live scores provided by the <a href="https://www.football-data.org" target="_blank" rel="noopener" style="color:inherit">Football-Data.org API</a>.
+  <br>Live scores &amp; goalscorers courtesy of <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener" style="color:inherit">ESPN</a>.
   <br><span id="syncStatus" style="font-size:11px;display:inline-block;margin-top:6px"></span>
 </footer>
 
@@ -1359,7 +1359,7 @@ const T_FULL_TIME_START     = T_SECOND_HALF_END + STOPPAGE_BUFFER_2H;           
 // land, without finished matches lingering in the live area indefinitely.
 const FT_DISPLAY_WINDOW_MIN = 5;
 const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            // used by findLiveMatches()
-// How long a cached real-world status from football-data.org stays trusted
+// How long a cached real-world status from ESPN stays trusted
 // before getMatchPhase() falls back to the clock-only estimate again (covers
 // sync being paused/disabled, or a match temporarily dropping off the feed).
 const LIVE_API_STATUS_MAX_AGE_MS = 3 * 60000; // stale after roughly 3 missed polls
@@ -1372,18 +1372,13 @@ function getMatchPhase(kickoffUTC, matchId) {
 
   if (elapsedMin < 0) return null;
 
-  // ---- Prefer the real broadcast status from football-data.org, if we
-  // have a fresh reading for this match. PAUSED (their halftime signal) and
-  // FINISHED short-circuit straight to those phases regardless of what the
-  // clock estimate would otherwise say — those two are unambiguous. For
-  // IN_PLAY, use their reported `minute` directly when it's present and
-  // plausible: our clock model assumes fixed stoppage-time and halftime
-  // lengths that won't match every real match exactly, so the real minute
-  // from the broadcast is always more trustworthy than our guess once we
-  // have it. Their status model has no concept of a hydration break, so a
-  // minute in the low-to-mid 20s or 60s might already include time we'd
-  // otherwise treat as "paused" — that's fine, it's still more accurate
-  // than compounding our own fixed assumptions on top of theirs. ----
+  // ---- Prefer ESPN's real broadcast status when we have a fresh reading.
+  // PAUSED (halftime) and FINISHED are unambiguous and short-circuit. For
+  // IN_PLAY we show ESPN's actual match clock string ("23'", "45'+2'",
+  // "90'+8'") verbatim — it's the real broadcast minute, far more accurate
+  // than our fixed-length clock estimate. The clock estimate below is only a
+  // fallback for when no fresh ESPN reading exists (no tab synced recently,
+  // or the match isn't in the feed window yet). ----
   const liveStatus = matchId != null ? getLiveApiStatus(matchId) : null;
   if (liveStatus) {
     if (liveStatus.status === 'PAUSED') {
@@ -1392,19 +1387,22 @@ function getMatchPhase(kickoffUTC, matchId) {
     if (liveStatus.status === 'FINISHED') {
       return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft', source: 'live' };
     }
-    if (liveStatus.status === 'IN_PLAY' && typeof liveStatus.minute === 'number' && liveStatus.minute >= 0 && liveStatus.minute <= 130) {
-      const min = liveStatus.minute;
-      if (min <= HALF_LENGTH_MIN) {
-        return { phase: '1st Half', displayMin: `${min}`, phase_code: '1h', source: 'live' };
+    if (liveStatus.status === 'IN_PLAY') {
+      const period = liveStatus.period || (typeof liveStatus.minute === 'number' && liveStatus.minute > HALF_LENGTH_MIN ? 2 : 1);
+      const code = period >= 2 ? '2h' : '1h';
+      const phaseName = period >= 2 ? '2nd Half' : '1st Half';
+      // Use ESPN's clock string; the banner appends a trailing apostrophe, so
+      // strip ESPN's trailing one ("90'+8'" -> "90'+8" -> banner shows "90'+8'").
+      let dm = '';
+      if (liveStatus.displayClock && /\d/.test(liveStatus.displayClock)) {
+        dm = String(liveStatus.displayClock).replace(/'\s*$/, '').trim();
+      } else if (typeof liveStatus.minute === 'number' && liveStatus.minute >= 0) {
+        dm = `${liveStatus.minute}`;
       }
-      if (min <= HALF_LENGTH_MIN * 2) {
-        return { phase: '2nd Half', displayMin: `${min}`, phase_code: '2h', source: 'live' };
-      }
-      // Beyond 90 without a FINISHED/PAUSED status yet — still 2nd half stoppage.
-      return { phase: '2nd Half', displayMin: `90+${min - HALF_LENGTH_MIN * 2}`, phase_code: '2h', source: 'live' };
+      if (dm) return { phase: phaseName, displayMin: dm, phase_code: code, source: 'live' };
     }
-    // IN_PLAY but their minute field is missing/implausible — fall through
-    // to the clock estimate below for the number, tagged as confirmed live.
+    // Status present but not usable for a number — fall through to the clock
+    // estimate below, still tagged as confirmed live.
   }
 
   const clockPhase = getMatchPhaseFromClock(elapsedMin);
@@ -1655,45 +1653,58 @@ MATCHES.forEach(m => { MATCH_UTC[m.id] = parseMatchUTC(m.date, m.time); });
 const ADMIN_PASS = "icd2026";
 
 /* ============================================================
-   LIVE SCORE SYNC — football-data.org (free tier)
-   Fetches live/finished scores for the World Cup competition (code "WC")
-   and auto-fills the admin score fields. Goalscorers are NOT covered by
-   the free tier's match data, so they always stay manual entry.
-   Attribution required by their terms: "Football data provided by the
-   Football-Data.org API" — included in the page footer.
+   LIVE SCORE SYNC — ESPN (free, no key, CORS-open public endpoint)
+   ESPN's public scoreboard returns the live score, the real broadcast match
+   clock ("90'+8'"), the match status (HT / FT / in-play), AND goalscorers —
+   for the World Cup, with NO API key, callable straight from the browser.
+   Any visitor with the page open fetches it and relays the result to every
+   device via Firebase, so scores (and scorers) flow with zero admin action.
+   An optional Cloudflare Worker (worker.js in the project) can run the exact
+   same sync on a 1-minute cron as a fully autonomous backstop / CORS proxy.
+   Data courtesy of ESPN.
    ============================================================ */
-const FOOTBALL_DATA_API_KEY = "77e8e87238044e2fb4047bbbf7e2be3b";
-const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
+const ESPN_SCOREBOARD_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
 
-// football-data.org's official team names for this tournament differ from
-// ours in a few cases (e.g. "Korea Republic" vs "South Korea", "Côte d'Ivoire"
-// vs "Ivory Coast"). Map their name -> our name so matches line up correctly.
-// Names not listed here are assumed identical between the two sources.
-const FOOTBALL_DATA_NAME_MAP = {
-  "South Korea": "Korea Republic",
-  "Korea Republic": "Korea Republic",
-  "Czech Republic": "Czechia",
-  "Czechia": "Czechia",
-  "Bosnia and Herzegovina": "Bosnia & Herzegovina",
-  "Côte d'Ivoire": "Ivory Coast",
-  "Ivory Coast": "Ivory Coast",
-  "IR Iran": "Iran",
-  "Iran": "Iran",
-  "United States": "United States",
-  "USA": "United States",
-  "Turkey": "Türkiye",
-  "Türkiye": "Türkiye",
-  "Saudi Arabia": "Saudi Arabia",
-  "DR Congo": "DR Congo",
-  "Congo DR": "DR Congo",
-  "Republic of Ireland": "Ireland",
-  "Cabo Verde": "Cape Verde",
-  "Cape Verde": "Cape Verde",
-  "Curacao": "Curaçao",
-  "Curaçao": "Curaçao",
+// Optional relay/proxy (e.g. a Cloudflare Worker). Leave "" to call ESPN
+// directly from the browser — that's the default and needs no setup. If a
+// browser ever blocks the direct call with a CORS error, deploy worker.js
+// and paste its URL here; the client will transparently route through it.
+const LIVE_SCORE_PROXY_URL = "";
+
+function espnScoreboardUrl(){
+  if(typeof LIVE_SCORE_PROXY_URL === 'string' && /^https?:\/\//.test(LIVE_SCORE_PROXY_URL) && !LIVE_SCORE_PROXY_URL.includes('<')){
+    return LIVE_SCORE_PROXY_URL;
+  }
+  // Request a tight ±26h window around "now" (UTC) so the payload stays small
+  // while always covering any match currently live, including midnight-ET
+  // kickoffs that roll into the next UTC date.
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}`;
+  const from = new Date(Date.now() - 26*3600*1000);
+  const to   = new Date(Date.now() + 26*3600*1000);
+  return `${ESPN_SCOREBOARD_BASE}?dates=${ymd(from)}-${ymd(to)}&limit=200`;
+}
+
+// ESPN's country names differ from ours in a few cases. Map ESPN -> ours.
+// Anything not listed falls back to an accent-insensitive match against TEAMS.
+const ESPN_NAME_MAP = {
+  "South Korea":"Korea Republic", "Korea Republic":"Korea Republic",
+  "Czech Republic":"Czechia", "Czechia":"Czechia",
+  "Bosnia and Herzegovina":"Bosnia & Herzegovina", "Bosnia & Herzegovina":"Bosnia & Herzegovina", "Bosnia-Herzegovina":"Bosnia & Herzegovina",
+  "Côte d'Ivoire":"Ivory Coast", "Cote d'Ivoire":"Ivory Coast", "Ivory Coast":"Ivory Coast",
+  "IR Iran":"Iran", "Iran":"Iran",
+  "USA":"United States", "United States":"United States",
+  "Turkey":"Türkiye", "Turkiye":"Türkiye", "Türkiye":"Türkiye",
+  "DR Congo":"DR Congo", "Congo DR":"DR Congo", "Democratic Republic of the Congo":"DR Congo",
+  "Cabo Verde":"Cape Verde", "Cape Verde":"Cape Verde",
+  "Curacao":"Curaçao", "Curaçao":"Curaçao",
 };
-function normaliseFootballDataName(name){
-  return FOOTBALL_DATA_NAME_MAP[name] || name;
+function normaliseEspnName(name){
+  if(!name) return name;
+  if(ESPN_NAME_MAP[name]) return ESPN_NAME_MAP[name];
+  const c = stripAccents(name).toLowerCase().trim();
+  for(const t in TEAMS){ if(stripAccents(t).toLowerCase().trim() === c) return t; }
+  return name;
 }
 
 /* ============================================================
@@ -1794,7 +1805,7 @@ const DB = {
       db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
     }
   },
-  // Real broadcast status (status/minute) pulled from football-data.org by
+  // Real broadcast status (status/clock) pulled from ESPN by
   // whoever is running the sync. Shared the same way as results, so every
   // player's device sees the same "Live"/HT/FT state — without this, the
   // cache only ever existed in the organiser's own browser tab memory, and
@@ -2562,7 +2573,7 @@ function initFilterArrows() {
    ============================================================ */
 let _kickedSet = null;
 let _lastBackgroundSyncCheck = 0;
-const BACKGROUND_SYNC_INTERVAL_MS = 60000; // football-data.org free tier allows 10 req/min — one shared poll per minute is comfortably within that even with many visitors, since each browser tab only fires this when it personally hasn't synced recently
+const BACKGROUND_SYNC_INTERVAL_MS = 60000; // one shared poll per minute is plenty for live scores; ESPN's public endpoint needs no key and is generous, and the cross-tab dedup below means many simultaneous viewers still produce only ~one fetch per minute total
 function tick() {
   updateCountdown();
   renderLiveBanner();
@@ -3357,7 +3368,7 @@ function setResultScorers(id,val){
 }
 
 /* ============================================================
-   LIVE SCORE SYNC — football-data.org
+   LIVE SCORE SYNC — ESPN
    ============================================================ */
 let _liveSyncPollTimer = null;
 let _liveSyncLastRun = 0;
@@ -3368,63 +3379,108 @@ let _liveSyncInFlight = false;
 window._liveSyncApplied = window._liveSyncApplied || {}; // { [matchId]: true }
 window._liveSyncOverridden = window._liveSyncOverridden || {}; // { [matchId]: true } — admin edited manually after an auto-fill
 
-/** Finds the MATCHES entry that corresponds to a football-data.org match
- *  object, by normalised team names first, falling back to closest kickoff
- *  date if names alone are ambiguous. Returns null if no confident match. */
-function findLocalMatchForApiMatch(apiMatch){
-  const apiHome = normaliseFootballDataName(apiMatch.homeTeam && apiMatch.homeTeam.name);
-  const apiAway = normaliseFootballDataName(apiMatch.awayTeam && apiMatch.awayTeam.name);
-  if(!apiHome || !apiAway) return null;
+/** Parse one ESPN scoreboard "event" into a normalised shape:
+ *  { home:{name,score}, away:{name,score}, status, state, period,
+ *    displayClock, minute, goals:[{side,name,ownGoal,clock}] }.
+ *  Returns null for matches not yet usable (scheduled/postponed). Team names
+ *  are normalised to our naming. */
+function parseEspnEvent(ev){
+  const comp = ev && ev.competitions && ev.competitions[0];
+  if(!comp) return null;
+  const st = comp.status && comp.status.type;
+  if(!st) return null;
+  const state = st.state; // 'pre' | 'in' | 'post'
+  let status = null;
+  if(state === 'in'){
+    const nm = `${st.name||''} ${st.detail||''} ${st.shortDetail||''}`;
+    status = (/HALF[\s_-]?TIME|HALFTIME/i.test(nm) || /^HT$/i.test(st.shortDetail||'')) ? 'PAUSED' : 'IN_PLAY';
+  } else if(state === 'post'){
+    status = 'FINISHED';
+  } else {
+    return null; // scheduled / postponed / delayed — nothing usable yet
+  }
+  const comps = comp.competitors || [];
+  const homeC = comps.find(c => c.homeAway === 'home');
+  const awayC = comps.find(c => c.homeAway === 'away');
+  if(!homeC || !awayC) return null;
+  const nameOf  = c => normaliseEspnName((c.team && (c.team.displayName || c.team.name || c.team.shortDisplayName)) || '');
+  const scoreOf = c => { const n = parseInt(c.score, 10); return isNaN(n) ? null : n; };
 
+  const sideById = {};
+  if(homeC.team) sideById[homeC.team.id] = 'home';
+  if(awayC.team) sideById[awayC.team.id] = 'away';
+
+  const goals = [];
+  (comp.details || []).forEach(d => {
+    if(!d || !d.scoringPlay) return;   // only goals
+    if(d.shootout) return;             // ignore penalty-shootout goals
+    if(!(d.scoreValue >= 1)) return;
+    const ath = (d.athletesInvolved && d.athletesInvolved[0]) || null;
+    const nm = ath ? (ath.displayName || ath.shortName || ath.fullName || '') : '';
+    goals.push({
+      side: sideById[d.team && d.team.id] || null,
+      name: d.ownGoal ? 'Own goal' : nm,
+      ownGoal: !!d.ownGoal,
+      clock: (d.clock && d.clock.displayValue) || ''
+    });
+  });
+
+  const displayClock = (comp.status && comp.status.displayClock) || '';
+  const period = (comp.status && comp.status.period) || null;
+  return {
+    home: { name: nameOf(homeC), score: scoreOf(homeC) },
+    away: { name: nameOf(awayC), score: scoreOf(awayC) },
+    status, state, period, displayClock,
+    minute: parseEspnMinute(displayClock),
+    goals
+  };
+}
+
+/** Parse ESPN's clock string into an approximate whole-minute number, used
+ *  only as a fallback when getMatchPhase can't use the string directly.
+ *  "23'" -> 23, "45'+2'" -> 47, "90'+8'" -> 98, "HT" -> 45, "FT" -> 90. */
+function parseEspnMinute(displayClock){
+  if(!displayClock) return null;
+  const s = String(displayClock).trim();
+  if(/^HT$/i.test(s)) return 45;
+  if(/^FT$/i.test(s)) return 90;
+  const m = s.match(/(\d+)\s*'?(?:\s*\+\s*(\d+))?/);
+  if(!m) return null;
+  return parseInt(m[1],10) + (m[2] ? parseInt(m[2],10) : 0);
+}
+
+/** Find the local MATCHES fixture for a parsed ESPN event by normalised team
+ *  names (order-independent), disambiguating repeat pairings by closest
+ *  kickoff date. Returns null if no confident match. */
+function findLocalMatch(homeName, awayName, isoDate){
+  if(!homeName || !awayName) return null;
   const candidates = MATCHES.filter(m =>
-    (m.h === apiHome && m.a === apiAway) || (m.h === apiAway && m.a === apiHome)
+    (m.h === homeName && m.a === awayName) || (m.h === awayName && m.a === homeName)
   );
   if(candidates.length === 0) return null;
   if(candidates.length === 1) return candidates[0];
-
-  // Same two teams meet more than once across the tournament (rare in groups,
-  // more likely in knockouts) — disambiguate by whichever fixture's kickoff
-  // is closest to the API's utcDate.
-  const apiDate = new Date(apiMatch.utcDate).getTime();
+  const apiDate = new Date(isoDate).getTime();
   candidates.sort((a,b) => Math.abs(MATCH_UTC[a.id] - apiDate) - Math.abs(MATCH_UTC[b.id] - apiDate));
   return candidates[0];
 }
 
-/** Maps a football-data.org match status to our result shape. Returns null
- *  if the match hasn't produced a usable score yet (e.g. still SCHEDULED). */
-function extractScoreFromApiMatch(apiMatch){
-  const s = apiMatch.status;
-  const usableStatus = ['IN_PLAY','PAUSED','FINISHED'].includes(s);
-  if(!usableStatus) return null;
-  const ft = apiMatch.score && apiMatch.score.fullTime;
-  const ht = apiMatch.score && apiMatch.score.halfTime;
-  // Prefer fullTime once available (covers IN_PLAY running score too — the
-  // API reports the current score live in fullTime while a match is on).
-  const home = ft && ft.home != null ? ft.home : (ht && ht.home);
-  const away = ft && ft.away != null ? ft.away : (ht && ht.away);
-  if(home == null || away == null) return null;
-  return { h: home, a: away, status: s };
-}
+// The real status/clock ESPN reports for each local match id is persisted via
+// DB.liveStatus()/saveLiveStatus() — same Firebase + localStorage pattern as
+// results — so every connected device sees the same live state, not just the
+// device that ran the fetch. getMatchPhase() reads this first so the banner's
+// minute / HT / FT reflect ESPN's real broadcast clock, falling back to our
+// own clock estimate only when no fresh reading exists.
 
-// Real status/minute football-data.org reports for each local match id is
-// persisted via DB.liveStatus()/saveLiveStatus() — same Firebase + localStorage
-// pattern as results — so every connected device sees the same real-world
-// status the organiser's sync pulled, not just the device that ran the fetch.
-// getMatchPhase() consults this first so "HT"/"FT" badges reflect the real
-// broadcast state instead of our clock-based guess — the guess is only used
-// as a fallback (sync never run, or the match hasn't appeared in the API
-// response yet). Their status model has no concept of a mid-half hydration
-// break, so we still use our own clock for the *minute number* during active
-// play — only PAUSED (their halftime signal) and FINISHED are trusted outright.
-
-/** Records the real status/minute for a match into the given statusMap
- *  (the caller batches these and saves once via DB.saveLiveStatus, the same
- *  way fetchLiveScoresFromAPI batches result updates before one DB.saveResults
- *  call) — avoids one Firebase write per match on every poll. */
-function recordLiveApiStatus(statusMap, localId, apiMatch){
+/** Records ESPN's status/clock for a match into the given statusMap (the
+ *  caller batches these and saves once via DB.saveLiveStatus) — avoids one
+ *  Firebase write per match on every poll. */
+function recordLiveApiStatus(statusMap, localId, parsed){
   statusMap[localId] = {
-    status: apiMatch.status,
-    minute: apiMatch.minute != null ? apiMatch.minute : null,
+    status: parsed.status,
+    state: parsed.state || null,
+    displayClock: parsed.displayClock || null,
+    period: parsed.period || null,
+    minute: (typeof parsed.minute === 'number') ? parsed.minute : null,
     fetchedAt: Date.now(),
   };
 }
@@ -3442,87 +3498,94 @@ function getLiveApiStatus(matchId){
   return cached;
 }
 
-/** Pulls current World Cup match data from football-data.org and merges
- *  scores into local results. Goalscorers are never touched — the free tier
- *  doesn't provide them, and even if it did, scorer entry stays manual per
- *  the agreed design. A match already overridden by the organiser (edited
- *  by hand after an auto-fill) is skipped on subsequent polls so a manual
- *  correction always wins. */
+/** Pulls current World Cup data from ESPN's public scoreboard and merges
+ *  scores AND goalscorers into local results, plus the real broadcast status
+ *  into liveStatus. No API key, called straight from the browser. Any match
+ *  the organiser has edited by hand (overridden) is skipped on later polls so
+ *  a manual correction always wins. Writes are batched into one saveResults /
+ *  one saveLiveStatus call. */
 async function fetchLiveScoresFromAPI(opts){
   const silent = opts && opts.silent;
   if(_liveSyncInFlight) return;
   _liveSyncInFlight = true;
   if(!silent) toast("Checking live scores…");
   try {
-    const res = await fetch(`${FOOTBALL_DATA_BASE}/competitions/WC/matches`, {
-      headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY }
-    });
+    const res = await fetch(espnScoreboardUrl(), { cache: 'no-store' });
     if(!res.ok){
-      if(res.status === 429){
-        if(!silent) toast("Live score API rate-limited — try again in a minute");
-      } else {
-        if(!silent) toast(`Live score fetch failed (${res.status})`);
-      }
+      if(!silent) toast(`Live score fetch failed (${res.status})`);
       return;
     }
     const data = await res.json();
-    const apiMatches = data.matches || [];
+    const events = data.events || [];
     const results = DB.results();
-    const liveStatusMap = DB.liveStatus(); // start from what's already shared, so matches not in this response keep their last known status until it goes stale
-    let updatedCount = 0;
-    let skippedOverridden = 0;
-    let statusChanged = false;
+    const liveStatusMap = DB.liveStatus(); // keep prior statuses for matches absent from this window until they go stale
+    let scoreUpdates = 0, scorerUpdates = 0, skippedOverridden = 0, statusChanged = false;
+    const changedIds = [];
 
-    apiMatches.forEach(apiMatch => {
-      const local = findLocalMatchForApiMatch(apiMatch);
+    events.forEach(ev => {
+      const parsed = parseEspnEvent(ev);
+      if(!parsed || !parsed.status) return;            // not live/finished yet
+      const local = findLocalMatch(parsed.home.name, parsed.away.name, ev.date);
       if(!local) return;
 
-      // Always record the real status/minute, even if the score itself is
-      // admin-overridden or unchanged — the live banner's HT/FT display
-      // should reflect reality regardless of who "owns" the score numbers.
+      // Always record the real status/clock, even if the score is
+      // admin-overridden or unchanged — the live banner should reflect reality.
       const prevStatus = liveStatusMap[local.id] && liveStatusMap[local.id].status;
-      recordLiveApiStatus(liveStatusMap, local.id, apiMatch);
-      if(prevStatus !== apiMatch.status) statusChanged = true;
+      recordLiveApiStatus(liveStatusMap, local.id, parsed);
+      if(prevStatus !== parsed.status) statusChanged = true;
 
       if(window._liveSyncOverridden[local.id]){ skippedOverridden++; return; }
-      const score = extractScoreFromApiMatch(apiMatch);
-      if(!score) return;
+
+      // Map ESPN's home/away onto THIS fixture's home/away by team name, so a
+      // flipped orientation can never assign a score to the wrong side.
+      let hVal, aVal;
+      if(parsed.home.name === local.h){ hVal = parsed.home.score; aVal = parsed.away.score; }
+      else if(parsed.away.name === local.h){ hVal = parsed.away.score; aVal = parsed.home.score; }
+      else { hVal = parsed.home.score; aVal = parsed.away.score; }
+      if(hVal == null || aVal == null) return;
+
+      // Real goalscorers (both teams); own goals recorded as "Own goal".
+      const scorers = parsed.goals.map(g => g.ownGoal ? 'Own goal' : g.name).filter(Boolean);
 
       const existing = results[local.id];
-      const changed = !existing || existing.h !== score.h || existing.a !== score.a;
-      if(changed){
-        results[local.id] = {
-          h: score.h,
-          a: score.a,
-          scorers: (existing && existing.scorers) || [],
-        };
+      const scoreChanged   = !existing || existing.h !== hVal || existing.a !== aVal;
+      const oldScorers     = (existing && existing.scorers) || [];
+      const scorersChanged = scorers.length !== oldScorers.length || scorers.some((s,i) => s !== oldScorers[i]);
+
+      if(scoreChanged || scorersChanged){
+        results[local.id] = { h: hVal, a: aVal, scorers };
         window._liveSyncApplied[local.id] = true;
-        updatedCount++;
+        if(scoreChanged) scoreUpdates++;
+        if(scorersChanged) scorerUpdates++;
+        changedIds.push(local.id);
       }
     });
 
     DB.saveLiveStatus(liveStatusMap); // always persist — keeps fetchedAt fresh for matches still live even with no other changes
+    if(scoreUpdates > 0 || scorerUpdates > 0) DB.saveResults(results);
 
-    if(updatedCount > 0){
-      DB.saveResults(results);
-    }
-    if(updatedCount > 0 || statusChanged){
+    if(scoreUpdates > 0 || scorerUpdates > 0 || statusChanged){
       renderScorebar();
       renderLiveBanner();
       renderNextMatchCard();
-      if(document.getElementById('adminPanel').style.display !== 'none') renderAdmin();
-      if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
+      const ap = document.getElementById('adminPanel');
+      if(ap && ap.style.display !== 'none') renderAdmin();
+      const sv = document.getElementById('view-standings');
+      if(sv && sv.classList.contains('active')) renderStandingsTab();
+      const pr = document.getElementById('predict');
+      if(pr && pr.style.display !== 'none') changedIds.forEach(refreshMatch); // patch affected cards in place — no group-state collapse
     }
 
     if(!silent){
-      if(updatedCount > 0) toast(`✓ ${updatedCount} score${updatedCount===1?'':'s'} updated from live feed`);
+      if(scoreUpdates > 0) toast(`✓ ${scoreUpdates} score${scoreUpdates===1?'':'s'} updated from ESPN`);
+      else if(scorerUpdates > 0) toast("✓ Goalscorers updated from ESPN");
       else if(skippedOverridden > 0) toast("No new scores — some matches use your manual edits");
       else toast("No live score changes");
     }
     _liveSyncLastRun = Date.now();
   } catch(e){
     console.error('Live score sync failed:', e);
-    if(!silent) toast("Live score sync failed — check connection");
+    if(!silent) toast("Live score sync failed — check connection (a browser may be blocking ESPN; see worker.js)");
   } finally {
     _liveSyncInFlight = false;
   }
