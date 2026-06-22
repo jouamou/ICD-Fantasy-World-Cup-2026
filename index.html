@@ -1017,6 +1017,68 @@
       order: 5;
     }
   }
+
+  /* ===== LIVE CARD IS TAPPABLE (jump to your prediction) ===== */
+  .lmb-slide{ cursor:pointer; }
+  .lmb-slide:active{ filter:brightness(1.07); }
+  #liveMatchBanner .lmb-tap-hint{
+    grid-column:1 / -1;
+    font-size:9.5px; font-weight:600; letter-spacing:.3px;
+    color:rgba(255,255,255,.42);
+    text-align:center;
+    padding-top:8px;
+    text-transform:uppercase;
+  }
+
+  /* ===== STICKY MINI LIVE BAR =====
+     When the full live card scrolls up under the tabbar, it collapses into a
+     thin always-on-top score line. Tapping a chip jumps to that prediction. */
+  #liveMiniBar{
+    position:fixed;
+    top:var(--tabbar-h, 52px);
+    left:0; right:0;
+    z-index:25;
+    background:linear-gradient(135deg,#2a1f00 0%,#3a2a00 100%);
+    border-bottom:1.5px solid var(--gold);
+    box-shadow:0 5px 16px rgba(20,40,10,.28);
+    transform:translateY(-130%);
+    opacity:0;
+    transition:transform .26s cubic-bezier(.4,0,.2,1), opacity .2s ease;
+    pointer-events:none;
+  }
+  #liveMiniBar.show{
+    transform:translateY(0);
+    opacity:1;
+    pointer-events:auto;
+  }
+  .lmb-mini-row{
+    display:flex; gap:8px; align-items:center;
+    max-width:980px; margin:0 auto;
+    padding:8px max(12px, env(safe-area-inset-left)) 8px max(12px, env(safe-area-inset-right));
+    overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .lmb-mini-row::-webkit-scrollbar{display:none}
+  .lmb-mini-row.single{ justify-content:center; }
+  .lmb-mini-chip{
+    flex:0 0 auto;
+    display:flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(224,168,46,.32);
+    border-radius:30px;
+    padding:6px 13px;
+    cursor:pointer; color:#fff;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+    transition:background .12s;
+  }
+  .lmb-mini-chip:active{ background:rgba(255,255,255,.16); }
+  .lmb-mini-chip img{ width:22px; height:15px; border-radius:2px; object-fit:cover; flex:0 0 auto; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .lmb-mini-chip .mini-dot{ width:6px; height:6px; border-radius:50%; background:var(--gold); flex:0 0 auto; }
+  .lmb-mini-chip .mini-dot.pulse{ animation:dotPulse 1.2s ease-in-out infinite; }
+  .lmb-mini-chip .mini-score{ font-family:'Oswald'; font-weight:700; font-size:18px; line-height:1; color:#fff; min-width:12px; text-align:center; }
+  .lmb-mini-chip .mini-score.pending{ color:rgba(255,255,255,.35); font-size:15px; }
+  .lmb-mini-chip .mini-sep{ font-family:'Oswald'; font-size:14px; color:rgba(255,255,255,.35); }
+  .lmb-mini-chip .mini-min{ font-family:'Inter'; font-size:10px; font-weight:700; color:var(--gold); background:rgba(224,168,46,.16); padding:2px 8px; border-radius:11px; margin-left:2px; white-space:nowrap; }
+  .lmb-mini-chip .mini-go{ font-size:11px; color:rgba(255,255,255,.4); font-weight:700; margin-left:1px; }
 </style>
 </head>
 <body>
@@ -1046,6 +1108,11 @@
     <button class="tab" data-view="admin"><span class="ic">🔐</span>Results</button>
   </div>
 </nav>
+
+<!-- Collapses the live match card into a thin always-visible score line once
+     the full card scrolls up under the tabbar. Tap a chip to jump to your
+     prediction. Populated/toggled entirely from JS (updateLiveMiniBar). -->
+<div id="liveMiniBar" aria-live="polite"></div>
 
 <main class="wrap">
 
@@ -2378,7 +2445,7 @@ function liveMatchSlideHtml(live) {
     ? `<div class="lmb-min-label" style="font-size:8.5px;opacity:.6;margin-top:1px" data-f="min-source">estimated</div>`
     : '';
 
-  return `<div class="lmb-slide" id="lmb-slide-${live.id}">
+  return `<div class="lmb-slide" id="lmb-slide-${live.id}" role="button" tabindex="0" onclick="scrollToMatch(${live.id})" aria-label="View your prediction for ${live.h} versus ${live.a}">
     <div class="lmb-inner">
       <div class="lmb-live-dot" data-f="live-dot">
         ${(!isFT && !isHT) ? '<div class="dot-pulse"></div>' : ''}
@@ -2409,6 +2476,7 @@ function liveMatchSlideHtml(live) {
         </div>
       </div>
       <div data-f="scorers-block">${scorersHtml}</div>
+      <div class="lmb-tap-hint">Tap to see your prediction →</div>
       <div class="lmb-progress"><div class="lmb-progress-fill" data-f="progress-fill" style="width:${progressPct}%"></div></div>
     </div>
   </div>`;
@@ -2529,6 +2597,122 @@ function renderLiveBanner() {
     </div>` : '';
 
   banner.innerHTML = `${labelHtml}<div class="lmb-row${isMulti ? ' multi' : ''}">${slidesHtml}</div>`;
+  updateLiveMiniBar();
+}
+
+/* ============================================================
+   STICKY MINI LIVE BAR
+   The full live card lives at the top of the predict view and scrolls with
+   the page. Once it slides up under the sticky tabbar, this thin bar pins a
+   compact score line to the top so the live score is never lost. Each chip is
+   tappable and jumps straight to that match's prediction card.
+   ============================================================ */
+let _fullLiveBannerVisible = true;   // is the big live card currently in view?
+let _liveBannerObserver = null;
+
+function getTabbarH(){
+  const tb = document.querySelector('.tabbar');
+  return tb ? tb.offsetHeight : 52;
+}
+function syncTabbarH(){
+  document.documentElement.style.setProperty('--tabbar-h', getTabbarH() + 'px');
+}
+
+function miniChipHtml(live){
+  const phase = getMatchPhase(MATCH_UTC[live.id], live.id);
+  const r = DB.results()[live.id] || {};
+  const hasScore = r.h != null && r.h !== '' && r.a != null && r.a !== '';
+  const hS = hasScore ? r.h : '–';
+  const aS = hasScore ? r.a : '–';
+  const isHT = phase && phase.phase_code === 'ht';
+  const isFT = phase && phase.phase_code === 'ft';
+  const minD = isHT ? 'HT' : (isFT ? 'FT' : (phase ? `${phase.displayMin}'` : ''));
+  return `<button class="lmb-mini-chip" id="mini-chip-${live.id}" onclick="scrollToMatch(${live.id})" aria-label="View your prediction for ${live.h} versus ${live.a}">
+    <span class="mini-dot ${(!isFT && !isHT) ? 'pulse' : ''}"></span>
+    <img src="${teamFlag(live.h)}" alt="">
+    <span class="mini-score ${!hasScore ? 'pending' : ''}" data-f="mini-h">${hS}</span>
+    <span class="mini-sep">:</span>
+    <span class="mini-score ${!hasScore ? 'pending' : ''}" data-f="mini-a">${aS}</span>
+    <img src="${teamFlag(live.a)}" alt="">
+    <span class="mini-min" data-f="mini-min">${minD}</span>
+    <span class="mini-go">→</span>
+  </button>`;
+}
+
+function patchMiniChip(live){
+  const el = document.getElementById('mini-chip-' + live.id);
+  if(!el) return;
+  const phase = getMatchPhase(MATCH_UTC[live.id], live.id);
+  if(!phase) return;
+  const r = DB.results()[live.id] || {};
+  const hasScore = r.h != null && r.h !== '' && r.a != null && r.a !== '';
+  const hS = hasScore ? r.h : '–';
+  const aS = hasScore ? r.a : '–';
+  const isHT = phase.phase_code === 'ht';
+  const isFT = phase.phase_code === 'ft';
+  const minD = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
+  const hEl = el.querySelector('[data-f="mini-h"]');
+  if(hEl){ hEl.textContent = hS; hEl.classList.toggle('pending', !hasScore); }
+  const aEl = el.querySelector('[data-f="mini-a"]');
+  if(aEl){ aEl.textContent = aS; aEl.classList.toggle('pending', !hasScore); }
+  const mEl = el.querySelector('[data-f="mini-min"]');
+  if(mEl) mEl.textContent = minD;
+  const dot = el.querySelector('.mini-dot');
+  if(dot) dot.classList.toggle('pulse', !isFT && !isHT);
+}
+
+function updateLiveMiniBar(){
+  const mini = document.getElementById('liveMiniBar');
+  if(!mini) return;
+  const playView = document.getElementById('view-play');
+  const predictEl = document.getElementById('predict');
+  const playActive = playView && playView.classList.contains('active');
+  const predictShown = predictEl && predictEl.style.display !== 'none';
+  const liveList = findLiveMatches().filter(m => getMatchPhase(MATCH_UTC[m.id], m.id));
+
+  const shouldShow = playActive && predictShown && liveList.length > 0 && !_fullLiveBannerVisible;
+  if(!shouldShow){ mini.classList.remove('show'); return; }
+
+  const ids = liveList.map(m => m.id).sort((a,b)=>a-b).join(',');
+  if(mini.dataset.miniIds !== ids){
+    mini.dataset.miniIds = ids;
+    const chips = liveList.map(miniChipHtml).join('');
+    mini.innerHTML = `<div class="lmb-mini-row${liveList.length === 1 ? ' single' : ''}">${chips}</div>`;
+  } else {
+    liveList.forEach(patchMiniChip);
+  }
+  mini.classList.add('show');
+}
+
+/** Decide whether the big live card is on-screen (below the sticky tabbar)
+ *  and refresh the mini bar accordingly. Driven by an IntersectionObserver
+ *  where supported, with a scroll-based fallback. */
+function recomputeBannerVisibility(){
+  const banner = document.getElementById('liveMatchBanner');
+  if(!banner || banner.style.display === 'none'){ _fullLiveBannerVisible = true; updateLiveMiniBar(); return; }
+  const rect = banner.getBoundingClientRect();
+  _fullLiveBannerVisible = rect.bottom > getTabbarH() + 4;
+  updateLiveMiniBar();
+}
+let _bannerScrollRaf = null;
+function _bannerScrollFallback(){
+  if(_bannerScrollRaf) return;
+  _bannerScrollRaf = requestAnimationFrame(() => { _bannerScrollRaf = null; recomputeBannerVisibility(); });
+}
+function setupLiveBannerObserver(){
+  const banner = document.getElementById('liveMatchBanner');
+  if(!banner) return;
+  if(window.IntersectionObserver){
+    if(_liveBannerObserver) _liveBannerObserver.disconnect();
+    _liveBannerObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => { _fullLiveBannerVisible = e.isIntersecting; });
+      updateLiveMiniBar();
+    }, { root: null, rootMargin: `-${getTabbarH()}px 0px 0px 0px`, threshold: 0 });
+    _liveBannerObserver.observe(banner);
+  } else {
+    window.removeEventListener('scroll', _bannerScrollFallback);
+    window.addEventListener('scroll', _bannerScrollFallback, { passive: true });
+  }
 }
 
 /* ============================================================
@@ -2577,6 +2761,7 @@ const BACKGROUND_SYNC_INTERVAL_MS = 60000; // one shared poll per minute is plen
 function tick() {
   updateCountdown();
   renderLiveBanner();
+  updateLiveMiniBar();
   updateUnpredictedPill();
   const now = Date.now();
 
@@ -2683,6 +2868,7 @@ function enterPredict(){
   renderNextMatchCard();
   renderLiveBanner();
   updateUnpredictedPill();
+  updateLiveMiniBar();
 }
 document.getElementById('switchBtn').addEventListener('click',()=>{
   document.getElementById('predict').style.display='none';
@@ -3649,6 +3835,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
       setLiveSyncPolling(true);
     }
     window.scrollTo({top:0,behavior:'smooth'});
+    updateLiveMiniBar();
   });
 });
 
@@ -3762,6 +3949,9 @@ function init(){
     enterPredict();
   }
   initFilterArrows();
+  syncTabbarH();
+  setupLiveBannerObserver();
+  window.addEventListener('resize', () => { syncTabbarH(); setupLiveBannerObserver(); }, { passive: true });
   setInterval(tick, 1000);
   setInterval(renderNextMatchCard, 30000);
 }
