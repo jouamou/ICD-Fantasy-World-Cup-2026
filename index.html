@@ -2702,16 +2702,19 @@ function _bannerScrollFallback(){
 function setupLiveBannerObserver(){
   const banner = document.getElementById('liveMatchBanner');
   if(!banner) return;
+  // Always drive visibility from a passive, rAF-throttled scroll listener using
+  // getBoundingClientRect — this is reliable on every device, including mobile
+  // browsers (iOS Safari in particular) that delay IntersectionObserver
+  // callbacks until momentum scrolling settles. The observer below is kept as
+  // an extra, instant trigger where available, but is no longer relied upon.
+  window.removeEventListener('scroll', _bannerScrollFallback);
+  window.addEventListener('scroll', _bannerScrollFallback, { passive: true });
   if(window.IntersectionObserver){
     if(_liveBannerObserver) _liveBannerObserver.disconnect();
-    _liveBannerObserver = new IntersectionObserver(entries => {
-      entries.forEach(e => { _fullLiveBannerVisible = e.isIntersecting; });
-      updateLiveMiniBar();
+    _liveBannerObserver = new IntersectionObserver(() => {
+      recomputeBannerVisibility();
     }, { root: null, rootMargin: `-${getTabbarH()}px 0px 0px 0px`, threshold: 0 });
     _liveBannerObserver.observe(banner);
-  } else {
-    window.removeEventListener('scroll', _bannerScrollFallback);
-    window.addEventListener('scroll', _bannerScrollFallback, { passive: true });
   }
 }
 
@@ -2761,7 +2764,7 @@ const BACKGROUND_SYNC_INTERVAL_MS = 60000; // one shared poll per minute is plen
 function tick() {
   updateCountdown();
   renderLiveBanner();
-  updateLiveMiniBar();
+  recomputeBannerVisibility();
   updateUnpredictedPill();
   const now = Date.now();
 
