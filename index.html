@@ -1221,7 +1221,7 @@
       </div>
       <div class="rule-card">
         <div class="rhead"><div class="rico">⚽</div><h3>Goalscorers</h3></div>
-        <p>Naming scorers is optional but it's where the big points are. Start typing and pick from the autocomplete list, or type any format — full name, last name only, or FIFA-style initials like <b>J. Quiñones</b>. Accents are optional too. Up to three scorers count per match for bonus points.</p>
+        <p>Naming scorers is optional but it's where the big points are. Start typing and pick from the autocomplete list, or type any format — full name, last name only, or FIFA-style initials like <b>J. Quiñones</b>. Accents are optional too. You can name one scorer for each goal you predict, and every correct one earns the bonus.</p>
       </div>
     </div>
 
@@ -1999,15 +1999,19 @@ function nameFuzzyMatch(pred, real){
 
 /** Returns which of the predicted scorers (by original index into pred.scorers,
  *  trimmed/non-empty entries only) earned points — i.e. matched a not-yet-used
- *  real scorer, within the first-3 cap. Mirrors scoreMatch()'s exact logic so
- *  the UI tick marks always agree with the points actually awarded. */
+ *  real scorer. Every predicted scorer is checked; the player can only name as
+ *  many scorers as goals they predicted (enforced by maxScorersFor), and each
+ *  real scorer can be matched at most once (the `used` list), so the count is
+ *  naturally bounded without any fixed positional cap — a correct scorer named
+ *  4th counts just the same as one named 1st. Mirrors scoreMatch()'s exact
+ *  logic so the UI tick marks always agree with the points actually awarded. */
 function matchedScorerIndexes(pred, res){
   const predSc=(pred && pred.scorers || []).map(s=>(s||'').trim()).filter(Boolean);
   const realSc=(res && res.scorers || []).map(s=>(s||'').trim()).filter(Boolean);
   const hit=new Set();
   if(!predSc.length || !realSc.length) return hit;
   const used=[];
-  predSc.slice(0,3).forEach((p,i)=>{
+  predSc.forEach((p,i)=>{
     const idx=realSc.findIndex((r,ri)=>!used.includes(ri) && nameFuzzyMatch(p, r));
     if(idx>-1){ used.push(idx); hit.add(i); }
   });
