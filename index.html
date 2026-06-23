@@ -1430,6 +1430,11 @@ const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            
 // before getMatchPhase() falls back to the clock-only estimate again (covers
 // sync being paused/disabled, or a match temporarily dropping off the feed).
 const LIVE_API_STATUS_MAX_AGE_MS = 3 * 60000; // stale after roughly 3 missed polls
+// How long after a match's SCHEDULED kickoff we keep polling ESPN in case the
+// real match was delayed (weather, broadcast) and hasn't actually kicked off
+// yet. Generous enough to cover long weather holds; polling for a given match
+// stops early the moment ESPN reports it FINISHED (see anyMatchPlausiblyLive).
+const LIVE_POLL_DELAY_GRACE_MS = 6 * 60 * 60000; // 6 hours
 
 function getMatchPhase(kickoffUTC, matchId) {
   const now = Date.now();
@@ -1466,7 +1471,11 @@ function getMatchPhase(kickoffUTC, matchId) {
       } else if (typeof liveStatus.minute === 'number' && liveStatus.minute >= 0) {
         dm = `${liveStatus.minute}`;
       }
-      if (dm) return { phase: phaseName, displayMin: dm, phase_code: code, source: 'live' };
+      // ESPN confirms the match is in play, so always return a live phase — never
+      // fall through to the scheduled-clock estimate, which is meaningless (and
+      // returns null) once a match has been delayed past its scheduled window.
+      if (!dm) dm = period >= 2 ? `${HALF_LENGTH_MIN}` : '0';
+      return { phase: phaseName, displayMin: dm, phase_code: code, source: 'live' };
     }
     // Status present but not usable for a number — fall through to the clock
     // estimate below, still tagged as confirmed live.
@@ -2396,15 +2405,21 @@ function updateCountdown() {
 /* ============================================================
    LIVE MATCH BANNER(S)
    ============================================================ */
-/** Returns every match currently in progress (kicked off, not yet past the
- *  MATCH_OVER_AT_MIN window we treat as "match over" — this already accounts
- *  for both 3-minute hydration breaks). Sorted by kickoff then group so
- *  simultaneous live games appear in a stable order. */
+/** Returns every match currently in progress. A match counts as live if EITHER
+ *  ESPN's fresh broadcast status says it's in play or at half time (this is the
+ *  authority — it correctly catches matches delayed by weather/broadcast, whose
+ *  real kickoff is hours after the scheduled time stored in our data), OR — when
+ *  we have no fresh ESPN reading — it falls within the scheduled-time window
+ *  (kickoff to MATCH_OVER_AT_MIN, which already accounts for both 3-minute
+ *  hydration breaks). Sorted by kickoff then group for a stable order. */
 function findLiveMatches() {
   const now = Date.now();
   const live = MATCHES.filter(m => {
-    const ko = MATCH_UTC[m.id].getTime();
-    const elapsed = now - ko;
+    // ESPN's real status wins whenever we have a fresh reading for this match.
+    const api = getLiveApiStatus(m.id);
+    if (api && (api.status === 'IN_PLAY' || api.status === 'PAUSED')) return true;
+    // No fresh ESPN reading — fall back to the scheduled-time window estimate.
+    const elapsed = now - MATCH_UTC[m.id].getTime();
     return elapsed > 0 && elapsed < MATCH_OVER_AT_MIN * 60000;
   });
   live.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id] || a.g.localeCompare(b.g));
@@ -2414,6 +2429,49 @@ function findLiveMatches() {
 function findLiveMatch() {
   const arr = findLiveMatches();
   return arr.length ? arr[arr.length - 1] : null;
+}
+
+/** Should we be polling ESPN right now? A match whose scheduled kickoff has
+ *  passed can still be live much later if the real match was delayed (weather,
+ *  broadcast). ESPN knows the truth, but we only learn it by polling — and the
+ *  poll itself is what populates the live status findLiveMatches() reads, so we
+ *  can't gate polling on findLiveMatches() or a delayed match is never
+ *  discovered. This check is therefore deliberately generous: poll while any
+ *  match is either ESPN-confirmed live, or its scheduled kickoff falls inside a
+ *  wide window (from just before kickoff to several hours after) that tolerates
+ *  long delays — unless ESPN has already told us that match finished. Reads the
+ *  raw shared status directly so a known-FINISHED match stops polling even after
+ *  its reading would be considered stale, avoiding a needless poll-every-few-
+ *  minutes loop for hours after a match ends. */
+function anyMatchPlausiblyLive(now){
+  const all = DB.liveStatus() || {};
+  return MATCHES.some(m => {
+    const raw = all[m.id];
+    if (raw){
+      if ((raw.status === 'IN_PLAY' || raw.status === 'PAUSED') &&
+          (now - (raw.fetchedAt || 0) < LIVE_API_STATUS_MAX_AGE_MS)) return true;
+      if (raw.status === 'FINISHED') return false; // known done — don't keep polling this one
+    }
+    const elapsed = now - MATCH_UTC[m.id].getTime();
+    return elapsed > -2 * 60000 && elapsed < LIVE_POLL_DELAY_GRACE_MS;
+  });
+}
+
+/** Progress-bar fill % for a live match. When ESPN gives us a real match minute
+ *  (phase.source === 'live'), base progress on that minute out of 90 — this is
+ *  correct even for delayed matches, whose elapsed-since-scheduled-kickoff is
+ *  meaningless. Otherwise fall back to the scheduled-clock elapsed estimate. */
+function liveProgressPct(live, phase) {
+  if (phase) {
+    if (phase.phase_code === 'ft') return 100;
+    if (phase.phase_code === 'ht') return 55;
+    if (phase.source === 'live') {
+      const mm = String(phase.displayMin).match(/\d+/);
+      if (mm) return Math.min(100, Math.round((parseInt(mm[0], 10) / 90) * 100));
+    }
+  }
+  const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
+  return Math.min(100, Math.round((elapsedMin / T_FULL_TIME_START) * 100));
 }
 
 function liveMatchSlideHtml(live) {
@@ -2428,8 +2486,7 @@ function liveMatchSlideHtml(live) {
   const isHT = phase.phase_code === 'ht';
   const isFT = phase.phase_code === 'ft';
 
-  const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
-  const progressPct = Math.min(100, Math.round((elapsedMin / T_FULL_TIME_START) * 100));
+  const progressPct = liveProgressPct(live, phase);
 
   let scorersHtml = '';
   if (r.scorers && r.scorers.length) {
@@ -2507,8 +2564,7 @@ function patchLiveSlide(live) {
   const isHT = phase.phase_code === 'ht';
   const isFT = phase.phase_code === 'ft';
 
-  const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
-  const progressPct = Math.min(100, Math.round((elapsedMin / T_FULL_TIME_START) * 100));
+  const progressPct = liveProgressPct(live, phase);
 
   const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
@@ -2814,7 +2870,7 @@ function tick() {
 async function maybeRunBackgroundLiveSync(now){
   if (now - _lastBackgroundSyncCheck < BACKGROUND_SYNC_INTERVAL_MS) return;
   _lastBackgroundSyncCheck = now;
-  if (!findLiveMatches().length) return; // nothing live right now — no point polling
+  if (!anyMatchPlausiblyLive(now)) return; // nothing live or plausibly delayed-live right now — no point polling
 
   const shared = DB.liveStatus();
   const freshestFetch = Object.values(shared || {}).reduce(
