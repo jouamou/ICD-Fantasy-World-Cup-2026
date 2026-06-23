@@ -412,6 +412,10 @@
   .lb-name small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
   .lb-pred{font-size:12px;color:var(--muted);font-weight:600;text-align:right}
   .lb-pts{font-family:'Oswald';font-weight:700;font-size:22px;color:var(--head)}
+  /* Top-scorers rows reuse the leaderboard row look but only need 3 columns
+     (rank · player · goals) — no prediction column. */
+  #scorerList .lb-row{grid-template-columns:42px 1fr auto}
+  @media(max-width:560px){ #scorerList .lb-row{grid-template-columns:34px 1fr auto} }
   .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
 
   /* ===== RULES ===== */
@@ -1103,6 +1107,7 @@
   <div class="tabbar-inner">
     <button class="tab active" data-view="play"><span class="ic">⚽</span>Play &amp; Predict</button>
     <button class="tab" data-view="leaderboard"><span class="ic">🏆</span>Leaderboard</button>
+    <button class="tab" data-view="scorers"><span class="ic">👟</span>Top Scorers</button>
     <button class="tab" data-view="standings"><span class="ic">📊</span>Standings</button>
     <button class="tab" data-view="rules"><span class="ic">📖</span>How to Play</button>
     <button class="tab" data-view="admin"><span class="ic">🔐</span>Results</button>
@@ -1176,6 +1181,20 @@
     </div>
     <div class="podium" id="podium"></div>
     <div class="lb-list" id="lbList"></div>
+  </section>
+
+  <!-- ============ TOP SCORERS ============ -->
+  <section class="view" id="view-scorers">
+    <div class="standings-note">
+      <b>Golden Boot race.</b> Every goal entered in the results feeds this tournament-wide tally — group stage and knockouts. Scorers are matched to players automatically as results come in. Own goals don't count toward anyone's total, just like the real Golden Boot.
+    </div>
+    <div class="lb-stats">
+      <div class="stat"><div class="l">Goals scored</div><div class="v" id="tsGoals">0</div></div>
+      <div class="stat"><div class="l">Players on the board</div><div class="v" id="tsScorers">0</div></div>
+      <div class="stat"><div class="l">Leader's goals</div><div class="v" id="tsTop">0</div></div>
+    </div>
+    <div class="podium" id="scorerPodium"></div>
+    <div class="lb-list" id="scorerList"></div>
   </section>
 
   <!-- ============ STANDINGS ============ -->
@@ -1908,6 +1927,8 @@ function refreshAll(){
   if(pr && pr.style.display !== 'none') renderGroups();
   const sv = document.getElementById('view-standings');
   if(sv && sv.classList.contains('active')) renderStandingsTab();
+  const tsv = document.getElementById('view-scorers');
+  if(tsv && tsv.classList.contains('active')) renderTopScorers();
 }
 
 if(firebaseReady){
@@ -3275,6 +3296,92 @@ function renderLeaderboard(){
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 /* ============================================================
+   TOP SCORERS (Golden Boot)
+   Aggregates every real goalscorer entered across all results into one
+   tournament-wide tally — group stage AND knockouts. Each goal is attributed
+   to a team and a canonical roster name by fuzzy-matching the entered scorer
+   against the two teams that actually played that match, so "Messi",
+   "L. Messi" and "Lionel Messi" all fold into the same player. Names that
+   don't match either roster (subs outside our 26-man lists, typos) are kept
+   under the name as entered. Own goals are excluded — they don't count toward
+   any player's tally, same as the real Golden Boot.
+   ============================================================ */
+function computeTopScorers(){
+  const results = DB.results();
+  const tally = {};
+  function addGoals(homeTeam, awayTeam, r){
+    if(!r || !r.scorers || !r.scorers.length) return;
+    const homeRoster = REAL_PLAYERS[homeTeam] || [];
+    const awayRoster = REAL_PLAYERS[awayTeam] || [];
+    r.scorers.forEach(raw=>{
+      const s=(raw||'').trim();
+      if(!s || isOwnGoal(s)) return;
+      let team=null, canonName=s;
+      const hh = homeRoster.find(p=>nameFuzzyMatch(s, p));
+      if(hh){ team=homeTeam; canonName=hh; }
+      else {
+        const ah = awayRoster.find(p=>nameFuzzyMatch(s, p));
+        if(ah){ team=awayTeam; canonName=ah; }
+      }
+      const key = team ? team+'|'+canonName : '?|'+canon(s);
+      if(!tally[key]) tally[key]={ name:canonName, team, goals:0 };
+      tally[key].goals++;
+    });
+  }
+  // Group stage
+  MATCHES.forEach(m=> addGoals(m.h, m.a, results[m.id]));
+  // Knockouts — resolve each tie's participants from earlier results
+  KO_ALL_MATCHES.forEach(km=>{
+    const r = results[km.match];
+    if(!r) return;
+    const { home, away } = getKoParticipants(km.match);
+    if(!home || !away) return; // can't attribute a goal without both teams known
+    addGoals(home, away, r);
+  });
+  return Object.values(tally).sort((a,b)=> b.goals-a.goals || a.name.localeCompare(b.name));
+}
+
+function renderTopScorers(){
+  const arr = computeTopScorers();
+  const totalGoals = arr.reduce((s,p)=>s+p.goals,0);
+
+  const stG=document.getElementById('tsGoals'); if(stG) stG.textContent=totalGoals;
+  const stS=document.getElementById('tsScorers'); if(stS) stS.textContent=arr.length;
+  const stT=document.getElementById('tsTop'); if(stT) stT.textContent=arr.length?arr[0].goals:0;
+
+  const pod=document.getElementById('scorerPodium');
+  const list=document.getElementById('scorerList');
+  if(!pod || !list) return;
+
+  if(arr.length===0){
+    pod.innerHTML='';
+    list.innerHTML=`<div class="empty">No goals scored yet. The Golden Boot race kicks off the moment the first goal goes in! ⚽</div>`;
+    return;
+  }
+
+  const medals=['🥇','🥈','🥉'];
+  const cls=['p1','p2','p3'];
+  pod.innerHTML = arr.slice(0,3).map((p,i)=>`
+    <div class="pod ${cls[i]}">
+      <div class="medal">${medals[i]}</div>
+      <div class="pname">${esc(p.name)}</div>
+      ${p.team?`<img class="pflag" src="${teamFlag(p.team)}" alt="">`:''}
+      <div class="ppts">${p.goals}</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:600">goal${p.goals===1?'':'s'}</div>
+    </div>`).join('');
+
+  list.innerHTML = arr.map((p,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank">${i+1}</div>
+      <div class="lb-who">
+        ${p.team?`<img src="${teamFlag(p.team)}" alt="">`:''}
+        <div class="lb-name">${esc(p.name)}<small>${p.team?esc(p.team):'—'}</small></div>
+      </div>
+      <div class="lb-pts">${p.goals}</div>
+    </div>`).join('');
+}
+
+/* ============================================================
    STANDINGS TAB — rendering
    ============================================================ */
 let standingsSubTab = 'groups';
@@ -3586,6 +3693,7 @@ function setKoResult(id,side,val){
   DB.saveResults(res);
   toast("Result saved");
   if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
+  if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
   renderAdmin();
 }
 function setKoResultScorers(id,val){
@@ -3594,6 +3702,7 @@ function setKoResultScorers(id,val){
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
   DB.saveResults(res);
   toast("Scorers saved");
+  if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
 }
 function setResult(id,side,val){
   const res=DB.results();
@@ -3606,6 +3715,7 @@ function setResult(id,side,val){
   renderLiveBanner();
   renderNextMatchCard();
   if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
+  if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
 }
 function setResultScorers(id,val){
   const res=DB.results();
@@ -3614,6 +3724,7 @@ function setResultScorers(id,val){
   DB.saveResults(res);
   toast("Scorers saved");
   renderLiveBanner();
+  if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
 }
 
 /* ============================================================
@@ -3821,6 +3932,8 @@ async function fetchLiveScoresFromAPI(opts){
       if(ap && ap.style.display !== 'none') renderAdmin();
       const sv = document.getElementById('view-standings');
       if(sv && sv.classList.contains('active')) renderStandingsTab();
+      const tsv = document.getElementById('view-scorers');
+      if(tsv && tsv.classList.contains('active')) renderTopScorers();
       const pr = document.getElementById('predict');
       if(pr && pr.style.display !== 'none') changedIds.forEach(refreshMatch); // patch affected cards in place — no group-state collapse
     }
@@ -3891,6 +4004,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     const v=tab.dataset.view;
     document.getElementById('view-'+v).classList.add('active');
     if(v==='leaderboard') renderLeaderboard();
+    if(v==='scorers') renderTopScorers();
     if(v==='standings') renderStandingsTab();
     if(v!=='admin' && _liveSyncPollTimer){ clearInterval(_liveSyncPollTimer); _liveSyncPollTimer = null; }
     if(v==='admin' && document.getElementById('adminPanel').style.display!=='none' &&
