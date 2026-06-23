@@ -1294,6 +1294,10 @@
           </label>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px">Scores <b>and goalscorers</b> now sync automatically from ESPN for everyone — any visitor with the page open keeps the shared score, clock and scorers fresh while a match is in progress, no admin tab required. You only need to touch a match if ESPN is wrong: a score or scorer you edit by hand here is locked as your manual override and won't be overwritten by the next sync.</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+          <button class="btn sm" onclick="rebuildAllResultsFromESPN()" style="background:#b5482c;color:#fff">🛟 Rebuild all results from ESPN</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px"><b>Recovery tool.</b> Re-fetches every finished match from ESPN and restores its score &amp; goalscorers. Only touches results — <b>player predictions are never affected</b>. Use this if the results table ever looks empty or thin.</div>
+        </div>
       </div>
       <div id="scorerDiag" style="margin-bottom:14px"></div>
       <div class="filter-wrap" id="adminFilterWrap">
@@ -1334,6 +1338,12 @@ let firebaseReady = false;
 window._rosterCache = {};
 window._resultsCache = {};
 window._liveStatusCache = {};
+// True once the Firebase 'value' listener has delivered the cloud copy at least
+// once. Until then we must NOT push local data up — a freshly-opened tab whose
+// cache is still empty/stale could otherwise overwrite the real cloud data
+// (this is what wiped the match results). Writes are blocked until hydrated.
+window._rostersLoadedFromCloud = false;
+window._resultsLoadedFromCloud = false;
 
 try {
   if (typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
@@ -1885,6 +1895,10 @@ const DB = {
     window._rosterCache = r;
     localStorage.setItem("ffwc26_rosters", JSON.stringify(r));
     if(firebaseReady){
+      if(!window._rostersLoadedFromCloud){
+        console.warn('Skipped roster cloud write — cloud copy not loaded yet (protects other players\' data).');
+        return;
+      }
       db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
     }
   },
@@ -1898,7 +1912,28 @@ const DB = {
     window._resultsCache = r;
     localStorage.setItem("ffwc26_results", JSON.stringify(r));
     if(firebaseReady){
+      if(!window._resultsLoadedFromCloud){
+        console.warn('Skipped results cloud write — cloud copy not loaded yet (protects entered results).');
+        return;
+      }
       db.ref('results').set(r).catch(err => console.error('Cloud save (results) failed:', err));
+    }
+  },
+  // Per-MATCH write. Writing only the single match node that changed means a
+  // stale tab can never blow away other matches' results — the failure mode
+  // that thinned the whole results table down to a handful. Used by every
+  // routine result update (admin entry + ESPN sync). Whole-object set() is now
+  // reserved for deliberate bulk operations (forceSyncToCloud / rebuild).
+  saveResultEntry(id, record){
+    if(!window._resultsCache) window._resultsCache = {};
+    window._resultsCache[id] = record;
+    localStorage.setItem("ffwc26_results", JSON.stringify(window._resultsCache));
+    if(firebaseReady){
+      if(!window._resultsLoadedFromCloud){
+        console.warn('Skipped result cloud write — cloud copy not loaded yet.');
+        return;
+      }
+      db.ref('results/'+id).set(record).catch(err => console.error('Cloud save (result '+id+') failed:', err));
     }
   },
   // Real broadcast status (status/clock) pulled from ESPN by
@@ -1935,12 +1970,14 @@ function refreshAll(){
 if(firebaseReady){
   db.ref('rosters').on('value', snap => {
     window._rosterCache = snap.val() || {};
+    window._rostersLoadedFromCloud = true;
     localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
     if(isInitialized) refreshAll();
   }, err => console.error('rosters listener error:', err));
 
   db.ref('results').on('value', snap => {
     window._resultsCache = snap.val() || {};
+    window._resultsLoadedFromCloud = true;
     localStorage.setItem("ffwc26_results", JSON.stringify(window._resultsCache));
     if(isInitialized) refreshAll();
   }, err => console.error('results listener error:', err));
@@ -1950,6 +1987,14 @@ if(firebaseReady){
     localStorage.setItem("ffwc26_livestatus", JSON.stringify(window._liveStatusCache));
     if(isInitialized){ renderLiveBanner(); renderNextMatchCard(); }
   }, err => console.error('liveStatus listener error:', err));
+
+  // Failsafe: if the first snapshot is unusually slow (but Firebase is up),
+  // unblock writes after a short delay so legitimate edits aren't stuck. Auto
+  // writes are per-match now, so even post-failsafe nothing can wipe the table.
+  setTimeout(() => {
+    window._rostersLoadedFromCloud = true;
+    window._resultsLoadedFromCloud = true;
+  }, 10000);
 }
 
 let activeName = DB.current();
@@ -3746,7 +3791,7 @@ function setKoResult(id,side,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id][side]= val===''?null:Math.max(0,+val);
-  DB.saveResults(res);
+  DB.saveResultEntry(id, res[id]);
   toast("Result saved");
   if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
   if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
@@ -3756,7 +3801,7 @@ function setKoResultScorers(id,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
-  DB.saveResults(res);
+  DB.saveResultEntry(id, res[id]);
   toast("Scorers saved");
   renderScorerDiagnostic();
   if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
@@ -3765,7 +3810,7 @@ function setResult(id,side,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id][side]= val===''?null:Math.max(0,+val);
-  DB.saveResults(res);
+  DB.saveResultEntry(id, res[id]);
   markMatchOverridden(id);
   toast("Result saved");
   renderScorebar();
@@ -3778,7 +3823,7 @@ function setResultScorers(id,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
-  DB.saveResults(res);
+  DB.saveResultEntry(id, res[id]);
   toast("Scorers saved");
   renderLiveBanner();
   renderScorerDiagnostic();
@@ -3980,7 +4025,11 @@ async function fetchLiveScoresFromAPI(opts){
     });
 
     DB.saveLiveStatus(liveStatusMap); // always persist — keeps fetchedAt fresh for matches still live even with no other changes
-    if(scoreUpdates > 0 || scorerUpdates > 0) DB.saveResults(results);
+    // Write only the matches that actually changed, one node each — so a stale
+    // tab can never overwrite the whole results table (the bug that wiped it).
+    if(scoreUpdates > 0 || scorerUpdates > 0){
+      changedIds.forEach(cid => DB.saveResultEntry(cid, results[cid]));
+    }
 
     if(scoreUpdates > 0 || scorerUpdates > 0 || statusChanged){
       renderScorebar();
@@ -4034,6 +4083,104 @@ function setLiveSyncPolling(enabled){
 function markMatchOverridden(id){
   window._liveSyncOverridden[id] = true;
   delete window._liveSyncApplied[id];
+}
+
+/* ============================================================
+   RECOVERY — REBUILD ALL RESULTS FROM ESPN
+   One-shot admin tool. Walks every tournament day from the opener to today,
+   pulls ESPN's scoreboard for each, and restores the score + goalscorers for
+   any finished/in-play match it finds. It MERGES into whatever results already
+   exist (never clears first) and writes one match node at a time, so it can
+   only ever add/correct — it can't wipe anything, and it never touches player
+   predictions (those live in a separate 'rosters' path). Use this to recover
+   after a results wipe, or any time the table looks thin.
+   ============================================================ */
+function espnUrlForDay(yyyymmdd){
+  return `${ESPN_SCOREBOARD_BASE}?dates=${yyyymmdd}&limit=200`;
+}
+
+async function rebuildAllResultsFromESPN(){
+  const ok = confirm(
+    "Rebuild ALL match results from ESPN?\n\n" +
+    "This re-fetches every World Cup match day from ESPN and restores each finished match's score and goalscorers. " +
+    "It only adds/corrects RESULTS — it never deletes anything, and player predictions are NOT affected.\n\n" +
+    "Continue?"
+  );
+  if(!ok) return;
+
+  // Deliberate admin recovery action — allow cloud writes even if the initial
+  // snapshot is somehow still pending.
+  window._resultsLoadedFromCloud = true;
+
+  toast("Rebuilding results from ESPN… this can take a few seconds");
+
+  // Day range: opener (11 Jun 2026) through today, in UTC. Start one day early
+  // and end one day late to safely cover midnight-ET kickoffs that straddle a
+  // UTC date boundary. Hard-capped at the final's date so it can't run away.
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}`;
+  const firstDay = new Date(Date.UTC(2026,5,10));            // 10 Jun (buffer)
+  const lastCap  = new Date(Date.UTC(2026,6,20));            // 20 Jul (after final)
+  let lastDay = new Date(Date.now() + 24*3600*1000);         // today +1 (buffer)
+  if(lastDay > lastCap) lastDay = lastCap;
+
+  const results = DB.results();        // merge into existing — never start empty
+  let restored = 0, daysOk = 0, daysFail = 0;
+  const seen = new Set();
+
+  for(let d = new Date(firstDay); d <= lastDay; d.setUTCDate(d.getUTCDate()+1)){
+    let data;
+    try {
+      const resp = await fetch(espnUrlForDay(ymd(d)), { cache:'no-store' });
+      if(!resp.ok){ daysFail++; continue; }
+      data = await resp.json();
+      daysOk++;
+    } catch(e){ daysFail++; continue; }
+
+    (data.events || []).forEach(ev => {
+      const parsed = parseEspnEvent(ev);
+      if(!parsed || !parsed.status) return;                  // scheduled/postponed — skip
+      const local = findLocalMatch(parsed.home.name, parsed.away.name, ev.date);
+      if(!local || seen.has(local.id)) return;               // dedup across overlapping day windows
+
+      // Map ESPN home/away onto this fixture's home/away by team name.
+      let hVal, aVal;
+      if(parsed.home.name === local.h){ hVal = parsed.home.score; aVal = parsed.away.score; }
+      else if(parsed.away.name === local.h){ hVal = parsed.away.score; aVal = parsed.home.score; }
+      else { hVal = parsed.home.score; aVal = parsed.away.score; }
+      if(hVal == null || aVal == null) return;
+
+      const scorers = parsed.goals.map(g => g.ownGoal ? 'Own goal' : g.name).filter(Boolean);
+      results[local.id] = { h: hVal, a: aVal, scorers };
+      window._liveSyncApplied[local.id] = true;
+      delete window._liveSyncOverridden[local.id];           // ESPN truth wins during a rebuild
+      DB.saveResultEntry(local.id, results[local.id]);       // per-match write
+      seen.add(local.id);
+      restored++;
+    });
+  }
+
+  // Refresh everything that depends on results.
+  renderScorebar();
+  renderLeaderboard();
+  renderLiveBanner();
+  renderNextMatchCard();
+  const ap = document.getElementById('adminPanel');
+  if(ap && ap.style.display !== 'none') renderAdmin();
+  const sv = document.getElementById('view-standings');
+  if(sv && sv.classList.contains('active')) renderStandingsTab();
+  const tsv = document.getElementById('view-scorers');
+  if(tsv && tsv.classList.contains('active')) renderTopScorers();
+  const pr = document.getElementById('predict');
+  if(pr && pr.style.display !== 'none') renderGroups();
+
+  if(restored > 0){
+    toast(`✓ Restored ${restored} match result${restored===1?'':'s'} from ESPN`);
+  } else if(daysOk === 0){
+    toast("Couldn't reach ESPN — check connection and try again");
+  } else {
+    toast("No finished matches found on ESPN to restore yet");
+  }
 }
 
 /* ============================================================
