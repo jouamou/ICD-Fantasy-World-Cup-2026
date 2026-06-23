@@ -1295,6 +1295,7 @@
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px">Scores <b>and goalscorers</b> now sync automatically from ESPN for everyone — any visitor with the page open keeps the shared score, clock and scorers fresh while a match is in progress, no admin tab required. You only need to touch a match if ESPN is wrong: a score or scorer you edit by hand here is locked as your manual override and won't be overwritten by the next sync.</div>
       </div>
+      <div id="scorerDiag" style="margin-bottom:14px"></div>
       <div class="filter-wrap" id="adminFilterWrap">
         <button class="farrow left hidden" id="afLeft" onclick="scrollFilter('admin',-1)" aria-label="Scroll left">&#8249;</button>
         <div class="fscroll" id="adminFilter"></div>
@@ -3306,25 +3307,36 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
    under the name as entered. Own goals are excluded — they don't count toward
    any player's tally, same as the real Golden Boot.
    ============================================================ */
+/** Attribute one entered scorer name to a team + canonical roster name by
+ *  fuzzy-matching against the two teams that played the match. Returns
+ *  {team, name, matched}. matched=false means the name matched neither squad
+ *  (likely a typo or a player outside our 26-man lists) — it's then kept under
+ *  the name as entered, so it won't fold together with squad-matched variants.
+ *  Shared by computeTopScorers (the board) and findUnmatchedScorers (the admin
+ *  data check) so both always agree on what counts as a clean match. */
+function attributeScorer(name, homeTeam, awayTeam){
+  const s=(name||'').trim();
+  if(!s) return { team:null, name:'', matched:false };
+  const homeRoster = REAL_PLAYERS[homeTeam] || [];
+  const awayRoster = REAL_PLAYERS[awayTeam] || [];
+  const hh = homeRoster.find(p=>nameFuzzyMatch(s, p));
+  if(hh) return { team:homeTeam, name:hh, matched:true };
+  const ah = awayRoster.find(p=>nameFuzzyMatch(s, p));
+  if(ah) return { team:awayTeam, name:ah, matched:true };
+  return { team:null, name:s, matched:false };
+}
+
 function computeTopScorers(){
   const results = DB.results();
   const tally = {};
   function addGoals(homeTeam, awayTeam, r){
     if(!r || !r.scorers || !r.scorers.length) return;
-    const homeRoster = REAL_PLAYERS[homeTeam] || [];
-    const awayRoster = REAL_PLAYERS[awayTeam] || [];
     r.scorers.forEach(raw=>{
       const s=(raw||'').trim();
       if(!s || isOwnGoal(s)) return;
-      let team=null, canonName=s;
-      const hh = homeRoster.find(p=>nameFuzzyMatch(s, p));
-      if(hh){ team=homeTeam; canonName=hh; }
-      else {
-        const ah = awayRoster.find(p=>nameFuzzyMatch(s, p));
-        if(ah){ team=awayTeam; canonName=ah; }
-      }
-      const key = team ? team+'|'+canonName : '?|'+canon(s);
-      if(!tally[key]) tally[key]={ name:canonName, team, goals:0 };
+      const att = attributeScorer(s, homeTeam, awayTeam);
+      const key = att.team ? att.team+'|'+att.name : '?|'+canon(s);
+      if(!tally[key]) tally[key]={ name:att.name, team:att.team, goals:0 };
       tally[key].goals++;
     });
   }
@@ -3379,6 +3391,49 @@ function renderTopScorers(){
       </div>
       <div class="lb-pts">${p.goals}</div>
     </div>`).join('');
+}
+
+/* ---- Admin data check: surface scorer entries that didn't match a squad,
+   the one realistic way a player's Top Scorers total could come out wrong
+   (a typo or off-roster name splits into a second row instead of folding). */
+function findUnmatchedScorers(){
+  const results = DB.results();
+  const unmatched = [];
+  let totalEntries = 0;
+  function scan(homeTeam, awayTeam, label, r){
+    if(!r || !r.scorers || !r.scorers.length) return;
+    r.scorers.forEach(raw=>{
+      const s=(raw||'').trim();
+      if(!s || isOwnGoal(s)) return;
+      totalEntries++;
+      const att = attributeScorer(s, homeTeam, awayTeam);
+      if(!att.matched) unmatched.push({ name:s, label });
+    });
+  }
+  MATCHES.forEach(m=> scan(m.h, m.a, 'M'+m.id+' · '+m.h+' v '+m.a, results[m.id]));
+  KO_ALL_MATCHES.forEach(km=>{
+    const { home, away } = getKoParticipants(km.match);
+    if(!home || !away) return;
+    scan(home, away, 'M'+km.match+' · '+home+' v '+away, results[km.match]);
+  });
+  return { unmatched, totalEntries };
+}
+
+function renderScorerDiagnostic(){
+  const el = document.getElementById('scorerDiag');
+  if(!el) return;
+  const { unmatched, totalEntries } = findUnmatchedScorers();
+  if(totalEntries===0){ el.innerHTML=''; return; }
+  if(unmatched.length===0){
+    el.innerHTML = `<div style="background:var(--green-100);border-left:4px solid var(--green-500);border-radius:0 9px 9px 0;padding:11px 14px;font-size:12.5px;color:var(--green-800);font-weight:600">
+      ✓ All ${totalEntries} goalscorer ${totalEntries===1?'entry':'entries'} matched a squad player — Top Scorers totals are accurate.</div>`;
+    return;
+  }
+  const items = unmatched.map(u=>`<li style="margin-bottom:3px"><b>${esc(u.name)}</b> <span style="color:#a07000">— ${esc(u.label)}</span></li>`).join('');
+  el.innerHTML = `<div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:0 9px 9px 0;padding:12px 14px;font-size:12.5px;color:#856404;line-height:1.5">
+    <b>⚠ ${unmatched.length} goalscorer ${unmatched.length===1?'entry didn\'t':'entries didn\'t'} match a squad list.</b> These won't fold with other spellings, so a player's Top Scorers total may split across two rows. Check for typos (e.g. "Mbape" vs "Mbappé") or names outside the 26-man squads:
+    <ul style="margin:8px 0 0 18px">${items}</ul>
+  </div>`;
 }
 
 /* ============================================================
@@ -3600,6 +3655,7 @@ function buildAdminFilter(){
 }
 function setAdminFilter(g){ adminFilter=g; buildAdminFilter(); renderAdmin(); }
 function renderAdmin(){
+  renderScorerDiagnostic();
   const cont=document.getElementById('adminContainer');
   if(adminFilter==='ko'){ cont.innerHTML = renderAdminKo(); return; }
   const res=DB.results();
@@ -3702,6 +3758,7 @@ function setKoResultScorers(id,val){
   res[id].scorers=val.split(',').map(s=>s.trim()).filter(Boolean);
   DB.saveResults(res);
   toast("Scorers saved");
+  renderScorerDiagnostic();
   if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
 }
 function setResult(id,side,val){
@@ -3724,6 +3781,7 @@ function setResultScorers(id,val){
   DB.saveResults(res);
   toast("Scorers saved");
   renderLiveBanner();
+  renderScorerDiagnostic();
   if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
 }
 
@@ -3929,7 +3987,7 @@ async function fetchLiveScoresFromAPI(opts){
       renderLiveBanner();
       renderNextMatchCard();
       const ap = document.getElementById('adminPanel');
-      if(ap && ap.style.display !== 'none') renderAdmin();
+      if(ap && ap.style.display !== 'none'){ renderAdmin(); }
       const sv = document.getElementById('view-standings');
       if(sv && sv.classList.contains('active')) renderStandingsTab();
       const tsv = document.getElementById('view-scorers');
