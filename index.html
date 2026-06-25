@@ -430,6 +430,64 @@
   @media(max-width:560px){ #scorerList .lb-row{grid-template-columns:34px 1fr auto} }
   .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
 
+  /* ===== LAST-RESULT HERO ===== */
+  .lrh{
+    background:linear-gradient(135deg,var(--gold-soft),#fff 70%);
+    border:1px solid var(--gold);border-radius:14px;padding:15px 17px;margin-bottom:14px;
+    box-shadow:0 2px 10px rgba(224,168,46,.14);
+  }
+  .lrh.lrh-me{box-shadow:0 4px 16px rgba(224,168,46,.3);border-width:1.5px}
+  .lrh-top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .lrh-badge{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#8a6516}
+  .lrh-you{font-size:10px;font-weight:800;color:#fff;background:var(--green-700);border-radius:20px;padding:2px 9px;letter-spacing:.3px}
+  .lrh-match{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
+  .lrh-team{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--head)}
+  .lrh-team img{width:22px;height:15px;border-radius:2px;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+  .lrh-score{font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-800);padding:0 2px}
+  .lrh-sc{text-align:center;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:9px}
+  .lrh-hero{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    background:rgba(255,255,255,.6);border-radius:10px;padding:9px 12px;
+  }
+  .lrh-flag{width:24px;height:16px;border-radius:3px;object-fit:cover;flex:0 0 auto;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .lrh-who{font-family:'Archivo';font-weight:800;font-size:15px;color:var(--head)}
+  .lrh-verb{font-size:13px;color:var(--muted);font-weight:600}
+  .lrh-pts{font-family:'Oswald';font-weight:700;font-size:16px;color:#fff;background:var(--gold);border-radius:20px;padding:3px 12px;margin-left:auto}
+  @media(max-width:560px){
+    .lrh-hero{gap:6px;padding:9px 10px}
+    .lrh-who{font-size:14px}
+    .lrh-verb{font-size:12px}
+    .lrh-pts{margin-left:0}
+  }
+
+  /* ===== CLOSEST RIVALS (your race) ===== */
+  .cr{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    margin-bottom:18px;box-shadow:var(--shadow);
+  }
+  .cr-head{font-family:'Archivo';font-weight:800;font-size:13px;color:var(--head);margin-bottom:11px}
+  .cr-headline{font-family:'Inter';font-weight:600;font-size:11.5px;color:var(--muted)}
+  .cr-row{
+    display:grid;grid-template-columns:24px 1fr auto auto;gap:11px;align-items:center;
+    padding:9px 11px;border-radius:10px;margin-bottom:6px;
+  }
+  .cr-row:last-child{margin-bottom:0}
+  .cr-row img{width:24px;height:16px;border-radius:3px;object-fit:cover}
+  .cr-row.above{background:#fbeaea}
+  .cr-row.below{background:#eef6e6}
+  .cr-row.me{background:var(--green-100);border:1.5px solid var(--green-500)}
+  .cr-name{font-weight:700;font-size:13.5px;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cr-pts{font-family:'Oswald';font-weight:700;font-size:18px;color:var(--head)}
+  .cr-gap{font-size:10.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap;border-radius:20px;padding:3px 9px}
+  .cr-gap.up{color:#b5482c;background:#fbeaea}
+  .cr-gap.down{color:var(--green-800);background:#e2efd6}
+  .cr-gap.you{color:#fff;background:var(--green-700)}
+  @media(max-width:560px){
+    .cr-row{grid-template-columns:22px 1fr auto auto;gap:8px;padding:8px 9px}
+    .cr-gap{font-size:9.5px;padding:3px 7px}
+    .cr-pts{font-size:16px}
+  }
+
   /* ===== RULES ===== */
   .rules-grid{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
   .rule-card{flex:1 1 280px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:20px;box-shadow:var(--shadow)}
@@ -1298,6 +1356,8 @@
       <div class="stat"><div class="l">Total matches</div><div class="v">72</div></div>
       <div class="stat"><div class="l">Top score</div><div class="v" id="stTop">0</div></div>
     </div>
+    <div id="lastResultHero"></div>
+    <div id="closestRivals"></div>
     <div class="podium" id="podium"></div>
     <div class="lb-list" id="lbList"></div>
   </section>
@@ -3789,6 +3849,63 @@ function computeStandingsArray(){
   })).sort((a,b)=> b.pts-a.pts || b.pred-a.pred || a.name.localeCompare(b.name));
 }
 
+/** The most recently finished GROUP match (players only predict 1–72). "Most
+ *  recent" = the finished match with the latest kickoff time, which is stable
+ *  and needs no extra history. Returns the MATCHES entry or null. */
+function lastFinishedGroupMatch(){
+  const res = DB.results();
+  let best = null;
+  MATCHES.forEach(m=>{
+    const r = res[m.id];
+    const hasResult = r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='';
+    if(!hasResult) return;
+    if(matchState(m.id) !== 'finished') return; // ignore still-live scores
+    if(!best || MATCH_UTC[m.id] > MATCH_UTC[best.id]) best = m;
+  });
+  return best;
+}
+
+/** For a given match, who scored the most points on it, and how many. Returns
+ *  { match, top:[{name,team,pts}], pts, total } — top may hold ties. Only
+ *  counts players who actually predicted the match (pts != null). */
+function lastResultHero(){
+  const m = lastFinishedGroupMatch();
+  if(!m) return null;
+  const res = DB.results()[m.id];
+  const rosters = DB.rosters();
+  let topPts = -1;
+  const scored = [];
+  Object.keys(rosters).forEach(n=>{
+    const pred = rosters[n].predictions && rosters[n].predictions[m.id];
+    const pts = scoreMatch(pred, res);
+    if(pts == null) return;            // didn't predict this match
+    scored.push({ name:n, team:rosters[n].team, pts });
+    if(pts > topPts) topPts = pts;
+  });
+  if(!scored.length) return null;
+  const top = scored.filter(s=>s.pts===topPts).sort((a,b)=>a.name.localeCompare(b.name));
+  return { match:m, result:res, top, pts:topPts, total:scored.length };
+}
+
+/** Where the active player sits relative to the people immediately above and
+ *  below them — the "race" view. Returns { rank, total, me, above, below,
+ *  gapAbove, gapBelow } (above/below may be null at the ends). */
+function closestRivals(){
+  if(!activeName) return null;
+  const arr = computeStandingsArray();
+  const i = arr.findIndex(p=>p.name===activeName);
+  if(i === -1) return null;
+  return {
+    rank: i+1,
+    total: arr.length,
+    me: arr[i],
+    above: i>0 ? arr[i-1] : null,
+    below: i<arr.length-1 ? arr[i+1] : null,
+    gapAbove: i>0 ? arr[i-1].pts - arr[i].pts : null,
+    gapBelow: i<arr.length-1 ? arr[i].pts - arr[i+1].pts : null,
+  };
+}
+
 /** Maintain the shared rank-movement baseline and return the ranks map to
  *  compare the CURRENT standings against — or null if there's nothing
  *  meaningful to compare yet (first load, or a player who only just joined).
@@ -3846,6 +3963,9 @@ function renderLeaderboard(){
   document.getElementById('stPlayed').textContent=played;
   document.getElementById('stTop').textContent=players.length?players[0].pts:0;
 
+  renderLastResultHero();
+  renderClosestRivals();
+
   const pod=document.getElementById('podium');
   if(players.length===0){ pod.innerHTML=""; }
   else{
@@ -3890,6 +4010,80 @@ function rankMoveHtml(baseline, name, nowRank){
   if(diff > 0) return `<span class="lb-move up" title="Up ${diff} since the last result">▲${diff}</span>`;
   if(diff < 0) return `<span class="lb-move down" title="Down ${-diff} since the last result">▼${-diff}</span>`;
   return `<span class="lb-move same" title="No change">–</span>`;
+}
+
+/** "Last result" hero card — celebrates who scored best on the most recently
+ *  finished match. Quiet when nothing's finished yet. */
+function renderLastResultHero(){
+  const el = document.getElementById('lastResultHero');
+  if(!el) return;
+  const h = lastResultHero();
+  if(!h){ el.innerHTML=''; return; }
+  const m = h.match, r = h.result;
+  const names = h.top.map(t=>esc(t.name)).join(', ');
+  const isMe = h.top.some(t=>t.name===activeName);
+  const flag = h.top.length===1 ? `<img src="${teamFlag(h.top[0].team)}" alt="" class="lrh-flag">` : '';
+  // tone the verb to the points earned
+  let verb;
+  if(h.pts>=13) verb = h.top.length>1 ? 'nailed it' : 'nailed it';
+  else if(h.pts>=10) verb = 'called the exact score';
+  else if(h.pts>=5) verb = 'called it right';
+  else verb = 'topped the table';
+  const ptsLabel = `+${h.pts} pt${h.pts===1?'':'s'}`;
+  const scLine = (r.scorers && r.scorers.length) ? `<div class="lrh-sc">⚽ ${r.scorers.map(esc).join(' · ')}</div>` : '';
+  el.innerHTML = `<div class="lrh${isMe?' lrh-me':''}">
+    <div class="lrh-top">
+      <span class="lrh-badge">🏅 Best of the last match</span>
+      ${isMe?'<span class="lrh-you">that\u2019s you!</span>':''}
+    </div>
+    <div class="lrh-match">
+      <span class="lrh-team"><img src="${teamFlag(m.h)}" alt="">${esc(m.h)}</span>
+      <b class="lrh-score">${r.h}\u2013${r.a}</b>
+      <span class="lrh-team"><img src="${teamFlag(m.a)}" alt="">${esc(m.a)}</span>
+    </div>
+    ${scLine}
+    <div class="lrh-hero">
+      ${flag}
+      <span class="lrh-who">${names}</span>
+      <span class="lrh-verb">${verb}</span>
+      <span class="lrh-pts">${ptsLabel}</span>
+    </div>
+  </div>`;
+}
+
+/** "Closest rivals" race strip — the active player flanked by whoever is just
+ *  above and just below them, with the points gap to each. Turns a flat list
+ *  into a personal chase. Hidden until the player exists on the board. */
+function renderClosestRivals(){
+  const el = document.getElementById('closestRivals');
+  if(!el) return;
+  const c = closestRivals();
+  if(!c){ el.innerHTML=''; return; }
+  const row = (p, role, gap) => {
+    if(!p) return '';
+    let tag='';
+    if(role==='above') tag = `<span class="cr-gap up">${gap} pt${gap===1?'':'s'} ahead</span>`;
+    else if(role==='below') tag = `<span class="cr-gap down">${gap} pt${gap===1?'':'s'} behind</span>`;
+    else tag = `<span class="cr-gap you">you · #${c.rank}</span>`;
+    return `<div class="cr-row ${role}">
+      <img src="${teamFlag(p.team)}" alt="">
+      <span class="cr-name">${esc(p.name)}</span>
+      <span class="cr-pts">${p.pts}</span>
+      ${tag}
+    </div>`;
+  };
+  // Nothing to chase if they're the only player.
+  if(!c.above && !c.below){ el.innerHTML=''; return; }
+  let headline;
+  if(!c.above) headline = `You're on top — ${c.gapBelow} pt${c.gapBelow===1?'':'s'} clear of the chasing pack 🛡️`;
+  else if(!c.below) headline = `Anchoring the table — ${c.gapAbove} pt${c.gapAbove===1?'':'s'} to climb 💪`;
+  else headline = `${c.gapAbove} pt${c.gapAbove===1?'':'s'} to catch up · ${c.gapBelow} pt${c.gapBelow===1?'':'s'} to defend`;
+  el.innerHTML = `<div class="cr">
+    <div class="cr-head">🎯 Your race${headline?` · <span class="cr-headline">${headline}</span>`:''}</div>
+    ${row(c.above,'above',c.gapAbove)}
+    ${row(c.me,'me')}
+    ${row(c.below,'below',c.gapBelow)}
+  </div>`;
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
