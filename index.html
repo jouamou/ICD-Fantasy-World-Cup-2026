@@ -664,6 +664,12 @@
   #nextMatchCard .nmc-countdown-units {
     display: flex; gap: 6px; align-items: flex-end;
   }
+  #nextMatchCard .nmc-lock-note {
+    font-size: 10px; font-weight: 700; letter-spacing: .4px;
+    color: var(--green-500); margin-top: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .nmc-slide.kickoff-soon .nmc-lock-note { color: var(--gold); }
   #nextMatchCard .nmc-unit {
     display: flex; flex-direction: column; align-items: center;
   }
@@ -1261,13 +1267,7 @@
       <!-- NEXT MATCH HERO CARD -->
       <div id="nextMatchCard" style="display:none"></div>
 
-      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;color:#856404;font-weight:700;margin-bottom:2px">📤 Share your predictions</div>
-          <div style="font-size:11px;color:#a07000;line-height:1.4">Tap to sync so your score appears on the leaderboard.</div>
-        </div>
-        <button class="btn sm" onclick="syncMyData()" style="background:#f5a623;color:#fff;border:none;cursor:pointer;flex:0 0 auto;font-size:12px;padding:8px 14px;border-radius:8px">Sync now</button>
-      </div>
+      <div id="syncBanner" style="border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"></div>
       <div class="toolbar">
         <div class="who"><span>Playing as</span> <img id="whoFlag" alt=""> <strong id="whoName"></strong></div>
         <div class="spacer"></div>
@@ -2516,6 +2516,7 @@ function nextMatchSlideHtml(next) {
       <div class="nmc-countdown">
         <div class="nmc-countdown-label">Kicks off in</div>
         <div class="nmc-countdown-units" id="cdUnits-${next.id}">${countdownHtml}</div>
+        <div class="nmc-lock-note">🔒 Predictions lock at kick-off</div>
       </div>
       <button class="nmc-predict-btn" onclick="scrollToMatchOrFirst(${next.id})">Predict now →</button>
     </div>
@@ -3437,6 +3438,7 @@ function enterPredict(){
   buildGroupFilter();
   renderGroups();
   renderScorebar();
+  renderSyncBanner();
   renderNextMatchCard();
   renderLiveBanner();
   updateUnpredictedPill();
@@ -4115,6 +4117,31 @@ function renderBracket(){
 /* ============================================================
    FORCE SYNC
    ============================================================ */
+/** Calm, accurate sync status. Predictions already auto-save to the cloud on
+ *  every change (DB.saveRosters writes to Firebase once hydrated), so this just
+ *  reassures rather than nags — green when cloud sync is live, amber only when
+ *  Firebase is genuinely unreachable (then a manual retry is offered). */
+function renderSyncBanner(){
+  const el = document.getElementById('syncBanner');
+  if(!el) return;
+  if(firebaseReady){
+    el.style.background = 'var(--green-100)';
+    el.style.border = '1px solid var(--green-500)';
+    el.innerHTML = `<div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--green-800);font-weight:700">✓ Saved &amp; live on the leaderboard</div>
+        <div style="font-size:11px;color:var(--green-700);line-height:1.4">Every pick syncs automatically — nothing to submit.</div>
+      </div>
+      <button class="btn ghost sm" onclick="syncMyData()" style="flex:0 0 auto;font-size:12px;padding:7px 13px">Re-sync</button>`;
+  } else {
+    el.style.background = '#fff3cd';
+    el.style.border = '1px solid #ffc107';
+    el.innerHTML = `<div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:#856404;font-weight:700">⚠ Saved on this device only</div>
+        <div style="font-size:11px;color:#a07000;line-height:1.4">Cloud sync is unavailable right now — your picks are safe locally and will appear on the leaderboard once it reconnects.</div>
+      </div>`;
+  }
+}
+
 function syncMyData(){
   if(!firebaseReady){ toast("Firebase not connected"); return; }
   const localRosters = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
