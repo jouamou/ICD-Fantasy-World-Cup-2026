@@ -365,7 +365,7 @@
   .scorers{margin-top:12px;border-top:1px dashed var(--line);padding-top:11px}
   .scorers .slab{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:6px}
   .scorer-row{display:flex;gap:8px;margin-bottom:7px;align-items:center}
-  .scorer-row input{flex:1;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;font-family:'Inter';font-size:13px;min-width:0}
+  .scorer-row input{flex:1;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;font-family:'Inter';font-size:16px;min-width:0}
   .scorer-row input:focus{outline:none;border-color:var(--green-500)}
   .scorer-team-chip{flex:0 0 auto;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--head);background:var(--green-100);border:1px solid rgba(45,107,21,.12);border-radius:20px;padding:5px 11px;max-width:46%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .scorer-team-chip img{width:20px;height:14px;border-radius:2px;object-fit:cover;flex:0 0 auto}
@@ -465,7 +465,7 @@
   .admin-match .am-score{display:flex;align-items:center;gap:6px}
   .admin-match .am-score input{width:42px;padding:7px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'Oswald';font-weight:700;font-size:18px}
   .admin-match .am-grp{font-size:10px;font-weight:800;color:#fff;background:var(--green-700);border-radius:5px;padding:2px 7px}
-  .admin-match input.am-sc{flex:1 1 100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;font-size:12.5px;margin-top:4px}
+  .admin-match input.am-sc{flex:1 1 100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;font-size:16px;margin-top:4px}
 
   .footer{text-align:center;padding:26px 16px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);background:var(--card)}
   .footer b{color:var(--green-700)}
@@ -958,7 +958,7 @@
     .side img{width:40px;height:27px}
     .score-val{font-size:28px;min-width:34px}
     /* stepper buttons larger touch targets on mobile */
-    .stepper button{width:36px;height:30px;font-size:16px}
+    .stepper button{width:40px;height:38px;font-size:16px}
     /* match cards more padding room */
     .match{padding:12px}
     /* hero chip wrap nicely */
@@ -1125,9 +1125,10 @@
   .fix{
     display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
     border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(20,40,10,.05);
-    transition:border-color .15s, box-shadow .15s; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:border-color .15s, box-shadow .15s; -webkit-tap-highlight-color:transparent;
   }
-  .fix:active{background:var(--green-100)}
+  .fix.tappable{cursor:pointer}
+  .fix.tappable:active{background:var(--green-100)}
   .fix.fix-live{border-color:var(--gold);box-shadow:0 2px 12px rgba(224,168,46,.18);animation:livePulse 3s ease-in-out infinite}
   .fix.fix-fin{background:#fafbf8}
   .fix .fix-status{flex:0 0 58px;text-align:center;font-size:10px;font-weight:800;letter-spacing:.4px}
@@ -2691,8 +2692,9 @@ function fixtureCardHtml(fx){
   const cls = state==='live'?'fix-live':(state==='finished'?'fix-fin':'');
   // tapping a fixture jumps to its prediction (group stage) when playing
   const tapAttr = fx.stage==='group' ? `onclick="goPredictFromHub(${fx.id})"` : '';
+  const tapCls = fx.stage==='group' ? ' tappable' : '';
 
-  return `<div class="fix ${cls}" ${tapAttr}>
+  return `<div class="fix ${cls}${tapCls}" ${tapAttr}>
     <div class="fix-status">${statusHtml}</div>
     <div class="fix-teams">
       <div class="fix-team">
@@ -2714,10 +2716,12 @@ function goPredictFromHub(id){
   // switch to the Play tab and scroll to that match's prediction card
   const playTab = document.querySelector('.tab[data-view="play"]');
   if(playTab) playTab.click();
-  // if onboarding still showing, can't scroll to a match yet
+  // if onboarding still showing, can't scroll to a match yet — guide the player
   const predictEl = document.getElementById('predict');
   if(predictEl && predictEl.style.display!=='none'){
     setTimeout(()=>scrollToMatch(id), 200);
+  } else {
+    setTimeout(()=>toast("Add your name & team first to start predicting"), 250);
   }
 }
 
@@ -3695,36 +3699,11 @@ function buildDatalists(){
   if(!dc){ dc=document.createElement('div'); dc.id='datalists'; document.body.appendChild(dc); }
   dc.innerHTML=html;
 }
-function addScorer(id){
-  const r=getRoster(activeName);
-  if(!r.predictions[id]) r.predictions[id]={h:null,a:null,scorers:[]};
-  if(!r.predictions[id].scorers) r.predictions[id].scorers=[];
-  const cap=maxScorersFor(r.predictions[id]);
-  if(cap===0){ toast("Set a score with at least one goal first"); return; }
-  if(r.predictions[id].scorers.length>=cap){
-    toast(`Your ${cap}–goal prediction allows up to ${cap} scorer${cap===1?'':'s'}`);
-    return;
-  }
-  r.predictions[id].scorers.push("");
-  saveRoster(r);
-  refreshMatch(id); // re-render so the add button hides once the cap is reached
-  // Focus the freshly added (last) input so the player can type straight away.
-  const box=document.getElementById('sc-'+id);
-  if(box){
-    const inputs=box.querySelectorAll('input');
-    if(inputs.length) inputs[inputs.length-1].focus();
-  }
-}
 function updateScorer(id,idx,val){
   const r=getRoster(activeName);
   if(r.predictions[id]&&r.predictions[id].scorers){
     r.predictions[id].scorers[idx]=val; saveRoster(r);
   }
-}
-function removeScorer(id,idx){
-  const r=getRoster(activeName);
-  r.predictions[id].scorers.splice(idx,1); saveRoster(r);
-  refreshMatch(id);
 }
 function saveRoster(r){
   const rosters=DB.rosters(); rosters[activeName]=r; DB.saveRosters(rosters);
