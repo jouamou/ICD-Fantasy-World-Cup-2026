@@ -1253,6 +1253,122 @@
   @keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg);opacity:.2}}
   @keyframes scoreFlip{0%{transform:translateY(0)}40%{transform:translateY(-8px);color:var(--gold)}100%{transform:translateY(0)}}
   .score-flip{animation:scoreFlip .5s ease-out}
+
+  /* ===== KNOCKOUT PREDICTIONS (Play tab) ===== */
+  .ko-locked-note{
+    background:linear-gradient(135deg,var(--green-900),var(--green-700));
+    color:#fff;border-radius:16px;padding:22px;text-align:center;margin-top:22px;
+    border:1px solid rgba(127,187,66,.25);
+  }
+  .ko-locked-note .kln-emoji{font-size:34px;display:block;margin-bottom:8px}
+  .ko-locked-note h3{font-family:'Archivo';font-weight:900;font-size:18px;margin-bottom:6px}
+  .ko-locked-note p{font-size:13px;opacity:.9;line-height:1.5;max-width:520px;margin:0 auto}
+  .ko-locked-note .kln-prog{margin-top:12px;font-size:12px;font-weight:700;color:var(--green-500)}
+
+  .ko-section-head{
+    display:flex;align-items:center;gap:12px;margin:26px 0 6px;
+  }
+  .ko-section-head .ksh-icon{
+    width:44px;height:44px;border-radius:12px;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--gold),#f5c842);
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    box-shadow:0 4px 14px rgba(224,168,46,.3);
+  }
+  .ko-section-head h2{font-family:'Archivo';font-weight:900;font-size:21px;color:var(--head);line-height:1.05}
+  .ko-section-head .ksh-sub{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+
+  /* Catch-up explainer banner */
+  .ko-catchup{
+    background:linear-gradient(135deg,#fff7e6,#fff 70%);
+    border:1.5px solid var(--gold);border-radius:14px;padding:15px 17px;margin:14px 0 6px;
+    box-shadow:0 2px 12px rgba(224,168,46,.14);
+  }
+  .ko-catchup h4{font-family:'Archivo';font-weight:800;font-size:14px;color:#8a6516;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .ko-catchup .kc-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .ko-catchup .kc-item{flex:1 1 200px;background:rgba(255,255,255,.7);border-radius:10px;padding:11px 13px;border:1px solid rgba(224,168,46,.25)}
+  .ko-catchup .kc-item .kc-t{font-size:12.5px;font-weight:800;color:var(--head);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+  .ko-catchup .kc-item .kc-d{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .ko-boost-chip{
+    display:inline-flex;align-items:center;gap:6px;background:var(--green-700);color:#fff;
+    border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;margin-top:4px;
+  }
+  .ko-boost-chip.none{background:var(--muted);opacity:.85}
+
+  /* KO round group */
+  .ko-round-block{margin-bottom:10px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 1px 4px rgba(20,40,10,.06)}
+  .ko-round-head{
+    display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;user-select:none;
+  }
+  .ko-round-head:active{background:var(--green-100)}
+  .ko-round-head .krh-tag{
+    flex:0 0 auto;height:30px;border-radius:8px;padding:0 11px;
+    background:var(--gold);color:#4a3608;font-family:'Oswald';font-weight:700;font-size:13px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .ko-round-head .krh-name{font-family:'Archivo';font-weight:800;font-size:15px;color:var(--head);flex:1;min-width:0}
+  .ko-round-head .krh-mult{font-family:'Oswald';font-weight:700;font-size:13px;color:var(--green-700);background:var(--green-100);border-radius:8px;padding:3px 9px}
+  .ko-round-head .chev{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bg);color:var(--muted);font-size:9px;font-weight:900;transition:transform .2s;flex:0 0 20px}
+  .ko-round-head.open .chev{transform:rotate(180deg)}
+  .ko-round-body{display:none;padding:8px}
+  .ko-round-body.open{display:block}
+
+  /* Individual KO match prediction card */
+  .ko-match{border:1px solid var(--line);border-radius:12px;padding:14px;margin:8px 4px;background:#fff}
+  .ko-match.locked{opacity:.97;background:#fafbf8}
+  .ko-match.scored{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 60%)}
+  .ko-match.wildcard{border:2px solid var(--gold);box-shadow:0 2px 14px rgba(224,168,46,.22)}
+  .ko-match-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:11px;flex-wrap:wrap}
+  .ko-match-meta .km-id{font-family:'Oswald';font-weight:700;color:var(--head)}
+  .ko-match-meta .km-venue{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* advancer chooser: two big tappable team buttons */
+  .ko-advancer{display:flex;gap:8px;align-items:stretch}
+  .ko-team-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;
+    border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:12px 8px;cursor:pointer;
+    transition:.12s;-webkit-tap-highlight-color:transparent;min-width:0;
+  }
+  .ko-team-btn:hover:not(.disabled){border-color:var(--green-500);background:var(--green-100)}
+  .ko-team-btn.sel{border-color:var(--green-700);background:var(--green-100);box-shadow:0 0 0 2px rgba(45,107,21,.18)}
+  .ko-team-btn.disabled{cursor:default;opacity:.85}
+  .ko-team-btn img{width:48px;height:33px;border-radius:5px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  .ko-team-btn .ktb-name{font-size:12px;font-weight:700;color:var(--head);text-align:center;line-height:1.25;word-break:break-word}
+  .ko-team-btn .ktb-adv{font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--green-700);opacity:0;transition:.12s}
+  .ko-team-btn.sel .ktb-adv{opacity:1}
+  .ko-vs-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;padding:0 2px}
+  .ko-vs-mid .kvm-vs{font-family:'Oswald';font-size:15px;font-weight:700;color:var(--muted)}
+  .ko-tbc{text-align:center;color:var(--muted);font-style:italic;font-size:12.5px;padding:14px 8px}
+
+  /* optional score row inside KO card */
+  .ko-score-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;padding-top:11px;border-top:1px dashed var(--line)}
+  .ko-score-row .ksr-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  .ko-score-row .stepper button{width:32px;height:26px;font-size:13px}
+  .ko-score-row .score-val{font-size:26px;min-width:30px}
+  .ko-bonus-note{font-size:10.5px;color:var(--muted);text-align:center;margin-top:5px}
+
+  /* wildcard toggle on a KO card */
+  .ko-wild-toggle{
+    display:flex;align-items:center;justify-content:center;gap:8px;margin-top:11px;
+    border:1.5px dashed var(--gold);border-radius:10px;padding:9px;cursor:pointer;
+    font-size:12px;font-weight:700;color:#8a6516;background:rgba(224,168,46,.06);
+    -webkit-tap-highlight-color:transparent;transition:.12s;
+  }
+  .ko-wild-toggle:hover{background:rgba(224,168,46,.14)}
+  .ko-wild-toggle.on{background:var(--gold);color:#4a3608;border-style:solid}
+  .ko-wild-toggle .kw-star{font-size:14px}
+
+  .ko-result-strip{
+    margin-top:11px;background:var(--green-100);border-radius:8px;padding:9px 12px;
+    display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--green-800);flex-wrap:wrap
+  }
+  .ko-result-strip .actual{font-family:'Oswald';font-weight:700;font-size:15px;color:var(--green-800)}
+  .ko-result-strip .pts-badge{margin-left:auto;font-family:'Archivo';font-weight:800;font-size:13px;color:#fff;background:var(--gold);padding:4px 11px;border-radius:20px}
+  .ko-result-strip .pts-badge.zero{background:var(--muted)}
+  .ko-result-strip .pts-badge.wild{background:var(--green-700)}
+  @media(max-width:560px){
+    .ko-team-btn img{width:40px;height:27px}
+    .ko-team-btn .ktb-name{font-size:11px}
+  }
 </style>
 </head>
 <body>
@@ -1345,6 +1461,8 @@
         <button class="farrow right hidden" id="gfRight" onclick="scrollFilter('group',1)" aria-label="Scroll right">&#8250;</button>
       </div>
       <div id="groupsContainer" style="padding-top:2px"></div>
+      <!-- KNOCKOUT PREDICTIONS (appears once all 12 groups finish) -->
+      <div id="koPredictContainer" style="padding-top:2px"></div>
     </div>
   </section>
 
@@ -1420,6 +1538,14 @@
       <div class="rule-card">
         <div class="rhead"><div class="rico">⚽</div><h3>Goalscorers</h3></div>
         <p>Naming scorers is optional but it's where the big points are. Start typing and pick from the autocomplete list, or type any format — full name, last name only, or FIFA-style initials like <b>J. Quiñones</b>. Accents are optional too. You can name one scorer for each goal you predict, and every correct one earns the bonus.</p>
+      </div>
+      <div class="rule-card">
+        <div class="rhead"><div class="rico">🏆</div><h3>Knockout stage &amp; the comeback</h3></div>
+        <p>When the groups finish, a whole new round of predictions opens — the bracket, from the Round of 32 to the Final. For each tie you pick <b>who advances</b> (10 pts), with bonuses for the <b>exact score</b> (+6) and <b>goalscorers</b> (+4 each, max 3). Then a round multiplier scales it all up: <b>R32 ×1, R16 ×1.5, QF ×2, SF ×3, Final ×4</b>.</p>
+        <ul>
+          <li><b>📈 Underdog Boost:</b> the further back you are after the groups, the bigger the bonus on every knockout point — an automatic, transparent rubber-band so nobody's out of it.</li>
+          <li><b>⭐ Wildcard Banker:</b> flag any one knockout match to <b>double</b> your points on it. Bank a deep round for a huge swing.</li>
+        </ul>
       </div>
     </div>
 
@@ -2228,6 +2354,10 @@ function getRoster(name){
   for(const id in r.predictions){
     if(r.predictions[id] && !r.predictions[id].scorers) r.predictions[id].scorers = [];
   }
+  if(!r.koPredictions) r.koPredictions = {};
+  for(const id in r.koPredictions){
+    if(r.koPredictions[id] && !r.koPredictions[id].scorers) r.koPredictions[id].scorers = [];
+  }
   return r;
 }
 function toast(msg){
@@ -2327,7 +2457,135 @@ function totalPoints(roster){
     const p=scoreMatch(roster.predictions[id], res[id]);
     if(p!=null) total+=p;
   }
+  // Knockout points (predictions, multipliers, underdog boost, wildcard) are
+  // computed together because the boost depends on the player's group-stage
+  // rank — see koTotalForRoster(). Returns 0 until KO predictions are scored.
+  total += koTotalForRoster(roster, total);
   return total;
+}
+
+/* ============================================================
+   KNOCKOUT SCORING
+   Players predict each KO match: who ADVANCES (the pick that matters most in a
+   bracket), plus an optional scoreline and goalscorers. Base points per memory:
+     · 10  correct advancer
+     · +6  exact scoreline (on top of the advancer points)
+     · +4  per correct goalscorer (max 3)
+   Then a per-round MULTIPLIER scales the whole match's points: deeper rounds are
+   worth more, so the bracket stays decisive right to the end.
+   Two catch-up layers sit on top (see below): an automatic Underdog Boost tied
+   to group-stage rank, and a one-match Wildcard the player chooses.
+   ============================================================ */
+const KO_ROUND_MULT = { r32:1, r16:1.5, qf:2, sf:3, final:4, third:2 };
+
+/** Which round a KO match id belongs to → multiplier key. */
+function koRoundOf(matchId){
+  if(KO_R32.some(m=>m.match===matchId)) return 'r32';
+  if(KO_R16.some(m=>m.match===matchId)) return 'r16';
+  if(KO_QF.some(m=>m.match===matchId)) return 'qf';
+  if(KO_SF.some(m=>m.match===matchId)) return 'sf';
+  if(matchId===KO_FINAL.match) return 'final';
+  if(matchId===KO_THIRD_PLACE.match) return 'third';
+  return null;
+}
+function koRoundLabel(key){
+  return {r32:'Round of 32', r16:'Round of 16', qf:'Quarter-final', sf:'Semi-final', final:'Final', third:'Third place'}[key]||'';
+}
+
+/** Base (pre-multiplier) score for one KO prediction against its result.
+ *  Returns null if the match has no result yet, else a number ≥ 0.
+ *  pred = {advancer, h, a, scorers}. We need the real participants to know who
+ *  actually advanced. */
+function scoreKoMatch(matchId, pred, res){
+  if(!res || res.h===''||res.h==null||res.a===''||res.a==null) return null;
+  if(!pred) return 0;
+  const { home, away } = getKoParticipants(matchId);
+  if(!home || !away) return 0; // can't score until the tie's teams are known
+  const rh=+res.h, ra=+res.a;
+  const realAdvancer = rh>ra ? home : (ra>rh ? away : null);
+  let pts=0;
+  // Correct advancer (the headline pick)
+  if(pred.advancer && realAdvancer && pred.advancer===realAdvancer) pts+=10;
+  // Exact scoreline — only meaningful if they also entered a score
+  if(pred.h!=null && pred.a!=null && +pred.h===rh && +pred.a===ra) pts+=6;
+  // Goalscorers, capped at 3
+  const matched=Math.min(3, matchedScorerIndexes(pred, res).size);
+  pts+=matched*4;
+  return pts;
+}
+
+/** A player's group-stage-only points — used to rank players for the Underdog
+ *  Boost so KO points themselves don't feed back into the boost (which would
+ *  make the multiplier chase its own tail). */
+function groupStagePoints(roster){
+  const res=DB.results();
+  let total=0;
+  for(const id in (roster.predictions||{})){
+    const p=scoreMatch(roster.predictions[id], res[id]);
+    if(p!=null) total+=p;
+  }
+  return total;
+}
+
+/** Underdog Boost factor for a player, by their group-stage rank among all
+ *  players. The leader plays at ×1.00; everyone below gets a gentle bump that
+ *  grows with how far back they are, capped so it rewards a comeback without
+ *  making the group stage pointless. Rank 1 → 1.00, last place → up to ~1.40.
+ *  Smooth and fully transparent: shown in the UI as e.g. "+25% underdog boost".
+ *  Returns 1 when there aren't enough players to rank meaningfully. */
+const UNDERDOG_MAX_BONUS = 0.40; // last place earns up to +40% on KO points
+function underdogBoostFor(name){
+  const rosters = DB.rosters();
+  const names = Object.keys(rosters);
+  if(names.length<2) return 1;
+  const ranked = names
+    .map(n=>({n, p:groupStagePoints(rosters[n])}))
+    .sort((a,b)=> b.p-a.p || a.n.localeCompare(b.n));
+  const idx = ranked.findIndex(x=>x.n===name);
+  if(idx<=0) return 1; // leader (or not found) → no boost
+  const frac = idx/(ranked.length-1); // 0 at top, 1 at bottom
+  return 1 + UNDERDOG_MAX_BONUS*frac;
+}
+
+/** Total KO contribution for a roster: each KO prediction's base score ×
+ *  round multiplier, with the player's chosen Wildcard match doubled, then the
+ *  whole KO subtotal scaled by the Underdog Boost. groupTotalHint is accepted
+ *  for callers that already computed it, but the boost is rank-based so we
+ *  recompute the ranking internally regardless. */
+function koTotalForRoster(roster, groupTotalHint){
+  const res=DB.results();
+  const ko = roster.koPredictions || {};
+  let subtotal=0;
+  let anyScored=false;
+  KO_ALL_MATCHES.forEach(km=>{
+    const id=km.match;
+    const base=scoreKoMatch(id, ko[id], res[id]);
+    if(base==null) return;
+    anyScored=true;
+    const mult=KO_ROUND_MULT[koRoundOf(id)]||1;
+    let pts=base*mult;
+    if(roster.wildcard===id) pts*=2; // banker: doubles this one match
+    subtotal+=pts;
+  });
+  if(!anyScored) return 0;
+  const boost = underdogBoostFor(_rosterName(roster));
+  return Math.round(subtotal*boost);
+}
+
+/** Resolve a roster object back to its player name (rosters are keyed by name).
+ *  Used by koTotalForRoster to look up the underdog boost. */
+function _rosterName(roster){
+  const rosters=DB.rosters();
+  for(const n in rosters){ if(rosters[n]===roster) return n; }
+  // Fallback: identity match on contents (roster may be a fresh getRoster copy)
+  for(const n in rosters){ if(rosters[n] && rosters[n].team===roster.team && JSON.stringify(rosters[n].predictions)===JSON.stringify(roster.predictions)) return n; }
+  return activeName;
+}
+
+/** How many KO matches a player has predicted an advancer for. */
+function koPredictedCount(roster){
+  const ko=roster.koPredictions||{};
+  return Object.keys(ko).filter(id=>ko[id] && ko[id].advancer).length;
 }
 function predictedCount(roster){
   let n=0;
@@ -3608,10 +3866,291 @@ function renderGroups(){
     html+=`</div></div>`;
   });
   cont.innerHTML=html;
+  renderKoPredictions();
 }
 function toggleGroup(head){
   head.classList.toggle('open');
   head.nextElementSibling.classList.toggle('open');
+}
+
+/* ============================================================
+   KNOCKOUT PREDICTIONS — player-facing UI (Play tab)
+   Appears only once all 12 groups are complete (so ties resolve to real
+   teams). Each KO match: pick the advancer (required for points), optionally
+   a scoreline + scorers. One match can be flagged as your Wildcard (doubles).
+   Locks the instant the organiser enters that match's result.
+   ============================================================ */
+function renderKoPredictions(){
+  const cont = document.getElementById('koPredictContainer');
+  if(!cont) return;
+  // Only show on the "all groups" filter so it doesn't clutter single-group views.
+  if(activeFilter!=='all'){ cont.innerHTML=''; return; }
+
+  if(!allGroupsComplete()){
+    const done = Object.keys(GROUPS).filter(isGroupComplete).length;
+    cont.innerHTML = `<div class="ko-locked-note">
+      <span class="kln-emoji">🏆</span>
+      <h3>Knockout predictions unlock soon</h3>
+      <p>Once all 12 groups finish, you'll predict the entire bracket — Round of 32 through the Final — for <b>much bigger points</b>. Deeper rounds are worth more, and there's a catch-up boost for anyone chasing the leaders.</p>
+      <div class="kln-prog">${done}/12 groups complete</div>
+    </div>`;
+    return;
+  }
+
+  const r = getRoster(activeName);
+  if(!r){ cont.innerHTML=''; return; }
+
+  buildKoDatalists();
+
+  const boost = underdogBoostFor(activeName);
+  const boostPct = Math.round((boost-1)*100);
+  const wildcardSet = r.wildcard!=null;
+
+  const rounds = [
+    {key:'r32', title:'Round of 32', matches:KO_R32.map(m=>m.match)},
+    {key:'r16', title:'Round of 16', matches:KO_R16.map(m=>m.match)},
+    {key:'qf',  title:'Quarter-finals', matches:KO_QF.map(m=>m.match)},
+    {key:'sf',  title:'Semi-finals', matches:KO_SF.map(m=>m.match)},
+    {key:'third', title:'Third place playoff', matches:[KO_THIRD_PLACE.match]},
+    {key:'final', title:'Final', matches:[KO_FINAL.match]},
+  ];
+
+  // Auto-open the earliest round that still has an unpredicted, unlocked match.
+  let autoOpenKey = null;
+  for(const rd of rounds){
+    const hasOpen = rd.matches.some(id=>{
+      const res=DB.results()[id];
+      const locked = res && res.h!=null && res.h!=='';
+      const ko=r.koPredictions[id];
+      return !locked && (!ko || !ko.advancer);
+    });
+    if(hasOpen){ autoOpenKey = rd.key; break; }
+  }
+  if(!autoOpenKey) autoOpenKey='r32';
+
+  let html = `<div class="ko-section-head">
+      <div class="ksh-icon">🏆</div>
+      <div>
+        <h2>Knockout predictions</h2>
+        <div class="ksh-sub">Pick who advances in every tie · scorelines &amp; scorers earn bonus points</div>
+      </div>
+    </div>`;
+
+  // Catch-up explainer
+  html += `<div class="ko-catchup">
+    <h4>⚡ The comeback is on — two ways to climb</h4>
+    <div class="kc-row">
+      <div class="kc-item">
+        <div class="kc-t">📈 Underdog Boost <span style="font-weight:600;color:var(--muted)">(automatic)</span></div>
+        <div class="kc-d">The further back you are after the groups, the bigger the bonus on every knockout point you earn. No action needed.</div>
+        <div class="ko-boost-chip ${boostPct<=0?'none':''}">${boostPct>0?`+${boostPct}% your boost`:`Leader · ×1.00`}</div>
+      </div>
+      <div class="kc-item">
+        <div class="kc-t">⭐ Wildcard Banker <span style="font-weight:600;color:var(--muted)">(you choose)</span></div>
+        <div class="kc-d">Tap the ⭐ on any one knockout match to <b>double</b> the points you score on it. Pick a deep round for maximum swing.</div>
+        <div class="ko-boost-chip ${wildcardSet?'':'none'}" style="${wildcardSet?'':'background:var(--gold);color:#4a3608;opacity:1'}">${wildcardSet?`⭐ Set on match ${r.wildcard}`:'⭐ Not set yet — tap one below'}</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.4">Points per KO match: <b>10</b> correct advancer · <b>+6</b> exact score · <b>+4</b> per scorer (max 3), then ×<b>round multiplier</b> (R32 ×1 → Final ×4).</div>
+  </div>`;
+
+  rounds.forEach(rd=>{
+    const mult = KO_ROUND_MULT[rd.key];
+    const open = rd.key===autoOpenKey;
+    html += `<div class="ko-round-block">
+      <div class="ko-round-head ${open?'open':''}" onclick="toggleKoRound(this)">
+        <div class="krh-tag">${rd.title}</div>
+        <div class="krh-name"></div>
+        <div class="krh-mult">×${mult}</div>
+        <div class="chev">▾</div>
+      </div>
+      <div class="ko-round-body ${open?'open':''}">`;
+    rd.matches.forEach(id=>{ html += koMatchCard(id, rd.key, r); });
+    html += `</div></div>`;
+  });
+
+  cont.innerHTML = html;
+}
+
+function toggleKoRound(head){
+  head.classList.toggle('open');
+  head.nextElementSibling.classList.toggle('open');
+}
+
+/** One knockout match prediction card. */
+function koMatchCard(matchId, roundKey, roster){
+  const { home, away } = getKoParticipants(matchId);
+  const meta = KO_ALL_MATCHES.find(m=>m.match===matchId);
+  const venue = meta ? meta.venue : '';
+  const res = DB.results()[matchId];
+  const hasResult = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
+  const locked = hasResult; // KO matches have no stored kickoff time; lock on result entry
+  const pred = roster.koPredictions[matchId] || {};
+  const isWild = roster.wildcard===matchId;
+  const mult = KO_ROUND_MULT[roundKey]||1;
+
+  // Not resolvable yet (earlier rounds incomplete) → locked-looking TBC card.
+  if(!home || !away){
+    return `<div class="ko-match locked">
+      <div class="ko-match-meta"><span class="km-id">M${matchId}</span><span class="dot"></span><span class="km-venue">${esc(venue)}</span><span style="margin-left:auto;color:var(--gold);font-weight:700">×${mult}</span></div>
+      <div class="ko-tbc">Teams decided by earlier knockout results — check back once they're played.</div>
+    </div>`;
+  }
+
+  let cardCls = 'ko-match';
+  if(locked) cardCls += hasResult ? ' locked scored' : ' locked';
+  if(isWild) cardCls += ' wildcard';
+
+  let html = `<div class="${cardCls}" id="komatch-${matchId}">
+    <div class="ko-match-meta">
+      <span class="km-id">M${matchId}</span>
+      <span class="dot"></span>
+      <span class="km-venue">${esc(venue)}</span>
+      <span style="margin-left:auto;color:var(--green-700);font-weight:700">Points ×${mult}${isWild?' · ⭐×2':''}</span>
+    </div>`;
+
+  // Advancer chooser
+  const selH = pred.advancer===home;
+  const selA = pred.advancer===away;
+  if(locked){
+    html += `<div class="ko-advancer">
+      <div class="ko-team-btn disabled ${selH?'sel':''}"><img src="${teamFlag(home)}" alt=""><div class="ktb-name">${esc(home)}</div><div class="ktb-adv">Your pick</div></div>
+      <div class="ko-vs-mid"><span class="kvm-vs">vs</span></div>
+      <div class="ko-team-btn disabled ${selA?'sel':''}"><img src="${teamFlag(away)}" alt=""><div class="ktb-name">${esc(away)}</div><div class="ktb-adv">Your pick</div></div>
+    </div>`;
+  } else {
+    html += `<div class="ko-advancer">
+      <div class="ko-team-btn ${selH?'sel':''}" onclick="pickKoAdvancer(${matchId},'h')"><img src="${teamFlag(home)}" alt=""><div class="ktb-name">${esc(home)}</div><div class="ktb-adv">✓ Advances</div></div>
+      <div class="ko-vs-mid"><span class="kvm-vs">vs</span></div>
+      <div class="ko-team-btn ${selA?'sel':''}" onclick="pickKoAdvancer(${matchId},'a')"><img src="${teamFlag(away)}" alt=""><div class="ktb-name">${esc(away)}</div><div class="ktb-adv">✓ Advances</div></div>
+    </div>`;
+  }
+
+  if(locked && hasResult){
+    // Result strip
+    const base = scoreKoMatch(matchId, pred, res) || 0;
+    let pts = base*mult;
+    if(isWild) pts*=2;
+    const realAdvancer = (+res.h>+res.a) ? home : away;
+    const advOk = pred.advancer===realAdvancer;
+    const predScorers=(pred.scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
+    const hitSet=matchedScorerIndexes(pred, res);
+    const predScHtml = predScorers.map((s,i)=>{
+      const ok=hitSet.has(i);
+      return `<span style="color:${ok?'var(--green-700)':'var(--muted)'};font-weight:${ok?700:500}">${ok?'✓':'✕'} ${esc(s)}</span>`;
+    }).join(', ');
+    html += `<div class="ko-result-strip">
+      <span>Final:</span>
+      <span class="actual">${esc(home)} ${res.h} – ${res.a} ${esc(away)}</span>
+      <span style="font-size:11px">${advOk?`<b style="color:var(--green-700)">✓ ${esc(realAdvancer)} advanced</b>`:`<span style="color:var(--muted)">✗ ${esc(realAdvancer)} advanced</span>`}</span>
+      ${(res.scorers&&res.scorers.length)?`<span style="font-weight:500;font-size:11px">⚽ ${res.scorers.map(esc).join(', ')}</span>`:''}
+      ${predScorers.length?`<span style="font-size:11px">You: ${predScHtml}</span>`:''}
+      <span class="pts-badge ${pts===0?'zero':(isWild?'wild':'')}">${Math.round(pts)} pt${Math.round(pts)===1?'':'s'}${isWild?' ⭐':''}</span>
+    </div>`;
+  } else {
+    // Optional scoreline + scorers + wildcard toggle
+    const ph=pred.h, pa=pred.a;
+    html += `<div class="ko-score-row">
+      <span class="ksr-label">Score <span style="font-weight:500;text-transform:none">(optional, +6)</span></span>
+      ${koStepper(matchId,'h',ph)}
+      <div class="score-sep">:</div>
+      ${koStepper(matchId,'a',pa)}
+    </div>`;
+    const hGoals=(ph!=null?+ph:0), aGoals=(pa!=null?+pa:0), predTotal=hGoals+aGoals;
+    if(predTotal>0){
+      html += `<div class="scorers" style="margin-top:10px"><div class="slab">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(+4 each, max 3)</span></div><div>`;
+      let gi=0;
+      for(let i=0;i<hGoals;i++){ html+=koScorerRow(matchId, (pred.scorers||[])[gi], gi, home, (i+1), hGoals); gi++; }
+      for(let i=0;i<aGoals;i++){ html+=koScorerRow(matchId, (pred.scorers||[])[gi], gi, away, (i+1), aGoals); gi++; }
+      html += `</div></div>`;
+    }
+    html += `<div class="ko-wild-toggle ${isWild?'on':''}" onclick="toggleWildcard(${matchId})">
+      <span class="kw-star">⭐</span>${isWild?'Wildcard set — points on this match are DOUBLED':'Make this my Wildcard (double points)'}
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function koStepper(id,side,val){
+  const v = val==null?'–':val;
+  return `<div class="stepper">
+      <button onclick="bumpKo(${id},'${side}',1)">▲</button>
+      <div class="score-val" id="koval-${id}-${side}">${v}</div>
+      <button onclick="bumpKo(${id},'${side}',-1)">▼</button>
+    </div>`;
+}
+
+function koScorerRow(matchId, val, idx, team, goalNum, sideTotal){
+  const listId = `kopl-${matchId}-${team===getKoParticipants(matchId).home?'h':'a'}`;
+  return `<div class="scorer-row">
+    <span class="scorer-team-chip"><img src="${teamFlag(team)}" alt="">${esc(team)}${sideTotal>1?` <b>#${goalNum}</b>`:''}</span>
+    <input list="${listId}" value="${(val||'').replace(/"/g,'&quot;')}" placeholder="${esc(team)} scorer…" oninput="updateKoScorer(${matchId},${idx},this.value)">
+  </div>`;
+}
+
+function pickKoAdvancer(matchId, side){
+  const r=getRoster(activeName);
+  const { home, away } = getKoParticipants(matchId);
+  if(!home||!away) return;
+  if(!r.koPredictions[matchId]) r.koPredictions[matchId]={advancer:null,h:null,a:null,scorers:[]};
+  r.koPredictions[matchId].advancer = side==='h'?home:away;
+  saveRoster(r);
+  refreshKoMatch(matchId);
+  renderScorebar();
+}
+
+function bumpKo(matchId, side, delta){
+  const r=getRoster(activeName);
+  if(!r.koPredictions[matchId]) r.koPredictions[matchId]={advancer:null,h:null,a:null,scorers:[]};
+  const p=r.koPredictions[matchId];
+  const prevH=p.h==null?0:+p.h, prevA=p.a==null?0:+p.a;
+  let cur=p[side]; cur=cur==null?0:+cur;
+  p[side]=Math.max(0,Math.min(20,cur+delta));
+  const other=side==='h'?'a':'h';
+  if(p[other]==null) p[other]=0;
+  // realign scorers like the group-stage bump
+  const oldSc=p.scorers||[];
+  const oldHome=oldSc.slice(0,prevH), oldAway=oldSc.slice(prevH,prevH+prevA);
+  const newH=+p.h, newA=+p.a;
+  const fit=(arr,n)=>{const out=arr.slice(0,n);while(out.length<n)out.push('');return out;};
+  p.scorers=[...fit(oldHome,newH),...fit(oldAway,newA)];
+  saveRoster(r);
+  refreshKoMatch(matchId);
+}
+
+function updateKoScorer(matchId, idx, val){
+  const r=getRoster(activeName);
+  if(r.koPredictions[matchId] && r.koPredictions[matchId].scorers){
+    r.koPredictions[matchId].scorers[idx]=val;
+    saveRoster(r);
+  }
+}
+
+function toggleWildcard(matchId){
+  const r=getRoster(activeName);
+  if(r.wildcard===matchId){ r.wildcard=null; toast('Wildcard cleared'); }
+  else { r.wildcard=matchId; toast('⭐ Wildcard set — this match now scores double'); }
+  saveRoster(r);
+  // A wildcard change affects the banner + every KO card's header, so re-render
+  // the whole KO section (cheap, and keeps the chip/labels consistent).
+  renderKoPredictions();
+  renderScorebar();
+}
+
+function refreshKoMatch(matchId){
+  const el=document.getElementById('komatch-'+matchId);
+  if(!el) return;
+  const r=getRoster(activeName);
+  const roundKey=koRoundOf(matchId);
+  const beforeTop=el.getBoundingClientRect().top;
+  el.outerHTML=koMatchCard(matchId, roundKey, r);
+  const fresh=document.getElementById('komatch-'+matchId);
+  if(fresh){
+    const delta=fresh.getBoundingClientRect().top-beforeTop;
+    if(delta) window.scrollBy(0,delta);
+  }
 }
 
 function matchCard(m,roster,result){
@@ -3623,6 +4162,12 @@ function matchCard(m,roster,result){
   const hasResult = result && result.h!=null && result.h!=="" && result.a!=null && result.a!=="";
   const locked = kicked || hasResult;
   const earned = hasResult ? scoreMatch(pred,result) : null;
+  // Is this match actually OVER, or is the score we're showing a live one that's
+  // still ticking? matchState() reads ESPN's real broadcast status (and the
+  // scheduled-time window as a fallback) — so a 1–3 with 30 minutes left reads
+  // as 'live', not 'finished'. We only say "Final result" when truly done.
+  const liveNow = hasResult && matchState(m.id)==='live';
+  const trulyFinished = hasResult && !liveNow;
 
   const localTime = fmtLocalTimeShort(koUTC);
   const tzAbbr = getTZAbbr();
@@ -3637,7 +4182,9 @@ function matchCard(m,roster,result){
   const scorers=pred.scorers||[];
 
   let statusLabel = '';
-  if(hasResult){
+  if(liveNow){
+    statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto;color:var(--gold)">● Live</span>';
+  } else if(trulyFinished){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>';
   } else if(kicked){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto;color:var(--muted)">In progress</span>';
@@ -3695,13 +4242,25 @@ function matchCard(m,roster,result){
       const ok = hitSet.has(i);
       return `<span style="color:${ok?'var(--green-700)':'var(--muted)'};font-weight:${ok?700:500}">${ok?'✓':'✕'} ${esc(s)}</span>`;
     }).join(', ');
-    html+=`<div class="result-strip">
-      <span>Final result:</span>
-      <span class="actual">${m.h} ${result.h} – ${result.a} ${m.a}</span>
-      ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.map(esc).join(', ')}</span>`:''}
-      ${predScorers.length?`<span style="font-size:11px">You said: ${predScorersHtml}</span>`:''}
-      <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
-    </div>`;
+    if(liveNow){
+      // Score exists but the match is still being played — show it as a LIVE,
+      // provisional standing, never "Final result". Points shown are "so far".
+      html+=`<div class="result-strip" style="background:linear-gradient(0deg,#fff5e0,#fff 60%);border:1px solid var(--gold)">
+        <span style="color:#8a6516;font-weight:700">● Live · in progress</span>
+        <span class="actual" style="color:#8a6516">${m.h} ${result.h} – ${result.a} ${m.a}</span>
+        ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.map(esc).join(', ')}</span>`:''}
+        ${predScorers.length?`<span style="font-size:11px">You said: ${predScorersHtml}</span>`:''}
+        <span class="pts-badge ${earned===0?'zero':''}" title="Provisional — updates as the match plays out">${earned} pt${earned===1?'':'s'} so far</span>
+      </div>`;
+    } else {
+      html+=`<div class="result-strip">
+        <span>Final result:</span>
+        <span class="actual">${m.h} ${result.h} – ${result.a} ${m.a}</span>
+        ${(result.scorers&&result.scorers.length)?`<span style="font-weight:500">⚽ ${result.scorers.map(esc).join(', ')}</span>`:''}
+        ${predScorers.length?`<span style="font-size:11px">You said: ${predScorersHtml}</span>`:''}
+        <span class="pts-badge ${earned===0?'zero':''}">${earned} pt${earned===1?'':'s'}</span>
+      </div>`;
+    }
   } else {
     const predScorers=(scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
     html+=`<div class="result-strip kicked-strip">
@@ -3795,6 +4354,26 @@ function updateScorer(id,idx,val){
     r.predictions[id].scorers[idx]=val; saveRoster(r);
   }
 }
+
+/** Per-KO-match datalists, one per side, built from the resolved participants.
+ *  Rebuilt each render since KO teams resolve progressively as rounds finish. */
+function buildKoDatalists(){
+  let html='';
+  KO_ALL_MATCHES.forEach(km=>{
+    const { home, away } = getKoParticipants(km.match);
+    if(home){
+      const opts=[...(REAL_PLAYERS[home]||[]),'Own goal'];
+      html+=`<datalist id="kopl-${km.match}-h">`+opts.map(o=>`<option value="${o.replace(/"/g,'&quot;')}">`).join('')+`</datalist>`;
+    }
+    if(away){
+      const opts=[...(REAL_PLAYERS[away]||[]),'Own goal'];
+      html+=`<datalist id="kopl-${km.match}-a">`+opts.map(o=>`<option value="${o.replace(/"/g,'&quot;')}">`).join('')+`</datalist>`;
+    }
+  });
+  let dc=document.getElementById('koDatalists');
+  if(!dc){ dc=document.createElement('div'); dc.id='koDatalists'; document.body.appendChild(dc); }
+  dc.innerHTML=html;
+}
 function saveRoster(r){
   const rosters=DB.rosters(); rosters[activeName]=r; DB.saveRosters(rosters);
 }
@@ -3802,7 +4381,19 @@ function refreshMatch(id){
   const r=getRoster(activeName);
   const m=MATCHES.find(x=>x.id===id);
   const el=document.getElementById('match-'+id);
-  if(el){ el.outerHTML=matchCard(m,r,DB.results()[id]); }
+  if(!el) return;
+  // Replacing outerHTML recreates the DOM node, which on its own makes the page
+  // jump (the card you're predicting scrolls out from under your finger). Anchor
+  // it: remember the card's viewport offset before the swap, then nudge the
+  // scroll position by however much it moved, so the card stays put visually.
+  const beforeTop = el.getBoundingClientRect().top;
+  el.outerHTML = matchCard(m,r,DB.results()[id]);
+  const fresh = document.getElementById('match-'+id);
+  if(fresh){
+    const afterTop = fresh.getBoundingClientRect().top;
+    const delta = afterTop - beforeTop;
+    if(delta) window.scrollBy(0, delta);
+  }
 }
 
 /* ============================================================
@@ -3815,10 +4406,13 @@ function renderScorebar(){
   const pts=totalPoints(r);
   const pc=predictedCount(r);
   const rank=getRank(activeName);
+  const koOpen = allGroupsComplete();
+  const koPc = koOpen ? koPredictedCount(r) : 0;
   bar.innerHTML=`
     <div class="chip"><img src="${teamFlag(r.team)}" alt=""> ${activeName}</div>
     <div class="chip">Points <b>${pts}</b></div>
     <div class="chip">Predicted <b>${pc}</b>/72</div>
+    ${koOpen?`<div class="chip">🏆 KO <b>${koPc}</b>/${KO_ALL_MATCHES.length}</div>`:''}
     ${rank?`<div class="chip">Rank <b>#${rank}</b></div>`:''}`;
 }
 function getRank(name){
@@ -4564,8 +5158,12 @@ function setKoResult(id,side,val){
   res[id][side]= val===''?null:Math.max(0,+val);
   DB.saveResultEntry(id, res[id]);
   toast("Result saved");
+  renderScorebar();
+  if(document.getElementById('view-leaderboard').classList.contains('active')) renderLeaderboard();
   if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
   if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
+  const pr=document.getElementById('predict');
+  if(pr && pr.style.display!=='none') refreshKoMatch(id);
   renderAdmin();
 }
 function setKoResultScorers(id,val){
@@ -4575,7 +5173,11 @@ function setKoResultScorers(id,val){
   DB.saveResultEntry(id, res[id]);
   toast("Scorers saved");
   renderScorerDiagnostic();
+  renderScorebar();
+  if(document.getElementById('view-leaderboard').classList.contains('active')) renderLeaderboard();
   if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
+  const pr=document.getElementById('predict');
+  if(pr && pr.style.display!=='none') refreshKoMatch(id);
 }
 function setResult(id,side,val){
   const res=DB.results();
