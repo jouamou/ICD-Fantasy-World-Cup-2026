@@ -4057,13 +4057,13 @@ function koMatchCard(matchId, roundKey, roster){
       ${koStepper(matchId,'a',pa)}
     </div>`;
     const hGoals=(ph!=null?+ph:0), aGoals=(pa!=null?+pa:0), predTotal=hGoals+aGoals;
+    html += `<div class="scorers" id="koscorers-${matchId}" style="margin-top:10px;${predTotal>0?'':'display:none'}"><div class="slab">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(+4 each, max 3)</span></div><div id="kosc-${matchId}">`;
     if(predTotal>0){
-      html += `<div class="scorers" style="margin-top:10px"><div class="slab">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(+4 each, max 3)</span></div><div>`;
       let gi=0;
       for(let i=0;i<hGoals;i++){ html+=koScorerRow(matchId, (pred.scorers||[])[gi], gi, home, (i+1), hGoals); gi++; }
       for(let i=0;i<aGoals;i++){ html+=koScorerRow(matchId, (pred.scorers||[])[gi], gi, away, (i+1), aGoals); gi++; }
-      html += `</div></div>`;
     }
+    html += `</div></div>`;
     html += `<div class="ko-wild-toggle ${isWild?'on':''}" onclick="toggleWildcard(${matchId})">
       <span class="kw-star">⭐</span>${isWild?'Wildcard set — points on this match are DOUBLED':'Make this my Wildcard (double points)'}
     </div>`;
@@ -4097,7 +4097,15 @@ function pickKoAdvancer(matchId, side){
   if(!r.koPredictions[matchId]) r.koPredictions[matchId]={advancer:null,h:null,a:null,scorers:[]};
   r.koPredictions[matchId].advancer = side==='h'?home:away;
   saveRoster(r);
-  refreshKoMatch(matchId);
+  // Toggle the selected state in place — no height change, no rebuild, no jump.
+  const card=document.getElementById('komatch-'+matchId);
+  if(card){
+    const btns=card.querySelectorAll('.ko-advancer .ko-team-btn');
+    if(btns.length>=2){
+      btns[0].classList.toggle('sel', side==='h'); // first button = home
+      btns[1].classList.toggle('sel', side==='a'); // second = away
+    }
+  }
   renderScorebar();
 }
 
@@ -4117,7 +4125,45 @@ function bumpKo(matchId, side, delta){
   const fit=(arr,n)=>{const out=arr.slice(0,n);while(out.length<n)out.push('');return out;};
   p.scorers=[...fit(oldHome,newH),...fit(oldAway,newA)];
   saveRoster(r);
-  refreshKoMatch(matchId);
+  // In-place patch — same reasoning as the group-stage bump: never recreate the
+  // card node, so the page doesn't jump away from the tie you're predicting.
+  patchKoMatchCard(matchId, r);
+}
+
+/** In-place updater for a KO card after a score bump — updates the two score
+ *  numbers and the goalscorer slots, reusing typed input values. Returns false
+ *  if the card isn't in the DOM. */
+function patchKoMatchCard(matchId, roster){
+  const card = document.getElementById('komatch-'+matchId);
+  if(!card) return false;
+  const r = roster || getRoster(activeName);
+  const pred = r.koPredictions[matchId] || {};
+  const ph=pred.h, pa=pred.a;
+  const { home, away } = getKoParticipants(matchId);
+
+  const vh=document.getElementById('koval-'+matchId+'-h');
+  const va=document.getElementById('koval-'+matchId+'-a');
+  if(vh) vh.textContent = ph==null?'–':ph;
+  if(va) va.textContent = pa==null?'–':pa;
+
+  const wrap=document.getElementById('koscorers-'+matchId);
+  const sc=document.getElementById('kosc-'+matchId);
+  if(wrap && sc){
+    const hGoals=ph!=null?+ph:0, aGoals=pa!=null?+pa:0, predTotal=hGoals+aGoals;
+    wrap.style.display = predTotal>0 ? '' : 'none';
+    // preserve typed values
+    const liveInputs = sc.querySelectorAll('.scorer-row input');
+    const typed = pred.scorers ? pred.scorers.slice() : [];
+    liveInputs.forEach((inp,i)=>{ if(inp.value!=null) typed[i]=inp.value; });
+    let rowsHtml='';
+    if(predTotal>0){
+      let gi=0;
+      for(let i=0;i<hGoals;i++){ rowsHtml+=koScorerRow(matchId, typed[gi], gi, home, (i+1), hGoals); gi++; }
+      for(let i=0;i<aGoals;i++){ rowsHtml+=koScorerRow(matchId, typed[gi], gi, away, (i+1), aGoals); gi++; }
+    }
+    sc.innerHTML = rowsHtml;
+  }
+  return true;
 }
 
 function updateKoScorer(matchId, idx, val){
@@ -4212,14 +4258,14 @@ function matchCard(m,roster,result){
         <img src="${teamFlag(m.a)}" alt=""><div class="tname">${m.a}</div>
       </div>
     </div>
-    <div class="winner-line">${winLine}</div>`;
+    <div class="winner-line" id="winline-${m.id}">${winLine}</div>`;
 
   if(!locked){
     const hGoals=(ph!=null?+ph:0);
     const aGoals=(pa!=null?+pa:0);
     const predTotal=hGoals+aGoals;
-    html+=`<div class="scorers">
-      <div class="slab">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(optional · +3 each${predTotal>0?` · ${predTotal} goal${predTotal===1?'':'s'}`:''})</span></div>
+    html+=`<div class="scorers" id="scorers-${m.id}">
+      <div class="slab" id="slab-${m.id}">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(optional · +3 each${predTotal>0?` · ${predTotal} goal${predTotal===1?'':'s'}`:''})</span></div>
       <div id="sc-${m.id}">`;
     // Each slot is bound to the team that scored it: the first `hGoals` slots
     // are home-team goals, the next `aGoals` slots are away-team goals. The
@@ -4317,9 +4363,89 @@ function bump(id,side,delta){
   const fit=(arr,n)=>{ const out=arr.slice(0,n); while(out.length<n) out.push(""); return out; };
   p.scorers = [...fit(oldHome,newH), ...fit(oldAway,newA)];
   saveRoster(r);
-  refreshMatch(id);
+  // Patch the card IN PLACE rather than rebuilding it. Rebuilding the whole
+  // card (outerHTML swap) recreated the DOM node, which on mobile fights the
+  // browser's scroll anchoring and makes the page jump away from the match you
+  // are tapping. Patching only the score readout, winner line and scorer rows
+  // keeps the node — and your scroll position — perfectly still.
+  if(!patchMatchCard(id, r)){
+    // Card not currently in the DOM (e.g. filtered out) — nothing to patch.
+  }
   renderScorebar();
   updateUnpredictedPill();
+}
+
+/** In-place updater for a group-stage match card after a score bump. Updates
+ *  the two score numbers, the winner line, the goalscorer slots and the slab
+ *  label, reusing any scorer <input> values already typed. Returns false if the
+ *  card isn't in the DOM. Never recreates the card element, so scroll stays put. */
+function patchMatchCard(id, roster){
+  const card = document.getElementById('match-'+id);
+  if(!card) return false;
+  const m = MATCHES.find(x=>x.id===id);
+  const r = roster || getRoster(activeName);
+  const pred = r.predictions[id] || {};
+  const ph = pred.h, pa = pred.a;
+
+  // 1) score readouts
+  const vh = document.getElementById('val-'+id+'-h');
+  const va = document.getElementById('val-'+id+'-a');
+  if(vh) vh.textContent = ph==null?'–':ph;
+  if(va) va.textContent = pa==null?'–':pa;
+
+  // 2) winner line
+  const win = document.getElementById('winline-'+id);
+  if(win){
+    let winLine;
+    if(ph!=null&&pa!=null){
+      if(+ph>+pa) winLine=`Your pick: <b>${m.h} win</b>`;
+      else if(+pa>+ph) winLine=`Your pick: <b>${m.a} win</b>`;
+      else winLine=`Your pick: <b>Draw</b>`;
+    } else winLine=`<span style="color:var(--gold);font-weight:600">⬆ Set your prediction</span>`;
+    win.innerHTML = winLine;
+  }
+
+  // 3) goalscorer rows — rebuild only the inner rows container, preserving any
+  // text the user has already typed into existing slots (match by slot index).
+  const scorersWrap = document.getElementById('scorers-'+id);
+  if(scorersWrap){
+    const hGoals = ph!=null?+ph:0;
+    const aGoals = pa!=null?+pa:0;
+    const predTotal = hGoals+aGoals;
+    // update slab label count
+    const slab = document.getElementById('slab-'+id);
+    if(slab){
+      slab.innerHTML = `⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(optional · +3 each${predTotal>0?` · ${predTotal} goal${predTotal===1?'':'s'}`:''})</span>`;
+    }
+    // capture any currently-typed values straight from the live inputs so we
+    // never lose what someone half-typed when a row count changes
+    const liveInputs = scorersWrap.querySelectorAll('.scorer-row input');
+    const typed = pred.scorers ? pred.scorers.slice() : [];
+    liveInputs.forEach((inp,i)=>{ if(inp.value!=null) typed[i]=inp.value; });
+
+    const sc = document.getElementById('sc-'+id);
+    if(sc){
+      let rowsHtml='';
+      if(predTotal>0){
+        let goalIdx=0;
+        for(let i=0;i<hGoals;i++){ rowsHtml+=scorerRow(m, typed[goalIdx], goalIdx, m.h, 'h', (i+1), hGoals); goalIdx++; }
+        for(let i=0;i<aGoals;i++){ rowsHtml+=scorerRow(m, typed[goalIdx], goalIdx, m.a, 'a', (i+1), aGoals); goalIdx++; }
+      }
+      sc.innerHTML = rowsHtml;
+    }
+    // the "set a score to name scorers" note sits as a sibling after #sc-
+    let note = scorersWrap.querySelector('.add-scorer-note');
+    if(predTotal===0 && !note){
+      const n=document.createElement('div');
+      n.className='add-scorer-note';
+      n.style.cssText='font-size:12px;color:var(--muted);padding:4px 0';
+      n.textContent='Set a score above to name goalscorers.';
+      scorersWrap.appendChild(n);
+    } else if(predTotal>0 && note){
+      note.remove();
+    }
+  }
+  return true;
 }
 
 function scorerRow(m, val, idx, team, side, goalNum, sideTotal){
