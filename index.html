@@ -306,6 +306,40 @@
     -webkit-tap-highlight-color:transparent;
   }
   .match:not(.locked):active{background:var(--green-100)}
+  /* Unpredicted (still open) matches get a soft gold left edge so what's left
+     to do is scannable at a glance; predicted ones get a clean green edge. */
+  .match.unpredicted{border-left:3px solid var(--gold)}
+  .match.predicted-open{border-left:3px solid var(--green-500)}
+  .predicted-chip{
+    display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;
+    font-size:9.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;
+    color:var(--green-700);background:var(--green-100);
+    border-radius:20px;padding:2px 8px;
+  }
+  .locks-soon-badge{
+    display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;
+    font-size:9.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;
+    color:#fff;background:var(--gold);
+    border-radius:20px;padding:2px 8px;
+    animation:locksPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes locksPulse{0%,100%{opacity:1}50%{opacity:.55}}
+  /* tiny pop when a score number changes */
+  @keyframes scorePop{0%{transform:scale(1)}40%{transform:scale(1.28);color:var(--green-700)}100%{transform:scale(1)}}
+  .score-pop{animation:scorePop .26s ease-out}
+  /* prediction progress bar at the top of the Play view */
+  .pred-progress{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 15px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  .pred-progress .pp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .pred-progress .pp-label{font-size:12px;font-weight:700;color:var(--head)}
+  .pred-progress .pp-count{font-family:'Oswald';font-weight:700;font-size:15px;color:var(--green-700)}
+  .pred-progress .pp-count small{font-family:'Inter';font-weight:600;font-size:11px;color:var(--muted)}
+  .pred-progress .pp-track{height:9px;border-radius:6px;background:var(--green-100);overflow:hidden}
+  .pred-progress .pp-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green-700),var(--green-500));transition:width .4s ease}
+  .pred-progress .pp-fill.done{background:linear-gradient(90deg,var(--gold),#f5c842)}
+  .pred-progress .pp-msg{font-size:11px;color:var(--muted);font-weight:600;margin-top:7px}
   /* Kicked off but no result yet — muted, slightly indented feel */
   .match.kicked{
     background:#fafafa;
@@ -1294,6 +1328,75 @@
   }
   .ko-boost-chip.none{background:var(--muted);opacity:.85}
 
+  /* Perfect-round pill in the round header */
+  .pr-pill{flex:0 0 auto;font-size:10.5px;font-weight:800;border-radius:20px;padding:3px 9px;letter-spacing:.2px;white-space:nowrap}
+  .pr-pill.pending{color:#8a6516;background:rgba(224,168,46,.14);border:1px solid rgba(224,168,46,.3)}
+  .pr-pill.perfect{color:#fff;background:linear-gradient(135deg,var(--green-700),var(--green-500));box-shadow:0 1px 6px rgba(45,107,21,.3)}
+  .pr-pill.missed{color:var(--muted);background:var(--bg);border:1px solid var(--line)}
+
+  /* Champion Pick card */
+  .champ-card{border-radius:16px;padding:16px 18px;margin:14px 0 4px;border:1.5px solid;box-shadow:0 2px 12px rgba(20,40,10,.08)}
+  .champ-card.champ-empty{background:linear-gradient(135deg,#2a1f4d 0%,#3d2c6e 100%);border-color:rgba(255,255,255,.15);color:#fff}
+  .champ-card.champ-set{background:linear-gradient(135deg,#fff7e6,#fff 70%);border-color:var(--gold)}
+  .champ-card.champ-win{background:linear-gradient(135deg,#eaf3de,#fff 70%);border-color:var(--green-500)}
+  .champ-card.champ-lose{background:#f7f7f4;border-color:var(--line);opacity:.92}
+  .champ-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+  .champ-ico{font-size:26px;flex:0 0 auto;line-height:1}
+  .champ-title{font-family:'Archivo';font-weight:900;font-size:17px;line-height:1.1}
+  .champ-card.champ-empty .champ-title{color:#fff}
+  .champ-card:not(.champ-empty) .champ-title{color:var(--head)}
+  .champ-sub{font-size:12px;margin-top:3px;line-height:1.4}
+  .champ-card.champ-empty .champ-sub{color:rgba(255,255,255,.8)}
+  .champ-card:not(.champ-empty) .champ-sub{color:var(--muted)}
+  .champ-sub b{color:inherit}
+  .champ-pick-btn{
+    width:100%;background:linear-gradient(135deg,var(--gold),#f5c842);color:#4a3608;border:none;
+    border-radius:11px;padding:13px;font-family:'Archivo';font-weight:800;font-size:14px;cursor:pointer;
+    transition:.15s;-webkit-tap-highlight-color:transparent;
+  }
+  .champ-pick-btn:active{transform:scale(.98)}
+  .champ-tiers{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:11px}
+  .champ-tiers span{font-family:'Oswald';font-weight:700;font-size:13px;color:rgba(255,255,255,.4)}
+  .champ-tiers span.now{color:var(--gold);font-size:17px}
+  .champ-tiers span.arr{font-size:10px;color:rgba(255,255,255,.25)}
+  .champ-pick-row{display:flex;align-items:center;gap:11px}
+  .champ-pick-row img{width:42px;height:29px;border-radius:5px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.15);flex:0 0 auto}
+  .champ-team{font-family:'Archivo';font-weight:800;font-size:17px;color:var(--head);flex:1;min-width:0}
+  .champ-change{background:#fff;border:1.5px solid var(--gold);color:#8a6516;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;flex:0 0 auto}
+  .champ-outcome{margin-top:11px;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:700}
+  .champ-outcome.win{background:var(--green-100);color:var(--green-800)}
+  .champ-outcome.lose{background:#f0eef4;color:var(--muted)}
+
+  /* Champion picker modal */
+  #championModal{position:fixed;inset:0;z-index:120;display:none}
+  #championModal.show{display:block}
+  #championModal .cm-backdrop{position:absolute;inset:0;background:rgba(20,30,10,.5);backdrop-filter:blur(2px)}
+  #championModal .cm-sheet{
+    position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    width:100%;max-width:560px;max-height:82vh;background:var(--card);
+    border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(20,40,10,.3);
+    display:flex;flex-direction:column;overflow:hidden;
+    animation:cmUp .28s cubic-bezier(.2,.9,.3,1);
+    padding-bottom:max(12px, env(safe-area-inset-bottom));
+  }
+  @keyframes cmUp{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}}
+  #championModal .cm-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 18px 12px;border-bottom:1px solid var(--line)}
+  #championModal .cm-title{font-family:'Archivo';font-weight:900;font-size:18px;color:var(--head)}
+  #championModal .cm-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  #championModal .cm-close{background:var(--bg);border:none;width:34px;height:34px;border-radius:50%;font-size:15px;color:var(--muted);cursor:pointer;flex:0 0 auto}
+  #championModal .cm-grid{overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  @media(min-width:480px){#championModal .cm-grid{grid-template-columns:repeat(3,1fr)}}
+  #championModal .cm-team{
+    display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);background:#fff;
+    border-radius:10px;padding:10px 11px;cursor:pointer;font-size:13px;font-weight:700;color:var(--head);
+    text-align:left;-webkit-tap-highlight-color:transparent;transition:.12s;min-width:0;
+  }
+  #championModal .cm-team:active{background:var(--green-100)}
+  #championModal .cm-team.sel{border-color:var(--green-700);background:var(--green-100);box-shadow:0 0 0 2px rgba(45,107,21,.15)}
+  #championModal .cm-team img{width:28px;height:19px;border-radius:3px;object-fit:cover;flex:0 0 auto}
+  #championModal .cm-team span:not(.cm-check){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+  #championModal .cm-team .cm-check{color:var(--green-700);font-weight:900;flex:0 0 auto}
+
   /* KO round group */
   .ko-round-block{margin-bottom:10px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 1px 4px rgba(20,40,10,.06)}
   .ko-round-head{
@@ -1453,6 +1556,8 @@
         <div class="spacer"></div>
         <button class="btn ghost sm" id="switchBtn">Switch player</button>
       </div>
+      <!-- prediction progress bar -->
+      <div id="predProgress"></div>
       <!-- Floating unpredicted-matches pill -->
       <button id="unpredictedPill" onclick="scrollToFirstUnpredicted()"></button>
       <div class="filter-wrap" id="groupFilterWrap">
@@ -1545,6 +1650,8 @@
         <ul>
           <li><b>📈 Underdog Boost:</b> the further back you are after the groups, the bigger the bonus on every knockout point — an automatic, transparent rubber-band so nobody's out of it.</li>
           <li><b>⭐ Wildcard Banker:</b> flag any one knockout match to <b>double</b> your points on it. Bank a deep round for a huge swing.</li>
+          <li><b>👑 Champion Pick:</b> name who lifts the trophy. Lock it in early for more — <b>50</b> pts before the knockouts start, sliding down to <b>10</b> by the semis. Paid out if your team wins the Final.</li>
+          <li><b>✨ Perfect Round:</b> get <i>every</i> advancer right in a completed round for a flat bonus — <b>+20</b> (R32), <b>+15</b> (R16), <b>+12</b> (QF), <b>+10</b> (SF).</li>
         </ul>
       </div>
     </div>
@@ -2567,9 +2674,17 @@ function koTotalForRoster(roster, groupTotalHint){
     if(roster.wildcard===id) pts*=2; // banker: doubles this one match
     subtotal+=pts;
   });
-  if(!anyScored) return 0;
+  if(!anyScored){
+    // Even with no per-match KO points yet, a champion bonus could land once
+    // the Final is decided, and perfect-round bonuses once rounds complete.
+    return championBonusForRoster(roster) + perfectRoundBonusForRoster(roster);
+  }
   const boost = underdogBoostFor(_rosterName(roster));
-  return Math.round(subtotal*boost);
+  // Per-match KO points are boost-scaled (the catch-up grind). The champion and
+  // perfect-round bonuses are flat achievements added on top, unscaled.
+  return Math.round(subtotal*boost)
+       + championBonusForRoster(roster)
+       + perfectRoundBonusForRoster(roster);
 }
 
 /** Resolve a roster object back to its player name (rosters are keyed by name).
@@ -2587,6 +2702,97 @@ function koPredictedCount(roster){
   const ko=roster.koPredictions||{};
   return Object.keys(ko).filter(id=>ko[id] && ko[id].advancer).length;
 }
+
+/* ============================================================
+   CHAMPION PICK — pick the eventual tournament winner, early for more.
+   Stored as roster.champion = { team, tier } where tier is frozen at the
+   moment the pick is first set, based on how far the knockouts have already
+   progressed: the earlier you commit, the bigger the reward if you're right.
+   Awarded only if the picked team wins the Final (match 104). A flat bonus,
+   NOT scaled by the underdog boost — it's an achievement, not grind points.
+   ============================================================ */
+// Tier thresholds: keyed by how many KO matches already had results when the
+// pick was locked. Fewer resolved = earlier commitment = higher tier.
+const CHAMPION_TIERS = [
+  { maxResolved: 0,  pts: 50, label: 'Before any knockout kicked off' },
+  { maxResolved: 8,  pts: 35, label: 'During the Round of 32' },
+  { maxResolved: 16, pts: 25, label: 'During the Round of 16' },
+  { maxResolved: 24, pts: 15, label: 'During the Quarter-finals' },
+  { maxResolved: 99, pts: 10, label: 'Semi-finals or later' },
+];
+/** How many KO matches currently have a result — drives champion tiering. */
+function koResolvedCount(){
+  const res=DB.results();
+  return KO_ALL_MATCHES.filter(km=>{
+    const r=res[km.match];
+    return r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='';
+  }).length;
+}
+/** The tier (and points) a champion pick locked *now* would earn. */
+function championTierNow(){
+  const resolved = koResolvedCount();
+  return CHAMPION_TIERS.find(t=>resolved<=t.maxResolved) || CHAMPION_TIERS[CHAMPION_TIERS.length-1];
+}
+/** The Final's winner, or null if not played yet. */
+function tournamentChampion(){
+  return getKoWinner(KO_FINAL.match);
+}
+/** Champion-pick bonus for a roster: the frozen tier points if their pick won
+ *  the Final, else 0 (and 0 until the Final is decided). */
+function championBonusForRoster(roster){
+  const champ = roster.champion;
+  if(!champ || !champ.team) return 0;
+  const winner = tournamentChampion();
+  if(!winner) return 0;
+  return champ.team===winner ? (champ.tier && champ.tier.pts || 0) : 0;
+}
+
+/* ============================================================
+   PERFECT ROUND — get every advancer in a completed round right.
+   Flat bonus per round (R32 +20, R16 +15, QF +12, SF +10). Only counts once a
+   round is fully resolved (all its matches have results) AND the player picked
+   an advancer for every match in it. Like the champion bonus, this is a flat
+   achievement and is NOT scaled by the underdog boost.
+   ============================================================ */
+const PERFECT_ROUND_BONUS = { r32:20, r16:15, qf:12, sf:10 };
+const PERFECT_ROUND_DEFS = [
+  { key:'r32', matches:KO_R32.map(m=>m.match) },
+  { key:'r16', matches:KO_R16.map(m=>m.match) },
+  { key:'qf',  matches:KO_QF.map(m=>m.match) },
+  { key:'sf',  matches:KO_SF.map(m=>m.match) },
+];
+/** Is every match in this id-list resolved? */
+function roundFullyResolved(ids){
+  const res=DB.results();
+  return ids.every(id=>{ const r=res[id]; return r && r.h!=null && r.h!=='' && r.a!=null && r.a!==''; });
+}
+/** Did the roster correctly pick the advancer for every match in this round? */
+function roundAllAdvancersCorrect(roster, ids){
+  const ko=roster.koPredictions||{};
+  return ids.every(id=>{
+    const pred=ko[id];
+    if(!pred || !pred.advancer) return false;
+    const winner=getKoWinner(id);
+    return winner && pred.advancer===winner;
+  });
+}
+/** Sum of perfect-round bonuses a roster has earned across completed rounds. */
+function perfectRoundBonusForRoster(roster){
+  let bonus=0;
+  PERFECT_ROUND_DEFS.forEach(rd=>{
+    if(roundFullyResolved(rd.matches) && roundAllAdvancersCorrect(roster, rd.matches)){
+      bonus += PERFECT_ROUND_BONUS[rd.key]||0;
+    }
+  });
+  return bonus;
+}
+/** Per-round status for the UI: 'pending' (not all played), 'perfect' (all
+ *  advancers right), or 'missed' (round done but at least one wrong). */
+function perfectRoundStatus(roster, ids){
+  if(!roundFullyResolved(ids)) return 'pending';
+  return roundAllAdvancersCorrect(roster, ids) ? 'perfect' : 'missed';
+}
+
 function predictedCount(roster){
   let n=0;
   for(const id in (roster.predictions||{})){
@@ -3676,6 +3882,7 @@ function tick() {
   renderLiveBanner();
   recomputeBannerVisibility();
   updateUnpredictedPill();
+  updateLocksSoonBadges();
   const now = Date.now();
 
   // Keep the Matches hub's live minutes / countdown ticking when it's open.
@@ -3790,6 +3997,7 @@ function enterPredict(){
   buildGroupFilter();
   renderGroups();
   renderScorebar();
+  renderPredProgress();
   renderSyncBanner();
   renderNextMatchCard();
   renderLiveBanner();
@@ -3867,10 +4075,30 @@ function renderGroups(){
   });
   cont.innerHTML=html;
   renderKoPredictions();
+  renderPredProgress();
 }
 function toggleGroup(head){
+  const willOpen = !head.classList.contains('open');
   head.classList.toggle('open');
   head.nextElementSibling.classList.toggle('open');
+  if(willOpen){
+    // When a group expands, its body pushes the rest of the page down. If the
+    // group sits anywhere but the very top, that shove makes the header jump
+    // out from under your finger and the revealed matches land off-screen.
+    // Anchor the tapped header just beneath the sticky tabbar so the matches
+    // you just opened slide neatly into view right below it — no chase, no jump.
+    requestAnimationFrame(()=>{
+      const tabbarH = getTabbarH();
+      const top = head.getBoundingClientRect().top;
+      const target = tabbarH + 8; // small breathing gap under the bar
+      const delta = top - target;
+      // Only nudge if the header isn't already sitting roughly where we want it,
+      // so a group already at the top doesn't twitch.
+      if(Math.abs(delta) > 6){
+        window.scrollBy({ top: delta, behavior: 'smooth' });
+      }
+    });
+  }
 }
 
 /* ============================================================
@@ -3951,16 +4179,30 @@ function renderKoPredictions(){
         <div class="ko-boost-chip ${wildcardSet?'':'none'}" style="${wildcardSet?'':'background:var(--gold);color:#4a3608;opacity:1'}">${wildcardSet?`⭐ Set on match ${r.wildcard}`:'⭐ Not set yet — tap one below'}</div>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.4">Points per KO match: <b>10</b> correct advancer · <b>+6</b> exact score · <b>+4</b> per scorer (max 3), then ×<b>round multiplier</b> (R32 ×1 → Final ×4).</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.4">Points per KO match: <b>10</b> correct advancer · <b>+6</b> exact score · <b>+4</b> per scorer (max 3), then ×<b>round multiplier</b> (R32 ×1 → Final ×4). Plus a <b>👑 Champion Pick</b> bonus (up to +50) and <b>✨ Perfect Round</b> bonuses for getting every advancer in a round right.</div>
   </div>`;
+
+  // Champion Pick card
+  html += championPickCardHtml(r);
 
   rounds.forEach(rd=>{
     const mult = KO_ROUND_MULT[rd.key];
     const open = rd.key===autoOpenKey;
+    // Perfect-round status pill (only for the four multi-match rounds that
+    // carry a perfect bonus — not the single-match third place / final).
+    let prPill = '';
+    if(PERFECT_ROUND_BONUS[rd.key]){
+      const st = perfectRoundStatus(r, rd.matches);
+      const amt = PERFECT_ROUND_BONUS[rd.key];
+      if(st==='perfect') prPill = `<div class="pr-pill perfect" title="Perfect round!">✨ Perfect +${amt}</div>`;
+      else if(st==='missed') prPill = `<div class="pr-pill missed" title="Round complete — not all advancers correct">Perfect missed</div>`;
+      else prPill = `<div class="pr-pill pending" title="Get every advancer right for +${amt}">🎯 Perfect +${amt}</div>`;
+    }
     html += `<div class="ko-round-block">
       <div class="ko-round-head ${open?'open':''}" onclick="toggleKoRound(this)">
         <div class="krh-tag">${rd.title}</div>
         <div class="krh-name"></div>
+        ${prPill}
         <div class="krh-mult">×${mult}</div>
         <div class="chev">▾</div>
       </div>
@@ -3970,6 +4212,104 @@ function renderKoPredictions(){
   });
 
   cont.innerHTML = html;
+}
+
+/** The Champion Pick card — choose the eventual winner, locked early for more.
+ *  Shows current tier value, the locked pick (with its frozen tier), and the
+ *  outcome once the Final is decided. */
+function championPickCardHtml(roster){
+  const champ = roster.champion;
+  const finalWinner = tournamentChampion();
+  const tierNow = championTierNow();
+  // Build the team option list: every team still alive (or all 48 if none of
+  // the KO results are in yet). Simpler + safe: offer all teams in the bracket
+  // that could still be champion — i.e. teams appearing in any unresolved path.
+  // For usability we just offer all 48 teams via a datalist.
+  if(champ && champ.team){
+    const locked = !!finalWinner; // once the final is decided, pick is settled
+    let outcome = '';
+    if(finalWinner){
+      const won = champ.team===finalWinner;
+      outcome = won
+        ? `<div class="champ-outcome win">🏆 ${esc(champ.team)} won it — <b>+${champ.tier.pts} pts!</b></div>`
+        : `<div class="champ-outcome lose">${esc(finalWinner)} lifted the trophy — your pick of ${esc(champ.team)} didn't land.</div>`;
+    }
+    return `<div class="champ-card ${finalWinner ? (champ.team===finalWinner?'champ-win':'champ-lose') : 'champ-set'}">
+      <div class="champ-head"><span class="champ-ico">👑</span><div>
+        <div class="champ-title">Your Champion Pick</div>
+        <div class="champ-sub">Locked ${esc(champ.tier.label.toLowerCase())} · worth <b>${champ.tier.pts} pts</b> if right</div>
+      </div></div>
+      <div class="champ-pick-row">
+        <img src="${teamFlag(champ.team)}" alt="">
+        <span class="champ-team">${esc(champ.team)}</span>
+        ${!finalWinner?`<button class="champ-change" onclick="openChampionPicker()">Change</button>`:''}
+      </div>
+      ${outcome}
+    </div>`;
+  }
+  // Not yet picked
+  return `<div class="champ-card champ-empty">
+    <div class="champ-head"><span class="champ-ico">👑</span><div>
+      <div class="champ-title">Pick your Champion</div>
+      <div class="champ-sub">Who lifts the trophy? Commit now while it's worth <b>${tierNow.pts} pts</b> — the value drops the longer you wait.</div>
+    </div></div>
+    <button class="champ-pick-btn" onclick="openChampionPicker()">👑 Choose my champion (+${tierNow.pts} pts)</button>
+    <div class="champ-tiers">${CHAMPION_TIERS.map(t=>`<span class="${t.pts===tierNow.pts?'now':''}">${t.pts}</span>`).join('<span class="arr">→</span>')}</div>
+  </div>`;
+}
+
+/** Champion picker modal — offers every team in the tournament, flagged. The
+ *  chosen team locks at the CURRENT tier (frozen), so picking earlier is worth
+ *  more. Reuses the goalOverlay-style fixed layer with its own markup. */
+function openChampionPicker(){
+  let modal = document.getElementById('championModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'championModal';
+    document.body.appendChild(modal);
+  }
+  const tierNow = championTierNow();
+  // All teams, sorted alphabetically, with flags. (Could be narrowed to teams
+  // still alive, but offering all is simplest and harmless — a knocked-out pick
+  // simply can't win the Final.)
+  const teams = Object.keys(TEAMS).sort((a,b)=>a.localeCompare(b));
+  const cur = (getRoster(activeName)||{}).champion;
+  const items = teams.map(t=>`
+    <button class="cm-team ${cur&&cur.team===t?'sel':''}" onclick="setChampion('${t.replace(/'/g,"\\'")}')">
+      <img src="${teamFlag(t)}" alt=""><span>${esc(t)}</span>
+      ${cur&&cur.team===t?'<span class="cm-check">✓</span>':''}
+    </button>`).join('');
+  modal.innerHTML = `<div class="cm-backdrop" onclick="closeChampionPicker()"></div>
+    <div class="cm-sheet" role="dialog" aria-label="Pick your champion">
+      <div class="cm-top">
+        <div>
+          <div class="cm-title">👑 Pick your Champion</div>
+          <div class="cm-sub">Locks at <b>+${tierNow.pts} pts</b> right now · ${esc(tierNow.label)}</div>
+        </div>
+        <button class="cm-close" onclick="closeChampionPicker()" aria-label="Close">✕</button>
+      </div>
+      <div class="cm-grid">${items}</div>
+    </div>`;
+  modal.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeChampionPicker(){
+  const modal = document.getElementById('championModal');
+  if(modal) modal.classList.remove('show');
+  document.body.style.overflow='';
+}
+function setChampion(team){
+  const r = getRoster(activeName);
+  if(!r) return;
+  // Freeze the tier at the moment of (first or changed) selection.
+  const tier = championTierNow();
+  r.champion = { team, tier: { pts: tier.pts, label: tier.label } };
+  saveRoster(r);
+  closeChampionPicker();
+  toast(`👑 ${team} is your champion — locked at +${tier.pts} pts`);
+  hapticTap();
+  renderKoPredictions();
+  renderScorebar();
 }
 
 function toggleKoRound(head){
@@ -4127,13 +4467,14 @@ function bumpKo(matchId, side, delta){
   saveRoster(r);
   // In-place patch — same reasoning as the group-stage bump: never recreate the
   // card node, so the page doesn't jump away from the tie you're predicting.
-  patchKoMatchCard(matchId, r);
+  patchKoMatchCard(matchId, r, side);
+  hapticTap();
 }
 
 /** In-place updater for a KO card after a score bump — updates the two score
  *  numbers and the goalscorer slots, reusing typed input values. Returns false
  *  if the card isn't in the DOM. */
-function patchKoMatchCard(matchId, roster){
+function patchKoMatchCard(matchId, roster, changedSide){
   const card = document.getElementById('komatch-'+matchId);
   if(!card) return false;
   const r = roster || getRoster(activeName);
@@ -4143,8 +4484,8 @@ function patchKoMatchCard(matchId, roster){
 
   const vh=document.getElementById('koval-'+matchId+'-h');
   const va=document.getElementById('koval-'+matchId+'-a');
-  if(vh) vh.textContent = ph==null?'–':ph;
-  if(va) va.textContent = pa==null?'–':pa;
+  if(vh){ vh.textContent = ph==null?'–':ph; if(changedSide==='h'){ vh.classList.remove('score-pop'); void vh.offsetWidth; vh.classList.add('score-pop'); } }
+  if(va){ va.textContent = pa==null?'–':pa; if(changedSide==='a'){ va.classList.remove('score-pop'); void va.offsetWidth; va.classList.add('score-pop'); } }
 
   const wrap=document.getElementById('koscorers-'+matchId);
   const sc=document.getElementById('kosc-'+matchId);
@@ -4226,6 +4567,7 @@ function matchCard(m,roster,result){
   } else winLine=`<span style="color:var(--gold);font-weight:600">⬆ Set your prediction</span>`;
 
   const scorers=pred.scorers||[];
+  const isPredicted = ph!=null && pa!=null;
 
   let statusLabel = '';
   if(liveNow){
@@ -4234,9 +4576,19 @@ function matchCard(m,roster,result){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto">Locked</span>';
   } else if(kicked){
     statusLabel = '<span class="dot" style="flex:0 0 auto"></span><span class="live" style="flex:0 0 auto;color:var(--muted)">In progress</span>';
+  } else {
+    // Open match — surface "locks soon" urgency and a predicted tick.
+    const minsToKO = Math.floor((koUTC.getTime()-now)/60000);
+    if(minsToKO>=0 && minsToKO<=90){
+      const lbl = minsToKO>=60 ? `${Math.floor(minsToKO/60)}h ${minsToKO%60}m` : `${minsToKO}m`;
+      statusLabel = `<span class="locks-soon-badge" id="locks-${m.id}">🔒 locks in ${lbl}</span>`;
+    } else if(isPredicted){
+      statusLabel = `<span class="predicted-chip">✓ Predicted</span>`;
+    }
   }
 
-  const cardClass = hasResult ? 'locked scored' : (kicked ? 'locked kicked' : '');
+  let cardClass = hasResult ? 'locked scored' : (kicked ? 'locked kicked' : '');
+  if(!locked){ cardClass += isPredicted ? ' predicted-open' : ' unpredicted'; }
 
   let html=`<div class="match ${cardClass}" id="match-${m.id}">
     <div class="match-meta">
@@ -4368,30 +4720,96 @@ function bump(id,side,delta){
   // browser's scroll anchoring and makes the page jump away from the match you
   // are tapping. Patching only the score readout, winner line and scorer rows
   // keeps the node — and your scroll position — perfectly still.
-  if(!patchMatchCard(id, r)){
-    // Card not currently in the DOM (e.g. filtered out) — nothing to patch.
-  }
+  patchMatchCard(id, r, side);
+  hapticTap();
   renderScorebar();
+  renderPredProgress();
   updateUnpredictedPill();
+}
+
+/** A tiny haptic blip on supporting devices — makes the stepper feel physical
+ *  on mobile. No-op where unsupported (most desktops). Kept very short so it's
+ *  a tap, not a buzz. */
+function hapticTap(){
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+}
+
+/** Slim prediction-progress bar at the top of the Play view. Counts how many
+ *  of the still-open group matches you've predicted out of all 72, with an
+ *  encouraging message. Turns gold when you've predicted every open match. */
+function renderPredProgress(){
+  const el = document.getElementById('predProgress');
+  if(!el) return;
+  const r = activeName ? getRoster(activeName) : null;
+  if(!r){ el.innerHTML=''; return; }
+  const total = MATCHES.length; // 72
+  let predicted = 0, openUnpred = 0;
+  const now = Date.now();
+  MATCHES.forEach(m=>{
+    const p = r.predictions[m.id];
+    const done = p && p.h!=null && p.a!=null;
+    if(done) predicted++;
+    else {
+      const res = DB.results()[m.id];
+      const hasResult = res && res.h!=null && res.h!=='';
+      const kicked = MATCH_UTC[m.id].getTime()<=now;
+      if(!hasResult && !kicked) openUnpred++;
+    }
+  });
+  const pct = Math.round((predicted/total)*100);
+  const allOpenDone = openUnpred===0;
+  let msg;
+  if(predicted===total) msg = '🎉 Every match predicted — you\'re all in!';
+  else if(allOpenDone) msg = '✓ All open matches predicted — you\'re caught up.';
+  else if(openUnpred===1) msg = '1 open match still needs your pick.';
+  else msg = `${openUnpred} open matches still need your pick.`;
+  el.innerHTML = `<div class="pred-progress">
+    <div class="pp-top">
+      <span class="pp-label">Your predictions</span>
+      <span class="pp-count">${predicted}<small> / ${total}</small></span>
+    </div>
+    <div class="pp-track"><div class="pp-fill ${allOpenDone?'done':''}" style="width:${pct}%"></div></div>
+    <div class="pp-msg">${msg}</div>
+  </div>`;
 }
 
 /** In-place updater for a group-stage match card after a score bump. Updates
  *  the two score numbers, the winner line, the goalscorer slots and the slab
  *  label, reusing any scorer <input> values already typed. Returns false if the
  *  card isn't in the DOM. Never recreates the card element, so scroll stays put. */
-function patchMatchCard(id, roster){
+function patchMatchCard(id, roster, changedSide){
   const card = document.getElementById('match-'+id);
   if(!card) return false;
   const m = MATCHES.find(x=>x.id===id);
   const r = roster || getRoster(activeName);
   const pred = r.predictions[id] || {};
   const ph = pred.h, pa = pred.a;
+  const isPredicted = ph!=null && pa!=null;
 
-  // 1) score readouts
+  // toggle the open-state edge accent (unpredicted=gold, predicted=green)
+  card.classList.toggle('unpredicted', !isPredicted);
+  card.classList.toggle('predicted-open', isPredicted);
+
+  // 1) score readouts (+ a little pop on the side that changed)
   const vh = document.getElementById('val-'+id+'-h');
   const va = document.getElementById('val-'+id+'-a');
-  if(vh) vh.textContent = ph==null?'–':ph;
-  if(va) va.textContent = pa==null?'–':pa;
+  if(vh){ vh.textContent = ph==null?'–':ph; if(changedSide==='h'){ vh.classList.remove('score-pop'); void vh.offsetWidth; vh.classList.add('score-pop'); } }
+  if(va){ va.textContent = pa==null?'–':pa; if(changedSide==='a'){ va.classList.remove('score-pop'); void va.offsetWidth; va.classList.add('score-pop'); } }
+
+  // predicted tick in the meta row (only when not in the locks-soon window,
+  // which owns that slot and is managed by the tick countdown)
+  const meta = card.querySelector('.match-meta');
+  if(meta && !meta.querySelector('.locks-soon-badge')){
+    let chip = meta.querySelector('.predicted-chip');
+    if(isPredicted && !chip){
+      chip=document.createElement('span');
+      chip.className='predicted-chip';
+      chip.innerHTML='✓ Predicted';
+      meta.appendChild(chip);
+    } else if(!isPredicted && chip){
+      chip.remove();
+    }
+  }
 
   // 2) winner line
   const win = document.getElementById('winline-'+id);
@@ -5822,6 +6240,38 @@ function updateUnpredictedPill() {
     pill.style.display = 'flex';
     pill.innerHTML = `<span class="pill-count">${count}</span> match${count === 1 ? '' : 'es'} to predict →`;
   }
+}
+
+/** Keeps the "🔒 locks in Xm" badges counting down live, and adds/removes them
+ *  as matches enter or leave the 90-minute pre-kickoff window — without a full
+ *  re-render. Only touches open (unlocked) group cards currently in the DOM. */
+function updateLocksSoonBadges(){
+  const playView = document.getElementById('view-play');
+  if(!playView || !playView.classList.contains('active')) return;
+  const r = activeName ? getRoster(activeName) : null;
+  const now = Date.now();
+  MATCHES.forEach(m=>{
+    const card = document.getElementById('match-'+m.id);
+    if(!card) return;
+    if(card.classList.contains('locked')) return;
+    const meta = card.querySelector('.match-meta');
+    if(!meta) return;
+    const minsToKO = Math.floor((MATCH_UTC[m.id].getTime()-now)/60000);
+    let badge = document.getElementById('locks-'+m.id);
+    if(minsToKO>=0 && minsToKO<=90){
+      const lbl = minsToKO>=60 ? `${Math.floor(minsToKO/60)}h ${minsToKO%60}m` : `${minsToKO}m`;
+      if(!badge){
+        // remove a predicted chip if present — the urgency badge takes the slot
+        const chip = meta.querySelector('.predicted-chip'); if(chip) chip.remove();
+        badge=document.createElement('span');
+        badge.className='locks-soon-badge'; badge.id='locks-'+m.id;
+        meta.appendChild(badge);
+      }
+      badge.innerHTML = `🔒 locks in ${lbl}`;
+    } else if(badge){
+      badge.remove();
+    }
+  });
 }
 
 function init(){
