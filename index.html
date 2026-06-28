@@ -2241,22 +2241,22 @@ function normaliseEspnName(name){
 // Each Round-of-32 slot. type: 'RU-RU' (runner-up vs runner-up),
 // 'W-RU' (winner vs runner-up), or 'W-3RD' (winner vs best-3rd-place).
 const KO_R32 = [
-  {match:73, venue:"Los Angeles",        type:'RU-RU', a:{kind:'RU',g:'A'}, b:{kind:'RU',g:'B'}},
-  {match:74, venue:"Boston",             type:'W-3RD', a:{kind:'W', g:'E'}, b:{kind:'3RD',groups:['A','B','C','D','F']}},
-  {match:75, venue:"Guadalajara",        type:'W-RU',  a:{kind:'W', g:'F'}, b:{kind:'RU',g:'C'}},
-  {match:76, venue:"Houston",            type:'W-RU',  a:{kind:'W', g:'C'}, b:{kind:'RU',g:'F'}},
-  {match:77, venue:"New York/New Jersey",type:'W-3RD', a:{kind:'W', g:'I'}, b:{kind:'3RD',groups:['C','D','F','G','H']}},
-  {match:78, venue:"Dallas",             type:'RU-RU', a:{kind:'RU',g:'E'}, b:{kind:'RU',g:'I'}},
-  {match:79, venue:"Mexico City",        type:'W-3RD', a:{kind:'W', g:'A'}, b:{kind:'3RD',groups:['C','E','F','H','I']}},
-  {match:80, venue:"Atlanta",            type:'W-3RD', a:{kind:'W', g:'L'}, b:{kind:'3RD',groups:['E','H','I','J','K']}},
-  {match:81, venue:"San Francisco Bay Area", type:'W-3RD', a:{kind:'W', g:'D'}, b:{kind:'3RD',groups:['B','E','F','I','J']}},
-  {match:82, venue:"Seattle",            type:'W-3RD', a:{kind:'W', g:'G'}, b:{kind:'3RD',groups:['A','E','H','I','J']}},
-  {match:83, venue:"Toronto",            type:'RU-RU', a:{kind:'RU',g:'K'}, b:{kind:'RU',g:'L'}},
-  {match:84, venue:"Los Angeles",        type:'W-RU',  a:{kind:'W', g:'H'}, b:{kind:'RU',g:'J'}},
-  {match:85, venue:"Vancouver",          type:'W-3RD', a:{kind:'W', g:'B'}, b:{kind:'3RD',groups:['E','F','G','I','J']}},
-  {match:86, venue:"Miami",              type:'W-RU',  a:{kind:'W', g:'J'}, b:{kind:'RU',g:'H'}},
-  {match:87, venue:"Kansas City",        type:'W-3RD', a:{kind:'W', g:'K'}, b:{kind:'3RD',groups:['D','E','I','J','L']}},
-  {match:88, venue:"Dallas",             type:'RU-RU', a:{kind:'RU',g:'D'}, b:{kind:'RU',g:'G'}},
+  {match:73, venue:"Los Angeles",        date:"2026-06-28", time:"3:00 PM ET",  type:'RU-RU', a:{kind:'RU',g:'A'}, b:{kind:'RU',g:'B'}},
+  {match:74, venue:"Boston",             date:"2026-06-29", time:"4:30 PM ET",  type:'W-3RD', a:{kind:'W', g:'E'}, b:{kind:'3RD',groups:['A','B','C','D','F']}},
+  {match:75, venue:"Guadalajara",        date:"2026-06-29", time:"9:00 PM ET",  type:'W-RU',  a:{kind:'W', g:'F'}, b:{kind:'RU',g:'C'}},
+  {match:76, venue:"Houston",            date:"2026-06-29", time:"1:00 PM ET",  type:'W-RU',  a:{kind:'W', g:'C'}, b:{kind:'RU',g:'F'}},
+  {match:77, venue:"New York/New Jersey",date:"2026-06-30", time:"5:00 PM ET",  type:'W-3RD', a:{kind:'W', g:'I'}, b:{kind:'3RD',groups:['C','D','F','G','H']}},
+  {match:78, venue:"Dallas",             date:"2026-06-30", time:"1:00 PM ET",  type:'RU-RU', a:{kind:'RU',g:'E'}, b:{kind:'RU',g:'I'}},
+  {match:79, venue:"Mexico City",        date:"2026-06-30", time:"9:00 PM ET",  type:'W-3RD', a:{kind:'W', g:'A'}, b:{kind:'3RD',groups:['C','E','F','H','I']}},
+  {match:80, venue:"Atlanta",            date:"2026-07-01", time:"12:00 PM ET", type:'W-3RD', a:{kind:'W', g:'L'}, b:{kind:'3RD',groups:['E','H','I','J','K']}},
+  {match:81, venue:"San Francisco Bay Area", date:"2026-07-01", time:"8:00 PM ET", type:'W-3RD', a:{kind:'W', g:'D'}, b:{kind:'3RD',groups:['B','E','F','I','J']}},
+  {match:82, venue:"Seattle",            date:"2026-07-01", time:"4:00 PM ET",  type:'W-3RD', a:{kind:'W', g:'G'}, b:{kind:'3RD',groups:['A','E','H','I','J']}},
+  {match:83, venue:"Toronto",            date:"2026-07-02", time:"7:00 PM ET",  type:'RU-RU', a:{kind:'RU',g:'K'}, b:{kind:'RU',g:'L'}},
+  {match:84, venue:"Los Angeles",        date:"2026-07-02", time:"3:00 PM ET",  type:'W-RU',  a:{kind:'W', g:'H'}, b:{kind:'RU',g:'J'}},
+  {match:85, venue:"Vancouver",          date:"2026-07-02", time:"11:00 PM ET", type:'W-3RD', a:{kind:'W', g:'B'}, b:{kind:'3RD',groups:['E','F','G','I','J']}},
+  {match:86, venue:"Miami",              date:"2026-07-03", time:"6:00 PM ET",  type:'W-RU',  a:{kind:'W', g:'J'}, b:{kind:'RU',g:'H'}},
+  {match:87, venue:"Kansas City",        date:"2026-07-03", time:"9:30 PM ET",  type:'W-3RD', a:{kind:'W', g:'K'}, b:{kind:'3RD',groups:['D','E','I','J','L']}},
+  {match:88, venue:"Dallas",             date:"2026-07-03", time:"2:00 PM ET",  type:'RU-RU', a:{kind:'RU',g:'D'}, b:{kind:'RU',g:'G'}},
 ];
 
 // The 8 "best third place" slots, each tied to a fixed 5-group eligible set
@@ -2273,32 +2273,40 @@ const THIRD_PLACE_SLOTS = [
 ];
 
 const KO_R16 = [
-  {match:89, venue:"Philadelphia",  a:74, b:77},
-  {match:90, venue:"Houston",       a:73, b:75},
-  {match:91, venue:"New York/New Jersey", a:76, b:78},
-  {match:92, venue:"Mexico City",   a:79, b:80},
-  {match:93, venue:"Dallas",        a:83, b:84},
-  {match:94, venue:"Seattle",       a:81, b:82},
-  {match:95, venue:"Atlanta",       a:86, b:88},
-  {match:96, venue:"Vancouver",     a:85, b:87},
+  {match:89, venue:"Philadelphia",  date:"2026-07-04", time:"5:00 PM ET", a:74, b:77},
+  {match:90, venue:"Houston",       date:"2026-07-04", time:"1:00 PM ET", a:73, b:75},
+  {match:91, venue:"New York/New Jersey", date:"2026-07-05", time:"4:00 PM ET", a:76, b:78},
+  {match:92, venue:"Mexico City",   date:"2026-07-05", time:"8:00 PM ET", a:79, b:80},
+  {match:93, venue:"Dallas",        date:"2026-07-06", time:"3:00 PM ET", a:83, b:84},
+  {match:94, venue:"Seattle",       date:"2026-07-06", time:"8:00 PM ET", a:81, b:82},
+  {match:95, venue:"Atlanta",       date:"2026-07-07", time:"12:00 PM ET", a:86, b:88},
+  {match:96, venue:"Vancouver",     date:"2026-07-07", time:"4:00 PM ET", a:85, b:87},
 ];
 
 const KO_QF = [
-  {match:97,  venue:"Boston",      a:89, b:90},
-  {match:98,  venue:"Los Angeles", a:93, b:94},
-  {match:99,  venue:"Miami",       a:91, b:92},
-  {match:100, venue:"Kansas City", a:95, b:96},
+  {match:97,  venue:"Boston",      date:"2026-07-09", time:"4:00 PM ET", a:89, b:90},
+  {match:98,  venue:"Los Angeles", date:"2026-07-10", time:"3:00 PM ET", a:93, b:94},
+  {match:99,  venue:"Miami",       date:"2026-07-11", time:"5:00 PM ET", a:91, b:92},
+  {match:100, venue:"Kansas City", date:"2026-07-11", time:"9:00 PM ET", a:95, b:96},
 ];
 
 const KO_SF = [
-  {match:101, venue:"Dallas",  a:97, b:98},
-  {match:102, venue:"Atlanta", a:99, b:100},
+  {match:101, venue:"Dallas",  date:"2026-07-14", time:"3:00 PM ET", a:97, b:98},
+  {match:102, venue:"Atlanta", date:"2026-07-15", time:"3:00 PM ET", a:99, b:100},
 ];
 
-const KO_THIRD_PLACE = {match:103, venue:"Miami Gardens", a:101, b:102, isLoserMatch:true};
-const KO_FINAL = {match:104, venue:"East Rutherford, NJ", a:101, b:102};
+const KO_THIRD_PLACE = {match:103, venue:"Miami Gardens", date:"2026-07-18", time:"5:00 PM ET", a:101, b:102, isLoserMatch:true};
+const KO_FINAL = {match:104, venue:"East Rutherford, NJ", date:"2026-07-19", time:"3:00 PM ET", a:101, b:102};
 
 const KO_ALL_MATCHES = [...KO_R32, ...KO_R16, ...KO_QF, ...KO_SF, KO_THIRD_PLACE, KO_FINAL];
+
+// Pre-compute UTC kick-off times for every knockout match too (same ET model
+// as the group stage). Stored under the match id so MATCH_UTC[id] works for
+// knockouts exactly like it does for group matches — this is what lets the
+// Matches hub / countdowns show real dates & times instead of "TBC"/"Date TBD".
+KO_ALL_MATCHES.forEach(km => {
+  if(km.date && km.time) MATCH_UTC[km.match] = parseMatchUTC(km.date, km.time);
+});
 
 /* ---------- hybrid storage ---------- */
 window._rosterCache  = JSON.parse(localStorage.getItem("ffwc26_rosters")||"{}");
@@ -3193,7 +3201,7 @@ function allFixtures(){
   ];
   koMeta.forEach(km=>{
     const { home, away } = getKoParticipants(km.id);
-    list.push({ id:km.id, g:null, ko:null, home, away, venue:km.venue, stage:'ko', round:km.round });
+    list.push({ id:km.id, g:null, ko:MATCH_UTC[km.id]||null, home, away, venue:km.venue, stage:'ko', round:km.round });
   });
   return list;
 }
@@ -4332,7 +4340,7 @@ function koMatchCard(matchId, roundKey, roster){
   // Not resolvable yet (earlier rounds incomplete) → locked-looking TBC card.
   if(!home || !away){
     return `<div class="ko-match locked">
-      <div class="ko-match-meta"><span class="km-id">M${matchId}</span><span class="dot"></span><span class="km-venue">${esc(venue)}</span><span style="margin-left:auto;color:var(--gold);font-weight:700">×${mult}</span></div>
+      <div class="ko-match-meta"><span class="km-id">M${matchId}</span>${MATCH_UTC[matchId]?`<span class="dot"></span><span>${fmtLocalTimeShort(MATCH_UTC[matchId])} ${getTZAbbr()}</span>`:''}<span class="dot"></span><span class="km-venue">${esc(venue)}</span><span style="margin-left:auto;color:var(--gold);font-weight:700">×${mult}</span></div>
       <div class="ko-tbc">Teams decided by earlier knockout results — check back once they're played.</div>
     </div>`;
   }
@@ -4344,6 +4352,7 @@ function koMatchCard(matchId, roundKey, roster){
   let html = `<div class="${cardCls}" id="komatch-${matchId}">
     <div class="ko-match-meta">
       <span class="km-id">M${matchId}</span>
+      ${MATCH_UTC[matchId]?`<span class="dot"></span><span>${fmtLocalTimeShort(MATCH_UTC[matchId])} ${getTZAbbr()}</span>`:''}
       <span class="dot"></span>
       <span class="km-venue">${esc(venue)}</span>
       <span style="margin-left:auto;color:var(--green-700);font-weight:700">Points ×${mult}${isWild?' · ⭐×2':''}</span>
@@ -5481,7 +5490,7 @@ function renderKoMatchCard(matchId, label, leftTbc, rightTbc, venue){
     ${brTeamHtml(home, hasResult?res.h:null, homeWin, leftTbc)}
     <div class="br-divider"></div>
     ${brTeamHtml(away, hasResult?res.a:null, awayWin, rightTbc)}
-    ${venue?`<div class="br-venue">${esc(venue)}</div>`:''}
+    ${MATCH_UTC[matchId]?`<div class="br-venue">${MATCH_UTC[matchId].toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${esc(venue||'')}</div>`:(venue?`<div class="br-venue">${esc(venue)}</div>`:'')}
   </div>`;
 }
 
@@ -5683,6 +5692,7 @@ function renderAdminKo(){
           <img src="${teamFlag(home)}" alt="">${esc(home)}
           <span style="color:var(--muted)">vs</span>
           ${esc(away)}<img src="${teamFlag(away)}" alt="">
+          ${MATCH_UTC[matchId]?`<span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:4px">${fmtLocalTimeShort(MATCH_UTC[matchId])} ${getTZAbbr()}</span>`:''}
         </div>
         <div class="am-score">
           <input type="number" min="0" max="20" value="${r.h!=null?r.h:''}" onchange="setKoResult(${matchId},'h',this.value)">
