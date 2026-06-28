@@ -4788,6 +4788,11 @@ function koMatchCard(matchId, roundKey, roster){
   html += `<div id="koadv-${matchId}">${koAdvancerHtml(matchId, roster)}</div>`;
 
   if(locked && hasResult){
+    // Is the match actually OVER, or is this a LIVE score still ticking? A KO
+    // match can have a result entered (the live score) while still in play, so
+    // we must not call it "Final" or bank the points as settled until it's done.
+    const liveNow = matchState(matchId)==='live';
+    const trulyFinished = !liveNow;
     // Result strip
     const base = scoreKoMatch(matchId, pred, res) || 0;
     let pts = base*mult;
@@ -4795,6 +4800,7 @@ function koMatchCard(matchId, roundKey, roster){
     const advSide = koAdvancerSide(res);
     const realAdvancer = advSide==='h' ? home : (advSide==='a' ? away : (+res.h>+res.a ? home : away));
     const advOk = pred.advancer===realAdvancer;
+    const advResolved = advSide!=null || (+res.h!==+res.a); // decided (or clearly leading)
     const wentToPens = (+res.h===+res.a) && (res.pkWinner==='h' || res.pkWinner==='a');
     const pensLabel = wentToPens ? `<span style="font-size:10.5px;color:#8a6516;font-weight:700">(${esc(realAdvancer)} won on pens${res.pkH!=null&&res.pkA!=null?` ${res.pkH}–${res.pkA}`:''})</span>` : '';
     const predScorers=(pred.scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
@@ -4803,15 +4809,38 @@ function koMatchCard(matchId, roundKey, roster){
       const ok=hitSet.has(i);
       return `<span style="color:${ok?'var(--green-700)':'var(--muted)'};font-weight:${ok?700:500}">${ok?'✓':'✕'} ${esc(s)}</span>`;
     }).join(', ');
-    html += `<div class="ko-result-strip">
-      <span>Final:</span>
-      <span class="actual">${esc(home)} ${res.h} – ${res.a} ${esc(away)}</span>
-      ${pensLabel}
-      <span style="font-size:11px">${realAdvancer ? (advOk?`<b style="color:var(--green-700)">✓ ${esc(realAdvancer)} advanced</b>`:`<span style="color:var(--muted)">✗ ${esc(realAdvancer)} advanced</span>`) : `<span style="color:var(--gold)">⏳ shootout winner pending</span>`}</span>
-      ${(res.scorers&&res.scorers.length)?`<span style="font-weight:500;font-size:11px">⚽ ${res.scorers.map(esc).join(', ')}</span>`:''}
-      ${predScorers.length?`<span style="font-size:11px">You: ${predScHtml}</span>`:''}
-      <span class="pts-badge ${pts===0?'zero':(isWild?'wild':'')}">${Math.round(pts)} pt${Math.round(pts)===1?'':'s'}${isWild?' ⭐':''}</span>
-    </div>`;
+    // Your predicted scoreline (+ who you backed to advance), shown alongside.
+    const ph=pred.h, pa=pred.a;
+    const yourScoreBit = (ph!=null && pa!=null)
+      ? `<span style="font-size:11px;color:var(--muted)">Your score: <b>${ph}–${pa}</b></span>` : '';
+
+    if(liveNow){
+      // LIVE: provisional standing — never "Final", points are "so far", and the
+      // advancer is only shown when the live score actually decides it.
+      const advLine = advResolved
+        ? (advOk?`<b style="color:var(--green-700)">✓ ${esc(realAdvancer)} ahead to advance</b>`:`<span style="color:var(--muted)">✗ ${esc(realAdvancer)} ahead to advance</span>`)
+        : `<span style="color:#8a6516;font-weight:700">level — advancer undecided</span>`;
+      html += `<div class="ko-result-strip" style="background:linear-gradient(0deg,#fff5e0,#fff 60%);border:1px solid var(--gold)">
+        <span style="color:#8a6516;font-weight:700">● Live · in progress</span>
+        <span class="actual" style="color:#8a6516">${esc(home)} ${res.h} – ${res.a} ${esc(away)}</span>
+        <span style="font-size:11px">${advLine}</span>
+        ${yourScoreBit}
+        ${(res.scorers&&res.scorers.length)?`<span style="font-weight:500;font-size:11px">⚽ ${res.scorers.map(esc).join(', ')}</span>`:''}
+        ${predScorers.length?`<span style="font-size:11px">You: ${predScHtml}</span>`:''}
+        <span class="pts-badge ${pts===0?'zero':(isWild?'wild':'')}" title="Provisional — updates as the match plays out">${Math.round(pts)} pt${Math.round(pts)===1?'':'s'} so far${isWild?' ⭐':''}</span>
+      </div>`;
+    } else {
+      html += `<div class="ko-result-strip">
+        <span>Final:</span>
+        <span class="actual">${esc(home)} ${res.h} – ${res.a} ${esc(away)}</span>
+        ${pensLabel}
+        <span style="font-size:11px">${realAdvancer ? (advOk?`<b style="color:var(--green-700)">✓ ${esc(realAdvancer)} advanced</b>`:`<span style="color:var(--muted)">✗ ${esc(realAdvancer)} advanced</span>`) : `<span style="color:var(--gold)">⏳ shootout winner pending</span>`}</span>
+        ${yourScoreBit}
+        ${(res.scorers&&res.scorers.length)?`<span style="font-weight:500;font-size:11px">⚽ ${res.scorers.map(esc).join(', ')}</span>`:''}
+        ${predScorers.length?`<span style="font-size:11px">You: ${predScHtml}</span>`:''}
+        <span class="pts-badge ${pts===0?'zero':(isWild?'wild':'')}">${Math.round(pts)} pt${Math.round(pts)===1?'':'s'}${isWild?' ⭐':''}</span>
+      </div>`;
+    }
   } else if(locked){
     // Kicked off but no result yet — show the player's locked-in prediction
     // read-only (advancer block above already renders it), plus a summary of
@@ -6605,7 +6634,27 @@ async function fetchLiveScoresFromAPI(opts){
       const mv = document.getElementById('view-matches');
       if(mv && mv.classList.contains('active')) renderMatchesHub();
       const pr = document.getElementById('predict');
-      if(pr && pr.style.display !== 'none') changedIds.forEach(refreshMatch); // patch affected cards in place — no group-state collapse
+      if(pr && pr.style.display !== 'none'){
+        changedIds.forEach(cid => {
+        // Route each changed id to the right card refresher: group cards use
+        // refreshMatch, knockout cards use refreshKoMatch. Both patch in place
+        // and are no-ops if that card isn't currently rendered — so a live KO
+        // score now updates its card (and flips "in progress" → "Final" when
+        // the match ends) without the player needing to reload.
+          if(cid >= 73) refreshKoMatch(cid); else refreshMatch(cid);
+        });
+        // A pure status change (e.g. a 0–0 going FINAL with no score change)
+        // produces no changedIds, but a live KO card still needs to flip from
+        // "in progress" to "Final". Refresh only KO cards that are live or just
+        // finished (a tiny set) — refreshing every card would nudge scroll.
+        if(statusChanged && allGroupsComplete()){
+          KO_ALL_MATCHES.forEach(km=>{
+            if(!document.getElementById('komatch-'+km.match)) return;
+            const stt = matchState(km.match);
+            if(stt==='live' || stt==='finished') refreshKoMatch(km.match);
+          });
+        }
+      }
     } else if(window._knownScoresSeeded){
       // even with no score change, keep last-known scores current
       detectAndCelebrateGoals(changedIds);
