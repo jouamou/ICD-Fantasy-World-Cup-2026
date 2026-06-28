@@ -340,6 +340,12 @@
   .pred-progress .pp-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green-700),var(--green-500));transition:width .4s ease}
   .pred-progress .pp-fill.done{background:linear-gradient(90deg,var(--gold),#f5c842)}
   .pred-progress .pp-msg{font-size:11px;color:var(--muted);font-weight:600;margin-top:7px}
+  .pred-progress.ko{background:linear-gradient(135deg,#fffdf6,#fff 65%);border-color:var(--gold)}
+  .pred-progress.ko .pp-label{color:#8a6516}
+  .pred-progress.ko .pp-count{color:#a07000}
+  .pred-progress .pp-chips{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .pred-progress .pp-chip{font-size:10.5px;font-weight:800;border-radius:20px;padding:3px 11px;border:1.5px solid var(--line);color:var(--muted);background:#fff;letter-spacing:.2px}
+  .pred-progress .pp-chip.on{border-color:var(--green-500);color:var(--green-700);background:var(--green-100)}
   /* Kicked off but no result yet — muted, slightly indented feel */
   .match.kicked{
     background:#fafafa;
@@ -1227,7 +1233,27 @@
   .fix.tappable{cursor:pointer}
   .fix.tappable:active{background:var(--green-100)}
   .fix.fix-live{border-color:var(--gold);box-shadow:0 2px 12px rgba(224,168,46,.18);animation:livePulse 3s ease-in-out infinite}
-  .fix.fix-fin{background:#fafbf8}
+  .fix.fix-fin{
+    background:#fafbf8;
+    /* Finished matches recede into grayscale so live & upcoming fixtures pop.
+       They bloom back to full colour on hover (desktop) or when scrolled into
+       the centre of the screen on touch (.in-view, set from JS). */
+    filter:grayscale(.92) opacity(.74);
+    transition:filter .4s ease, opacity .4s ease, transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  @media (hover:hover){
+    .fix.fix-fin:hover{
+      filter:grayscale(0) opacity(1);
+      transform:translateY(-2px);
+      border-color:var(--green-500);
+      box-shadow:0 6px 18px rgba(20,40,10,.14);
+    }
+  }
+  .fix.fix-fin.in-view{
+    filter:grayscale(0) opacity(1);
+    border-color:var(--green-500);
+    box-shadow:0 4px 14px rgba(20,40,10,.1);
+  }
   .fix .fix-status{flex:0 0 58px;text-align:center;font-size:10px;font-weight:800;letter-spacing:.4px}
   .fix .fix-status .fs-time{font-family:'Oswald';font-weight:700;font-size:14px;color:var(--head);letter-spacing:0}
   .fix .fix-status .fs-date{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:1px}
@@ -3558,6 +3584,37 @@ function renderMatchesHub(){
   });
   if(lastDay!=='') html+=`</div>`;
   list.innerHTML = html;
+  updateFixtureSpotlight(); // (re)apply the mobile colour spotlight after a render
+}
+
+/* ============================================================
+   FINISHED-FIXTURE COLOUR SPOTLIGHT (mobile)
+   On desktop, finished fixtures are greyscale and bloom to colour on hover.
+   Touch devices have no hover, so instead the finished card nearest the centre
+   of the screen is colourised as you scroll — colour follows your reading
+   position down the list, a quiet, tactile equivalent of the hover reveal.
+   ============================================================ */
+let _fixSpotlightRaf = null;
+function updateFixtureSpotlight(){
+  // Desktop (real hover) doesn't need this — the :hover rule handles colour.
+  if(window.matchMedia && window.matchMedia('(hover: hover)').matches) return;
+  const mv = document.getElementById('view-matches');
+  if(!mv || !mv.classList.contains('active')) return;
+  const cards = document.querySelectorAll('#matchesList .fix.fix-fin');
+  if(!cards.length) return;
+  const mid = window.innerHeight * 0.5;
+  let best = null, bestDist = Infinity;
+  cards.forEach(c=>{
+    const rect = c.getBoundingClientRect();
+    if(rect.bottom < 0 || rect.top > window.innerHeight){ c.classList.remove('in-view'); return; }
+    const dist = Math.abs((rect.top + rect.height/2) - mid);
+    if(dist < bestDist){ bestDist = dist; best = c; }
+  });
+  cards.forEach(c=> c.classList.toggle('in-view', c===best));
+}
+function _fixSpotlightScroll(){
+  if(_fixSpotlightRaf) return;
+  _fixSpotlightRaf = requestAnimationFrame(()=>{ _fixSpotlightRaf = null; updateFixtureSpotlight(); });
 }
 
 /* ============================================================
@@ -4529,6 +4586,7 @@ function setChampion(team){
   hapticTap();
   renderKoPredictions();
   renderScorebar();
+  renderPredProgress();
 }
 
 function toggleKoRound(head){
@@ -4715,6 +4773,7 @@ function pickKoAdvancer(matchId, side){
     }
   }
   renderScorebar();
+  renderPredProgress();
 }
 
 function bumpKo(matchId, side, delta){
@@ -4745,6 +4804,7 @@ function bumpKo(matchId, side, delta){
   // card node, so the page doesn't jump away from the tie you're predicting.
   patchKoMatchCard(matchId, r, side);
   hapticTap();
+  renderPredProgress();
 }
 
 /** In-place updater for a KO card after a score bump — updates the two score
@@ -4805,6 +4865,7 @@ function toggleWildcard(matchId){
   // the whole KO section (cheap, and keeps the chip/labels consistent).
   renderKoPredictions();
   renderScorebar();
+  renderPredProgress();
 }
 
 function refreshKoMatch(matchId){
@@ -5022,6 +5083,48 @@ function hapticTap(){
  *  Shared by the Play view and the Matches hub so both show the same bar. */
 function predProgressHtml(r){
   if(!r) return '';
+
+  // ---- Knockout phase: bracket predictions (once every group has finished) ----
+  if(allGroupsComplete()){
+    const ko = r.koPredictions || {};
+    let predicted = 0, openNow = 0;
+    KO_ALL_MATCHES.forEach(km=>{
+      const id = km.match;
+      const p = ko[id];
+      if(p && p.advancer){ predicted++; return; }
+      const { home, away } = getKoParticipants(id);
+      const res = DB.results()[id];
+      const locked = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
+      if(home && away && !locked) openNow++; // resolvable, not played, no pick yet
+    });
+    const denom = predicted + openNow;                 // exclude unreachable/missed ties
+    const pct = denom>0 ? Math.round((predicted/denom)*100) : 100;
+    const allDone = openNow===0;
+    let kmsg;
+    if(denom===0) kmsg = 'Knockout ties open as each round resolves — check back after the next round.';
+    else if(allDone) kmsg = '\u2713 Every available tie predicted — you\u2019re caught up.';
+    else if(openNow===1) kmsg = '1 knockout tie is ready to predict now.';
+    else kmsg = `${openNow} knockout ties are ready to predict now.`;
+
+    const champSet = !!(r.champion && r.champion.team);
+    const wildSet = r.wildcard!=null;
+    const chips = `<div class="pp-chips">
+      <span class="pp-chip ${champSet?'on':''}">\uD83D\uDC51 ${champSet?'Champion locked':'Pick champion'}</span>
+      <span class="pp-chip ${wildSet?'on':''}">\u2B50 ${wildSet?'Wildcard set':'Set wildcard'}</span>
+    </div>`;
+
+    return `<div class="pred-progress ko">
+      <div class="pp-top">
+        <span class="pp-label">\uD83C\uDFC6 Knockout predictions</span>
+        <span class="pp-count">${predicted}<small> / ${denom}</small></span>
+      </div>
+      <div class="pp-track"><div class="pp-fill ${allDone?'done':''}" style="width:${pct}%"></div></div>
+      <div class="pp-msg">${kmsg}</div>
+      ${chips}
+    </div>`;
+  }
+
+  // ---- Group stage: the 72 group matches ----
   const total = MATCHES.length; // 72
   let predicted = 0, openUnpred = 0;
   const now = Date.now();
@@ -6692,6 +6795,7 @@ function init(){
   initFilterArrows();
   syncTabbarH();
   setupLiveBannerObserver();
+  window.addEventListener('scroll', _fixSpotlightScroll, { passive: true });
   window.addEventListener('resize', () => { syncTabbarH(); setupLiveBannerObserver(); }, { passive: true });
   setInterval(tick, 1000);
   setInterval(renderNextMatchCard, 30000);
