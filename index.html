@@ -6423,14 +6423,37 @@ function parseEspnMinute(displayClock){
  *  kickoff date. Returns null if no confident match. */
 function findLocalMatch(homeName, awayName, isoDate){
   if(!homeName || !awayName) return null;
+  // 1) Group-stage fixtures (the 72-match MATCHES array).
   const candidates = MATCHES.filter(m =>
     (m.h === homeName && m.a === awayName) || (m.h === awayName && m.a === homeName)
   );
-  if(candidates.length === 0) return null;
   if(candidates.length === 1) return candidates[0];
-  const apiDate = new Date(isoDate).getTime();
-  candidates.sort((a,b) => Math.abs(MATCH_UTC[a.id] - apiDate) - Math.abs(MATCH_UTC[b.id] - apiDate));
-  return candidates[0];
+  if(candidates.length > 1){
+    const apiDate = new Date(isoDate).getTime();
+    candidates.sort((a,b) => Math.abs(MATCH_UTC[a.id] - apiDate) - Math.abs(MATCH_UTC[b.id] - apiDate));
+    return candidates[0];
+  }
+  // 2) Knockout fixtures (73-104). Their participants resolve progressively as
+  //    earlier rounds finish, so we match against the *resolved* teams. Without
+  //    this, ESPN's score/scorers for a knockout match map to nothing and are
+  //    silently dropped — which is why live sync went quiet in the knockouts.
+  //    We return the same {id, h, a} shape the caller expects (via liveMatchInfo).
+  const koCandidates = [];
+  KO_ALL_MATCHES.forEach(km => {
+    const info = liveMatchInfo(km.match); // {id, h, a, ...} or null if teams unknown
+    if(!info) return;
+    if((info.h === homeName && info.a === awayName) || (info.h === awayName && info.a === homeName)){
+      koCandidates.push(info);
+    }
+  });
+  if(koCandidates.length === 1) return koCandidates[0];
+  if(koCandidates.length > 1){
+    const apiDate = new Date(isoDate).getTime();
+    koCandidates.sort((a,b) =>
+      Math.abs((MATCH_UTC[a.id]||0) - apiDate) - Math.abs((MATCH_UTC[b.id]||0) - apiDate));
+    return koCandidates[0];
+  }
+  return null;
 }
 
 // The real status/clock ESPN reports for each local match id is persisted via
