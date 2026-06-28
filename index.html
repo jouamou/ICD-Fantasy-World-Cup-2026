@@ -2617,11 +2617,15 @@ function scoreKoMatch(matchId, pred, res){
   const { home, away } = getKoParticipants(matchId);
   if(!home || !away) return 0; // can't score until the tie's teams are known
   const rh=+res.h, ra=+res.a;
-  const realAdvancer = rh>ra ? home : (ra>rh ? away : null);
+  // Advancer accounts for penalties: a level scoreline resolves via res.pkWinner.
+  const advSide = koAdvancerSide(res);
+  const realAdvancer = advSide==='h' ? home : (advSide==='a' ? away : null);
   let pts=0;
-  // Correct advancer (the headline pick)
+  // Correct advancer (the headline pick) — pays out even when the tie went to
+  // penalties, as long as the player picked the team that actually went through.
   if(pred.advancer && realAdvancer && pred.advancer===realAdvancer) pts+=10;
-  // Exact scoreline — only meaningful if they also entered a score
+  // Exact scoreline — checked against the real 90/120-minute score (so a 1–1
+  // that went to pens still rewards a predicted 1–1). Penalties don't change it.
   if(pred.h!=null && pred.a!=null && +pred.h===rh && +pred.a===ra) pts+=6;
   // Goalscorers, capped at 3
   const matched=Math.min(3, matchedScorerIndexes(pred, res).size);
@@ -2959,23 +2963,38 @@ function resolveKoSide(side){
   return null;
 }
 
+/** Resolve which SIDE ('h' or 'a') advances from a knockout result, accounting
+ *  for penalty shootouts. A knockout tie can finish level after 90/120 minutes
+ *  and be decided on penalties, but the app stores only the real 90/120-min
+ *  scoreline (h,a) — the shootout outcome is captured separately in
+ *  res.pkWinner ('h' or 'a'). So: if one side scored more, they advance; if the
+ *  scores are level, the recorded pkWinner advances; if level with no pkWinner
+ *  yet, it's unresolved (returns null) until the organiser records the
+ *  shootout winner. Returns 'h', 'a', or null. */
+function koAdvancerSide(res){
+  if(!res || res.h==null || res.h==='' || res.a==null || res.a==='') return null;
+  const h=+res.h, a=+res.a;
+  if(h>a) return 'h';
+  if(a>h) return 'a';
+  // Level after normal/extra time → decided on penalties.
+  if(res.pkWinner==='h' || res.pkWinner==='a') return res.pkWinner;
+  return null; // level but shootout winner not recorded yet
+}
 function getKoWinner(matchId){
   const r = DB.results()[matchId];
-  if(!r || r.h==null || r.h==='' || r.a==null || r.a==='') return null;
+  const side = koAdvancerSide(r);
+  if(!side) return null;
   const { home, away } = getKoParticipants(matchId);
   if(!home || !away) return null;
-  const h=+r.h, a=+r.a;
-  if(h===a) return null; // KO matches can't end level in this app's data; treat unresolved if so
-  return h>a ? home : away;
+  return side==='h' ? home : away;
 }
 function getKoLoser(matchId){
   const r = DB.results()[matchId];
-  if(!r || r.h==null || r.h==='' || r.a==null || r.a==='') return null;
+  const side = koAdvancerSide(r);
+  if(!side) return null;
   const { home, away } = getKoParticipants(matchId);
   if(!home || !away) return null;
-  const h=+r.h, a=+r.a;
-  if(h===a) return null;
-  return h>a ? away : home;
+  return side==='h' ? away : home;
 }
 
 /** Returns {home, away} team names (or null if still TBC) for any match
@@ -3234,8 +3253,9 @@ function fixtureCardHtml(fx){
     statusHtml = `<div class="fs-time">${timeStr}</div><div class="fs-date">${fx.ko?getTZAbbr():''}</div>`;
   }
 
-  const hWin = hasScore && +r.h>+r.a;
-  const aWin = hasScore && +r.a>+r.h;
+  const wentToPens = hasScore && (+r.h===+r.a) && (r.pkWinner==='h' || r.pkWinner==='a');
+  const hWin = hasScore && (wentToPens ? r.pkWinner==='h' : +r.h>+r.a);
+  const aWin = hasScore && (wentToPens ? r.pkWinner==='a' : +r.a>+r.h);
   const nameCls = (win,lose)=> hasScore ? (win?'win':(lose?'lose':'')) : '';
   const goalCls = (win,lose)=> hasScore ? (win?'win':(lose?'lose':'')) : '';
 
@@ -3248,6 +3268,9 @@ function fixtureCardHtml(fx){
   const awayGoal = hasScore ? `<span class="fix-goal ${goalCls(aWin,hWin)}">${r.a}</span>` : (state==='live'?'<span class="fix-goal">–</span>':'');
 
   const tag = fx.stage==='group' ? `Grp ${fx.g}` : fx.round;
+  const pensLine = wentToPens
+    ? `<div class="fix-scorers" style="color:#8a6516;font-weight:700">🥅 ${esc(r.pkWinner==='h'?homeName:awayName)} won on penalties${r.pkH!=null&&r.pkA!=null?` ${r.pkH}–${r.pkA}`:''}</div>`
+    : '';
   const scorersLine = (r.scorers && r.scorers.length && (state==='finished'||state==='live'))
     ? `<div class="fix-scorers">⚽ ${r.scorers.map(esc).join(' · ')}</div>` : '';
 
@@ -3265,6 +3288,7 @@ function fixtureCardHtml(fx){
       <div class="fix-team">
         ${awayImg}<span class="fix-name ${nameCls(aWin,hWin)}">${esc(awayName)}</span>${awayGoal}
       </div>
+      ${pensLine}
       ${scorersLine}
     </div>
     <div class="fix-meta">
@@ -3553,11 +3577,16 @@ function liveMatchSlideHtml(live) {
   const progressPct = liveProgressPct(live, phase);
 
   let scorersHtml = '';
+  const pensTag = (r.pkWinner==='h' || r.pkWinner==='a')
+    ? `<span style="display:inline-block;font-size:10px;font-weight:800;color:#3a2a00;background:var(--gold);border-radius:11px;padding:2px 9px;margin-left:6px">PENS ${r.pkH!=null&&r.pkA!=null?`${r.pkH}–${r.pkA} `:''}${esc((r.pkWinner==='h'?live.h:live.a))}</span>`
+    : '';
   if (r.scorers && r.scorers.length) {
     scorersHtml = `<div class="lmb-scorers">
       <span class="lmb-scorers-label">⚽ Goals</span>
-      <span class="lmb-scorers-names">${r.scorers.join(' · ')}</span>
+      <span class="lmb-scorers-names">${r.scorers.join(' · ')}${pensTag}</span>
     </div>`;
+  } else if (pensTag) {
+    scorersHtml = `<div class="lmb-scorers"><span class="lmb-scorers-names">${pensTag}</span></div>`;
   } else if (!hasScore) {
     scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
   }
@@ -3672,11 +3701,16 @@ function patchLiveSlide(live) {
   if (scoreAEl) { scoreAEl.textContent = aScore; scoreAEl.classList.toggle('pending', !hasScore); }
 
   let scorersHtml = '';
+  const pensTag = (r.pkWinner==='h' || r.pkWinner==='a')
+    ? `<span style="display:inline-block;font-size:10px;font-weight:800;color:#3a2a00;background:var(--gold);border-radius:11px;padding:2px 9px;margin-left:6px">PENS ${r.pkH!=null&&r.pkA!=null?`${r.pkH}–${r.pkA} `:''}${esc((r.pkWinner==='h'?live.h:live.a))}</span>`
+    : '';
   if (r.scorers && r.scorers.length) {
     scorersHtml = `<div class="lmb-scorers">
       <span class="lmb-scorers-label">⚽ Goals</span>
-      <span class="lmb-scorers-names">${r.scorers.join(' · ')}</span>
+      <span class="lmb-scorers-names">${r.scorers.join(' · ')}${pensTag}</span>
     </div>`;
+  } else if (pensTag) {
+    scorersHtml = `<div class="lmb-scorers"><span class="lmb-scorers-names">${pensTag}</span></div>`;
   } else if (!hasScore) {
     scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
   }
@@ -4380,8 +4414,11 @@ function koMatchCard(matchId, roundKey, roster){
     const base = scoreKoMatch(matchId, pred, res) || 0;
     let pts = base*mult;
     if(isWild) pts*=2;
-    const realAdvancer = (+res.h>+res.a) ? home : away;
+    const advSide = koAdvancerSide(res);
+    const realAdvancer = advSide==='h' ? home : (advSide==='a' ? away : (+res.h>+res.a ? home : away));
     const advOk = pred.advancer===realAdvancer;
+    const wentToPens = (+res.h===+res.a) && (res.pkWinner==='h' || res.pkWinner==='a');
+    const pensLabel = wentToPens ? `<span style="font-size:10.5px;color:#8a6516;font-weight:700">(${esc(realAdvancer)} won on pens${res.pkH!=null&&res.pkA!=null?` ${res.pkH}–${res.pkA}`:''})</span>` : '';
     const predScorers=(pred.scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
     const hitSet=matchedScorerIndexes(pred, res);
     const predScHtml = predScorers.map((s,i)=>{
@@ -4391,7 +4428,8 @@ function koMatchCard(matchId, roundKey, roster){
     html += `<div class="ko-result-strip">
       <span>Final:</span>
       <span class="actual">${esc(home)} ${res.h} – ${res.a} ${esc(away)}</span>
-      <span style="font-size:11px">${advOk?`<b style="color:var(--green-700)">✓ ${esc(realAdvancer)} advanced</b>`:`<span style="color:var(--muted)">✗ ${esc(realAdvancer)} advanced</span>`}</span>
+      ${pensLabel}
+      <span style="font-size:11px">${realAdvancer ? (advOk?`<b style="color:var(--green-700)">✓ ${esc(realAdvancer)} advanced</b>`:`<span style="color:var(--muted)">✗ ${esc(realAdvancer)} advanced</span>`) : `<span style="color:var(--gold)">⏳ shootout winner pending</span>`}</span>
       ${(res.scorers&&res.scorers.length)?`<span style="font-weight:500;font-size:11px">⚽ ${res.scorers.map(esc).join(', ')}</span>`:''}
       ${predScorers.length?`<span style="font-size:11px">You: ${predScHtml}</span>`:''}
       <span class="pts-badge ${pts===0?'zero':(isWild?'wild':'')}">${Math.round(pts)} pt${Math.round(pts)===1?'':'s'}${isWild?' ⭐':''}</span>
@@ -5481,15 +5519,20 @@ function renderKoMatchCard(matchId, label, leftTbc, rightTbc, venue){
   const res = DB.results()[matchId];
   const hasResult = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
   let homeWin=false, awayWin=false;
+  const wentToPens = hasResult && (+res.h===+res.a) && (res.pkWinner==='h' || res.pkWinner==='a');
   if(hasResult){
-    const h=+res.h, a=+res.a;
-    homeWin = h>a; awayWin = a>h;
+    if(wentToPens){ homeWin = res.pkWinner==='h'; awayWin = res.pkWinner==='a'; }
+    else { const h=+res.h, a=+res.a; homeWin = h>a; awayWin = a>h; }
   }
+  const pensNote = wentToPens
+    ? `<div class="br-venue" style="color:#8a6516;font-weight:700">pens${res.pkH!=null&&res.pkA!=null?` ${res.pkH}–${res.pkA}`:''}</div>`
+    : '';
   return `<div class="br-match">
     <div class="br-num">${label}</div>
     ${brTeamHtml(home, hasResult?res.h:null, homeWin, leftTbc)}
     <div class="br-divider"></div>
     ${brTeamHtml(away, hasResult?res.a:null, awayWin, rightTbc)}
+    ${pensNote}
     ${MATCH_UTC[matchId]?`<div class="br-venue">${MATCH_UTC[matchId].toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${esc(venue||'')}</div>`:(venue?`<div class="br-venue">${esc(venue)}</div>`:'')}
   </div>`;
 }
@@ -5687,6 +5730,21 @@ function renderAdminKo(){
         </div>`;
         return;
       }
+      const isLevel = r.h!=null && r.h!=='' && r.a!=null && r.a!=='' && (+r.h===+r.a);
+      const pensRow = isLevel ? `
+        <div style="flex:1 1 100%;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:700;color:#8a6516">⚽ Level after 90/120' — won on penalties:</span>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer">
+            <input type="radio" name="pk-${matchId}" ${r.pkWinner==='h'?'checked':''} onchange="setKoPenWinner(${matchId},'h')"> ${esc(home)}
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer">
+            <input type="radio" name="pk-${matchId}" ${r.pkWinner==='a'?'checked':''} onchange="setKoPenWinner(${matchId},'a')"> ${esc(away)}
+          </label>
+          <span style="font-size:11px;color:var(--muted);margin-left:6px">Pens score (optional):</span>
+          <input type="number" min="0" max="30" value="${r.pkH!=null?r.pkH:''}" placeholder="${esc(home.split(' ')[0])}" onchange="setKoPenScore(${matchId},'h',this.value)" style="width:46px;padding:6px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'Oswald';font-weight:700;font-size:15px">
+          <span style="font-weight:700;color:var(--muted)">:</span>
+          <input type="number" min="0" max="30" value="${r.pkA!=null?r.pkA:''}" placeholder="${esc(away.split(' ')[0])}" onchange="setKoPenScore(${matchId},'a',this.value)" style="width:46px;padding:6px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'Oswald';font-weight:700;font-size:15px">
+        </div>` : '';
       html += `<div class="admin-match">
         <div class="am-teams">
           <img src="${teamFlag(home)}" alt="">${esc(home)}
@@ -5700,6 +5758,7 @@ function renderAdminKo(){
           <input type="number" min="0" max="20" value="${r.a!=null?r.a:''}" onchange="setKoResult(${matchId},'a',this.value)">
         </div>
         <input class="am-sc" type="text" placeholder="Goalscorers, comma separated" value="${scText.replace(/"/g,'&quot;')}" onchange="setKoResultScorers(${matchId},this.value)">
+        ${pensRow}
       </div>`;
     });
   });
@@ -5710,6 +5769,11 @@ function setKoResult(id,side,val){
   const res=DB.results();
   if(!res[id]) res[id]={h:null,a:null,scorers:[]};
   res[id][side]= val===''?null:Math.max(0,+val);
+  // If the scoreline is no longer level, any previously-recorded shootout result
+  // is meaningless — clear it so the advancer resolves from the score alone.
+  if(res[id].h!=null && res[id].a!=null && +res[id].h!==+res[id].a){
+    delete res[id].pkWinner; delete res[id].pkH; delete res[id].pkA;
+  }
   DB.saveResultEntry(id, res[id]);
   toast("Result saved");
   renderScorebar();
@@ -5719,6 +5783,37 @@ function setKoResult(id,side,val){
   const pr=document.getElementById('predict');
   if(pr && pr.style.display!=='none') refreshKoMatch(id);
   renderAdmin();
+}
+
+/** Record who won a level knockout tie on penalties. side = 'h' or 'a'. This is
+ *  what lets the bracket advance a team (and pay out advancer points) when the
+ *  90/120-minute score finished level — the stored scoreline stays untouched. */
+function setKoPenWinner(id,side){
+  const res=DB.results();
+  if(!res[id]) res[id]={h:null,a:null,scorers:[]};
+  res[id].pkWinner = side;
+  DB.saveResultEntry(id, res[id]);
+  markMatchOverridden(id); // organiser's call on the shootout — never overwrite
+  toast(`Penalty winner saved — ${side==='h'?'home':'away'} advances`);
+  renderScorebar();
+  if(document.getElementById('view-leaderboard').classList.contains('active')) renderLeaderboard();
+  if(document.getElementById('view-standings').classList.contains('active')) renderStandingsTab();
+  if(document.getElementById('view-scorers').classList.contains('active')) renderTopScorers();
+  const pr=document.getElementById('predict');
+  if(pr && pr.style.display!=='none') refreshKoMatch(id);
+  renderAdmin();
+}
+
+/** Optional shootout score (e.g. 4–3), shown as a label only — does not affect
+ *  scoring, which uses the 90/120-minute scoreline. */
+function setKoPenScore(id,side,val){
+  const res=DB.results();
+  if(!res[id]) res[id]={h:null,a:null,scorers:[]};
+  res[id][side==='h'?'pkH':'pkA'] = val===''?null:Math.max(0,+val);
+  DB.saveResultEntry(id, res[id]);
+  toast("Penalty score saved");
+  const pr=document.getElementById('predict');
+  if(pr && pr.style.display!=='none') refreshKoMatch(id);
 }
 function setKoResultScorers(id,val){
   const res=DB.results();
@@ -5801,9 +5896,10 @@ function parseEspnEvent(ev){
   if(awayC.team) sideById[awayC.team.id] = 'away';
 
   const goals = [];
+  let pkH = null, pkA = null, anyShootout = false;
   (comp.details || []).forEach(d => {
     if(!d || !d.scoringPlay) return;   // only goals
-    if(d.shootout) return;             // ignore penalty-shootout goals
+    if(d.shootout){ anyShootout = true; return; } // shootout goals counted separately, not as match goals
     if(!(d.scoreValue >= 1)) return;
     const ath = (d.athletesInvolved && d.athletesInvolved[0]) || null;
     const nm = ath ? (ath.displayName || ath.shortName || ath.fullName || '') : '';
@@ -5814,6 +5910,10 @@ function parseEspnEvent(ev){
       clock: (d.clock && d.clock.displayValue) || ''
     });
   });
+  // Penalty shootout score: ESPN puts it on each competitor as `shootoutScore`.
+  const pkOf = c => { const n = parseInt(c && c.shootoutScore, 10); return isNaN(n) ? null : n; };
+  pkH = pkOf(homeC); pkA = pkOf(awayC);
+  const hadShootout = anyShootout || pkH != null || pkA != null;
 
   const displayClock = (comp.status && comp.status.displayClock) || '';
   const period = (comp.status && comp.status.period) || null;
@@ -5822,7 +5922,8 @@ function parseEspnEvent(ev){
     away: { name: nameOf(awayC), score: scoreOf(awayC) },
     status, state, period, displayClock,
     minute: parseEspnMinute(displayClock),
-    goals
+    goals,
+    pk: { had: hadShootout, h: pkH, a: pkA }
   };
 }
 
@@ -5942,11 +6043,32 @@ async function fetchLiveScoresFromAPI(opts){
       const oldScorers     = (existing && existing.scorers) || [];
       const scorersChanged = scorers.length !== oldScorers.length || scorers.some((s,i) => s !== oldScorers[i]);
 
-      if(scoreChanged || scorersChanged){
-        results[local.id] = { h: hVal, a: aVal, scorers };
+      // Penalty shootout, for level knockout ties. Map ESPN's shootout score onto
+      // this fixture's home/away the same way the match score was mapped, then
+      // derive the advancer side. Only auto-apply when the tie is actually level
+      // (a shootout only decides level games) and we have a shootout signal.
+      let pkWinner, pkH, pkA;
+      if(parsed.pk && parsed.pk.had && hVal === aVal){
+        if(parsed.home.name === local.h){ pkH = parsed.pk.h; pkA = parsed.pk.a; }
+        else if(parsed.away.name === local.h){ pkH = parsed.pk.a; pkA = parsed.pk.h; }
+        else { pkH = parsed.pk.h; pkA = parsed.pk.a; }
+        if(pkH != null && pkA != null && pkH !== pkA){ pkWinner = pkH > pkA ? 'h' : 'a'; }
+      }
+      const oldPk = existing ? (existing.pkWinner||null) : null;
+      const pkChanged = (pkWinner||null) !== oldPk;
+
+      if(scoreChanged || scorersChanged || pkChanged){
+        const rec = { h: hVal, a: aVal, scorers };
+        // Carry through / set the shootout result only for a level scoreline.
+        if(hVal === aVal){
+          if(pkWinner){ rec.pkWinner = pkWinner; if(pkH!=null) rec.pkH = pkH; if(pkA!=null) rec.pkA = pkA; }
+          else if(existing && existing.pkWinner){ rec.pkWinner = existing.pkWinner; if(existing.pkH!=null) rec.pkH = existing.pkH; if(existing.pkA!=null) rec.pkA = existing.pkA; }
+        }
+        results[local.id] = rec;
         window._liveSyncApplied[local.id] = true;
         if(scoreChanged) scoreUpdates++;
         if(scorersChanged) scorerUpdates++;
+        if(pkChanged) scoreUpdates++;
         changedIds.push(local.id);
       }
     });
@@ -6087,7 +6209,24 @@ async function rebuildAllResultsFromESPN(){
       if(hVal == null || aVal == null) return;
 
       const scorers = parsed.goals.map(g => g.ownGoal ? 'Own goal' : g.name).filter(Boolean);
-      results[local.id] = { h: hVal, a: aVal, scorers };
+      const rec = { h: hVal, a: aVal, scorers };
+      // Penalty shootout for a level knockout tie: derive from ESPN, else carry
+      // forward any existing recorded shootout result so a rebuild never drops it.
+      if(hVal === aVal){
+        let pkH, pkA;
+        if(parsed.pk && parsed.pk.had){
+          if(parsed.home.name === local.h){ pkH = parsed.pk.h; pkA = parsed.pk.a; }
+          else if(parsed.away.name === local.h){ pkH = parsed.pk.a; pkA = parsed.pk.h; }
+          else { pkH = parsed.pk.h; pkA = parsed.pk.a; }
+        }
+        const prior = results[local.id];
+        if(pkH != null && pkA != null && pkH !== pkA){
+          rec.pkWinner = pkH > pkA ? 'h' : 'a'; rec.pkH = pkH; rec.pkA = pkA;
+        } else if(prior && prior.pkWinner){
+          rec.pkWinner = prior.pkWinner; if(prior.pkH!=null) rec.pkH = prior.pkH; if(prior.pkA!=null) rec.pkA = prior.pkA;
+        }
+      }
+      results[local.id] = rec;
       window._liveSyncApplied[local.id] = true;
       delete window._liveSyncOverridden[local.id];           // ESPN truth wins during a rebuild
       DB.saveResultEntry(local.id, results[local.id]);       // per-match write
