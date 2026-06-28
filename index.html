@@ -1934,10 +1934,15 @@ const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            
 // before getMatchPhase() falls back to the clock-only estimate again (covers
 // sync being paused/disabled, or a match temporarily dropping off the feed).
 const LIVE_API_STATUS_MAX_AGE_MS = 3 * 60000; // stale after roughly 3 missed polls
-// How long after a match's SCHEDULED kickoff we keep polling ESPN in case the
-// real match was delayed (weather, broadcast) and hasn't actually kicked off
-// yet. Generous enough to cover long weather holds; polling for a given match
-// stops early the moment ESPN reports it FINISHED (see anyMatchPlausiblyLive).
+// An IN_PLAY / PAUSED reading deserves a far more forgiving trust window than
+// a FINISHED one: a football match doesn't stop mid-flow, so if ESPN said a
+// game was live a handful of minutes ago it is almost certainly still live.
+// Without this, a brief polling lapse (tab backgrounded, a skipped dedup poll,
+// a momentary rate-limit) made getMatchPhase() drop the real ESPN minute and
+// fall back to the clock estimate — the "ESTIMATED" tag users were seeing on a
+// genuinely live match. We keep FINISHED on the short window so a finished
+// match still clears out of the live UI promptly.
+const LIVE_API_INPLAY_MAX_AGE_MS = 15 * 60000; // trust a live reading for ~15 min
 const LIVE_POLL_DELAY_GRACE_MS = 6 * 60 * 60000; // 6 hours
 
 function getMatchPhase(kickoffUTC, matchId) {
@@ -3586,16 +3591,12 @@ function renderMatchesHub(){
   renderMatchesProgress();
 
   const fixtures = allFixtures();
-  // resolve each fixture's state once (handles timeless KO fixtures by result)
-  const stateOf = fx=>{
-    if(fx.ko) return matchState(fx.id);
-    const r = DB.results()[fx.id];
-    const hasResult = r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='';
-    const api = getLiveApiStatus(fx.id);
-    if(api && (api.status==='IN_PLAY'||api.status==='PAUSED')) return 'live';
-    if(hasResult || (api && api.status==='FINISHED')) return 'finished';
-    return 'upcoming';
-  };
+  // resolve each fixture's state once — delegate to matchState() for EVERY
+  // fixture (group and knockout) so the Live-tab list and counts can never
+  // disagree with the live banner / countdown, which also go through
+  // matchState()/findLiveMatches(). (Previously this duplicated the logic for
+  // group fixtures, which let the pill count and the banner drift apart.)
+  const stateOf = fx => matchState(fx.id);
   // counts for the filter pills
   const counts = {live:0, upcoming:0, finished:0};
   fixtures.forEach(fx=>{ counts[stateOf(fx)]++; });
@@ -6486,7 +6487,13 @@ function getLiveApiStatus(matchId){
   const all = DB.liveStatus();
   const cached = all && all[matchId];
   if(!cached) return null;
-  if(Date.now() - cached.fetchedAt > LIVE_API_STATUS_MAX_AGE_MS) return null;
+  // In-play / paused readings are trusted for much longer than finished ones —
+  // a live match stays live across a brief polling gap, so we keep showing
+  // ESPN's real minute instead of dropping to the clock estimate.
+  const maxAge = (cached.status === 'IN_PLAY' || cached.status === 'PAUSED')
+    ? LIVE_API_INPLAY_MAX_AGE_MS
+    : LIVE_API_STATUS_MAX_AGE_MS;
+  if(Date.now() - cached.fetchedAt > maxAge) return null;
   return cached;
 }
 
