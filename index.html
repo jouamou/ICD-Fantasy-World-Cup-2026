@@ -3105,6 +3105,59 @@ function getKoParticipants(matchId){
 }
 
 /* ============================================================
+   UNIFIED LIVE/NEXT FIXTURE ACCESS (group stage AND knockouts)
+   The live banner, sticky mini-bar and next-match countdown were originally
+   written to scan only the 72-match MATCHES array. Once the tournament reaches
+   the Round of 32 those fixtures live in KO_ALL_MATCHES instead, so the banner
+   went dark. These helpers give every one of those features a single, shape-
+   normalised view of ANY fixture — group or knockout — so the live banner,
+   mini-bar and countdown all keep working straight through the knockouts.
+   ============================================================ */
+
+// Round label + multiplier-tag for a knockout match id (for the banner header).
+function koRoundTitle(matchId){
+  if(KO_R32.some(m=>m.match===matchId)) return 'Round of 32';
+  if(KO_R16.some(m=>m.match===matchId)) return 'Round of 16';
+  if(KO_QF.some(m=>m.match===matchId)) return 'Quarter-final';
+  if(KO_SF.some(m=>m.match===matchId)) return 'Semi-final';
+  if(matchId===KO_THIRD_PLACE.match) return 'Third place';
+  if(matchId===KO_FINAL.match) return 'Final';
+  return '';
+}
+
+/** Normalised fixture info for ANY match id (group or KO). Returns
+ *  { id, h, a, venue, isKo, label } — h/a are real team names (KO ties resolve
+ *  via getKoParticipants), label is "Group X" or the round name, used in the
+ *  banner's small header. Returns null for a KO tie whose teams aren't both
+ *  known yet (it then can't be live or "next"). */
+function liveMatchInfo(id){
+  const gm = MATCHES.find(m=>m.id===id);
+  if(gm){
+    return { id, h:gm.h, a:gm.a, venue:gm.venue, isKo:false, label:`Group ${gm.g}` };
+  }
+  const km = KO_ALL_MATCHES.find(m=>m.match===id);
+  if(km){
+    const { home, away } = getKoParticipants(id);
+    if(!home || !away) return null; // teams not decided yet
+    return { id, h:home, a:away, venue:km.venue, isKo:true, label:koRoundTitle(id) };
+  }
+  return null;
+}
+
+/** Every fixture id in the tournament that has a known kickoff time AND (for
+ *  knockouts) both participants resolved — i.e. everything the live/next logic
+ *  can meaningfully act on. */
+function liveScannableIds(){
+  const ids = MATCHES.map(m=>m.id);
+  KO_ALL_MATCHES.forEach(km=>{
+    if(!MATCH_UTC[km.match]) return;
+    const { home, away } = getKoParticipants(km.match);
+    if(home && away) ids.push(km.match);
+  });
+  return ids;
+}
+
+/* ============================================================
    NEXT MATCH HERO CARD(S)
    ============================================================ */
 /** Returns every upcoming, unplayed match that shares the *soonest* kickoff
@@ -3115,18 +3168,22 @@ function getKoParticipants(matchId){
 function findNextMatches() {
   const now = Date.now();
   const results = DB.results();
-  const unplayed = MATCHES.filter(m => {
-    const r = results[m.id];
-    const hasResult = r && r.h != null && r.h !== "";
-    return !hasResult && MATCH_UTC[m.id].getTime() > now;
-  });
+  // Scan group AND knockout fixtures, normalised to {id,h,a,venue,isKo,label}.
+  const unplayed = liveScannableIds()
+    .map(id => liveMatchInfo(id))
+    .filter(info => {
+      if (!info || !MATCH_UTC[info.id]) return false;
+      const r = results[info.id];
+      const hasResult = r && r.h != null && r.h !== "";
+      return !hasResult && MATCH_UTC[info.id].getTime() > now;
+    });
   if (!unplayed.length) return [];
   unplayed.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id]);
   const soonest = MATCH_UTC[unplayed[0].id].getTime();
   const TOLERANCE_MS = 60000;
   return unplayed
-    .filter(m => MATCH_UTC[m.id].getTime() - soonest < TOLERANCE_MS)
-    .sort((a,b) => a.g.localeCompare(b.g) || a.id - b.id);
+    .filter(info => MATCH_UTC[info.id].getTime() - soonest < TOLERANCE_MS)
+    .sort((a,b) => (a.label||'').localeCompare(b.label||'') || a.id - b.id);
 }
 // Back-compat alias: some helpers historically used the singular form to mean
 // "the immediately upcoming fixture" — kept pointing at the first of the group.
@@ -3147,6 +3204,8 @@ function nextMatchSlideHtml(next) {
   const tzAbbr = getTZAbbr();
   const localTimeStr = fmtLocalTimeShort(koUTC);
   const soonClass = diffMs < 30 * 60000 ? 'kickoff-soon' : '';
+  const badgeLabel = `${next.label} · Up next`;
+  const predictAction = next.isKo ? `scrollToKoMatch(${next.id})` : `scrollToMatchOrFirst(${next.id})`;
 
   let countdownHtml = '';
   if (days > 0) {
@@ -3163,7 +3222,7 @@ function nextMatchSlideHtml(next) {
     <div class="nmc-pitch"></div>
     <div class="nmc-inner">
       <div class="nmc-left">
-        <div class="nmc-badge">Group ${next.g} · Up next</div>
+        <div class="nmc-badge">${badgeLabel}</div>
         <div class="nmc-title">${next.venue.split(',')[0]}</div>
         <div class="nmc-meta">
           <span>${localTimeStr}</span>
@@ -3187,7 +3246,7 @@ function nextMatchSlideHtml(next) {
         <div class="nmc-countdown-units" id="cdUnits-${next.id}">${countdownHtml}</div>
         <div class="nmc-lock-note">🔒 Predictions lock at kick-off</div>
       </div>
-      <button class="nmc-predict-btn" onclick="scrollToMatchOrFirst(${next.id})">Predict now →</button>
+      <button class="nmc-predict-btn" onclick="${predictAction}">Predict now →</button>
     </div>
   </div>`;
 }
@@ -3707,15 +3766,16 @@ function seedKnownScores(){
  *  hydration breaks). Sorted by kickoff then group for a stable order. */
 function findLiveMatches() {
   const now = Date.now();
-  const live = MATCHES.filter(m => {
+  const live = liveScannableIds().map(id => liveMatchInfo(id)).filter(info => {
+    if (!info || !MATCH_UTC[info.id]) return false;
     // ESPN's real status wins whenever we have a fresh reading for this match.
-    const api = getLiveApiStatus(m.id);
+    const api = getLiveApiStatus(info.id);
     if (api && (api.status === 'IN_PLAY' || api.status === 'PAUSED')) return true;
     // No fresh ESPN reading — fall back to the scheduled-time window estimate.
-    const elapsed = now - MATCH_UTC[m.id].getTime();
+    const elapsed = now - MATCH_UTC[info.id].getTime();
     return elapsed > 0 && elapsed < MATCH_OVER_AT_MIN * 60000;
   });
-  live.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id] || a.g.localeCompare(b.g));
+  live.sort((a,b) => MATCH_UTC[a.id] - MATCH_UTC[b.id] || (a.label||'').localeCompare(b.label||''));
   return live;
 }
 // Back-compat alias used by any older call sites expecting a single match.
@@ -3738,14 +3798,15 @@ function findLiveMatch() {
  *  minutes loop for hours after a match ends. */
 function anyMatchPlausiblyLive(now){
   const all = DB.liveStatus() || {};
-  return MATCHES.some(m => {
-    const raw = all[m.id];
+  return liveScannableIds().some(id => {
+    const raw = all[id];
     if (raw){
       if ((raw.status === 'IN_PLAY' || raw.status === 'PAUSED') &&
           (now - (raw.fetchedAt || 0) < LIVE_API_STATUS_MAX_AGE_MS)) return true;
       if (raw.status === 'FINISHED') return false; // known done — don't keep polling this one
     }
-    const elapsed = now - MATCH_UTC[m.id].getTime();
+    if (!MATCH_UTC[id]) return false;
+    const elapsed = now - MATCH_UTC[id].getTime();
     return elapsed > -2 * 60000 && elapsed < LIVE_POLL_DELAY_GRACE_MS;
   });
 }
@@ -3803,14 +3864,15 @@ function liveMatchSlideHtml(live) {
   const sourceTag = isEstimated
     ? `<div class="lmb-min-label" style="font-size:8.5px;opacity:.6;margin-top:1px" data-f="min-source">estimated</div>`
     : '';
+  const tapAction = live.isKo ? `scrollToKoMatch(${live.id})` : `scrollToMatch(${live.id})`;
 
-  return `<div class="lmb-slide" id="lmb-slide-${live.id}" role="button" tabindex="0" onclick="scrollToMatch(${live.id})" aria-label="View your prediction for ${live.h} versus ${live.a}">
+  return `<div class="lmb-slide" id="lmb-slide-${live.id}" role="button" tabindex="0" onclick="${tapAction}" aria-label="View your prediction for ${live.h} versus ${live.a}">
     <div class="lmb-inner">
       <div class="lmb-live-dot" data-f="live-dot">
         ${(!isFT && !isHT) ? '<div class="dot-pulse"></div>' : ''}
         <span data-f="live-label">${liveLabel}</span>
       </div>
-      <div class="lmb-phase">Group ${live.g}</div>
+      <div class="lmb-phase">${live.label}</div>
       ${!isFT ? `<div class="lmb-minute" data-f="minute-block">
         <div class="lmb-min-val" data-f="min-val">${minDisplay}</div>
         <div class="lmb-min-label" data-f="min-label">${minLabel}</div>
@@ -3990,7 +4052,8 @@ function miniChipHtml(live){
   const isHT = phase && phase.phase_code === 'ht';
   const isFT = phase && phase.phase_code === 'ft';
   const minD = isHT ? 'HT' : (isFT ? 'FT' : (phase ? `${phase.displayMin}'` : ''));
-  return `<button class="lmb-mini-chip" id="mini-chip-${live.id}" onclick="scrollToMatch(${live.id})" aria-label="View your prediction for ${live.h} versus ${live.a}">
+  const tapAction = live.isKo ? `scrollToKoMatch(${live.id})` : `scrollToMatch(${live.id})`;
+  return `<button class="lmb-mini-chip" id="mini-chip-${live.id}" onclick="${tapAction}" aria-label="View your prediction for ${live.h} versus ${live.a}">
     <span class="mini-dot ${(!isFT && !isHT) ? 'pulse' : ''}"></span>
     <img src="${teamFlag(live.h)}" alt="">
     <span class="mini-score ${!hasScore ? 'pending' : ''}" data-f="mini-h">${hS}</span>
