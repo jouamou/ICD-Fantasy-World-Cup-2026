@@ -1289,6 +1289,31 @@
   .score-flip{animation:scoreFlip .5s ease-out}
 
   /* ===== KNOCKOUT PREDICTIONS (Play tab) ===== */
+  /* Once the group stage is complete, the Play view reorders so the knockout
+     predictions sit ABOVE the (now collapsed) group cards — the action moves
+     to the bracket, and the groups become a tuck-away review section. */
+  #predict.groups-wrapped{ display:flex; flex-direction:column; }
+  #predict.groups-wrapped #koPredictContainer{ order:4; }
+  #predict.groups-wrapped #groupFilterWrap{ order:5; margin-top:22px; }
+  #predict.groups-wrapped #groupsContainer{ order:6; }
+  /* keep the elements above the group/KO area in their natural order */
+  #predict.groups-wrapped #liveMatchBanner{ order:0; }
+  #predict.groups-wrapped #nextMatchCard{ order:0; }
+  #predict.groups-wrapped #syncBanner{ order:1; }
+  #predict.groups-wrapped .toolbar{ order:1; }
+  #predict.groups-wrapped #predProgress{ order:2; }
+  #predict.groups-wrapped #unpredictedPill{ order:0; }
+
+  .groups-wrapped-note{
+    background:linear-gradient(135deg,var(--green-100),#fff 70%);
+    border:1px solid var(--green-500);border-radius:13px;
+    padding:13px 16px;margin-bottom:12px;box-shadow:var(--shadow);
+  }
+  .groups-wrapped-note .gwn-left{display:flex;align-items:flex-start;gap:11px}
+  .groups-wrapped-note .gwn-emoji{font-size:22px;line-height:1;flex:0 0 auto}
+  .groups-wrapped-note .gwn-title{font-family:'Archivo';font-weight:800;font-size:14px;color:var(--green-800)}
+  .groups-wrapped-note .gwn-sub{font-size:12px;color:var(--green-700);line-height:1.45;margin-top:3px}
+
   .ko-locked-note{
     background:linear-gradient(135deg,var(--green-900),var(--green-700));
     color:#fff;border-radius:16px;padding:22px;text-align:center;margin-top:22px;
@@ -2921,24 +2946,55 @@ function rankThirdPlacedTeams(){
 function assignThirdPlaceSlots(){
   if(!allGroupsComplete()) return {};
   const ranked = rankThirdPlacedTeams();
-  const best8 = ranked.slice(0,8).map(t=>({group:t.group, team:t.team}));
-  const remaining = [...best8];
-  const assignment = {};
-  let slots = THIRD_PLACE_SLOTS.map(s=>({...s}));
-  while(slots.length){
-    slots.forEach(s=>{ s.eligible = remaining.filter(t=>s.groups.includes(t.group)); });
-    slots.sort((a,b)=>a.eligible.length-b.eligible.length);
-    const s = slots[0];
-    if(s.eligible.length===0){ assignment[s.match] = null; }
-    else {
-      const chosen = s.eligible[0];
-      assignment[s.match] = chosen.team;
-      const idx = remaining.findIndex(t=>t.group===chosen.group);
-      remaining.splice(idx,1);
+  const best8 = ranked.slice(0,8);
+  // Map each qualifying group letter to its third-placed team name.
+  const qualByGroup = {};
+  best8.forEach(t=>{ qualByGroup[t.group] = t.team; });
+  const groups = Object.keys(qualByGroup);
+
+  // Each best-3rd slot accepts a third-placed team from only a fixed 5-group
+  // set. A plain greedy "fewest-eligible-first" pass can strand a later slot
+  // (an early pick consumes the only team a downstream slot could have taken),
+  // leaving a real opponent stuck on "TBC" even though a valid full assignment
+  // exists. So we solve it as a perfect-matching: most-constrained-slot-first
+  // with backtracking, which always finds a complete valid assignment when one
+  // is possible (verified exhaustively across every qualifying combination).
+  const used = new Set();
+  const result = {};
+  const eligibleFor = slot => groups.filter(g => !used.has(g) && slot.groups.includes(g));
+  function solve(remaining){
+    if(remaining.length === 0) return true;
+    // pick the slot with the fewest still-eligible teams (prune fastest)
+    let best = null, bestE = null;
+    for(const s of remaining){
+      const e = eligibleFor(s);
+      if(best === null || e.length < bestE.length){ best = s; bestE = e; }
     }
-    slots = slots.slice(1);
+    if(bestE.length === 0) return false; // dead end → let the caller backtrack
+    const rest = remaining.filter(s => s !== best);
+    for(const g of bestE){
+      used.add(g); result[best.match] = qualByGroup[g];
+      if(solve(rest)) return true;
+      used.delete(g); delete result[best.match]; // undo and try the next team
+    }
+    return false;
   }
-  return assignment;
+
+  if(solve(THIRD_PLACE_SLOTS.map(s => ({...s})))) return result;
+
+  // No complete matching is possible yet (e.g. fewer than 8 thirds resolvable)
+  // — fall back to a best-effort greedy fill so partial info still displays.
+  const partial = {};
+  const used2 = new Set();
+  let slots = THIRD_PLACE_SLOTS.map(s => ({...s}));
+  while(slots.length){
+    slots.forEach(s => { s.eligible = groups.filter(g => !used2.has(g) && s.groups.includes(g)); });
+    slots.sort((a,b) => a.eligible.length - b.eligible.length);
+    const s = slots.shift();
+    if(s.eligible.length === 0){ partial[s.match] = null; }
+    else { partial[s.match] = qualByGroup[s.eligible[0]]; used2.add(s.eligible[0]); }
+  }
+  return partial;
 }
 
 /** Resolve a group-winner or runner-up reference to a team name, or null
@@ -3328,22 +3384,49 @@ function renderMatchesCountdown(){
       <div class="mc-sub">Tap “Live” below for scores as they happen</div></div>`;
     return;
   }
-  const next = findNextMatch();
+  // Look across the WHOLE tournament — group stage AND knockouts — so the
+  // banner counts down to the next real kickoff phase by phase, instead of
+  // declaring everything "complete" the moment the group stage ends (knockout
+  // fixtures live outside the 72-match MATCHES array). Once a knockout tie's
+  // teams are resolved it shows them; if the next KO fixture's teams aren't
+  // known yet we still count down to its scheduled kickoff with a phase label.
+  const next = findNextFixtureAny();
   if(next){
-    const diff = MATCH_UTC[next.id].getTime() - Date.now();
+    const diff = (next.ko ? next.ko.getTime() : 0) - Date.now();
     const totalSecs = Math.max(0, Math.floor(diff/1000));
     const d=Math.floor(totalSecs/86400), h=Math.floor((totalSecs%86400)/3600), mi=Math.floor((totalSecs%3600)/60);
     let cd = d>0 ? `${d}d ${h}h` : (h>0 ? `${h}h ${mi}m` : `${mi}m`);
+    const label = next.stage==='ko' ? `⏳ Next ${next.round||'knockout'} kick-off in` : '⏳ Next kick-off in';
+    const homeName = next.home || (next.stage==='ko' ? 'TBC' : '');
+    const awayName = next.away || (next.stage==='ko' ? 'TBC' : '');
     el.innerHTML = `<div class="mc-banner"><div class="mc-pitch"></div>
-      <div class="mc-label">⏳ Next kick-off in</div>
+      <div class="mc-label">${label}</div>
       <div class="mc-big" id="hubCountdown">${cd}</div>
-      <div class="mc-sub">${esc(next.home||next.h)} vs ${esc(next.away||next.a)} · ${fmtLocalTimeShort(MATCH_UTC[next.id])}</div></div>`;
+      <div class="mc-sub">${esc(homeName)} vs ${esc(awayName)}${next.ko?` · ${fmtLocalTimeShort(next.ko)}`:''}</div></div>`;
   } else {
+    // Truly nothing left to play anywhere — the Final is done.
     el.innerHTML = `<div class="mc-banner"><div class="mc-pitch"></div>
       <div class="mc-label">🏆 Tournament</div>
       <div class="mc-big">All matches complete</div>
       <div class="mc-sub">Check the leaderboard for the final standings</div></div>`;
   }
+}
+
+/** The next upcoming, unplayed fixture anywhere in the tournament — group stage
+ *  or knockout — by scheduled kickoff time. Used by the Matches-hub countdown
+ *  so it advances phase by phase (group stage → R32 → … → Final) instead of
+ *  declaring "all complete" the instant the 72 group matches finish. Returns an
+ *  allFixtures()-shaped object, or null only when every fixture has been played. */
+function findNextFixtureAny(){
+  const now = Date.now();
+  const upcoming = allFixtures().filter(fx => {
+    if(!fx.ko) return false;                       // no scheduled time → can't count down
+    if(fx.ko.getTime() <= now) return false;       // already kicked off / in the past
+    return matchState(fx.id) === 'upcoming';       // not live, not finished
+  });
+  if(!upcoming.length) return null;
+  upcoming.sort((a,b) => a.ko - b.ko);
+  return upcoming[0];
 }
 
 function renderMatchesHub(){
@@ -4085,7 +4168,26 @@ function renderGroups(){
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
   const nextM = findNextMatch();
   const autoOpenGroup = nextM ? nextM.g : null;
+  // Once every group has finished, the group stage is "done": collapse all the
+  // group cards on the All-groups view so the player's focus lands on the
+  // knockout predictions below. They can still tap any group open to review
+  // their group-stage picks and points. When the player has filtered to a
+  // single group, always show it open (they asked for it specifically).
+  const groupsDone = allGroupsComplete();
   let html="";
+  // When the group stage is wrapped up, lead the section with a slim banner
+  // that explains the cards are collapsed and nudges toward the knockouts.
+  if(groupsDone && activeFilter==='all'){
+    html += `<div class="groups-wrapped-note">
+      <div class="gwn-left">
+        <span class="gwn-emoji">✅</span>
+        <div>
+          <div class="gwn-title">Group stage complete</div>
+          <div class="gwn-sub">Your group predictions are locked &amp; scored. Tap any group to review them — the action's now in the knockouts below. 👇</div>
+        </div>
+      </div>
+    </div>`;
+  }
   groupsToShow.forEach(g=>{
     const gm=MATCHES.filter(m=>m.g===g);
     let gpts=0, hasRes=false;
@@ -4097,7 +4199,10 @@ function renderGroups(){
       const koGone = MATCH_UTC[m.id].getTime() <= Date.now();
       if(!hasResult&&!koGone){ const pr=r.predictions[m.id]; if(!pr||pr.h==null||pr.a==null) unpredCount++; }
     });
-    const open = activeFilter!=='all' || g===autoOpenGroup;
+    // Single-group filter → always open. All-groups view → open the group with
+    // the next upcoming match while the group stage is live; once it's done,
+    // keep every group collapsed so the knockouts take the spotlight.
+    const open = activeFilter!=='all' || (!groupsDone && g===autoOpenGroup);
     html+=`<div class="group-block">
       <div class="group-head ${open?'open':''}" onclick="toggleGroup(this)">
         <div class="group-tag">${g}</div>
@@ -4116,6 +4221,13 @@ function renderGroups(){
     html+=`</div></div>`;
   });
   cont.innerHTML=html;
+  // Reorder the Play view to put knockouts first once the group stage is done
+  // (CSS flex order). Only meaningful on the All-groups view; a single-group
+  // filter keeps the normal top-to-bottom flow.
+  const predictEl = document.getElementById('predict');
+  if(predictEl){
+    predictEl.classList.toggle('groups-wrapped', groupsDone && activeFilter==='all');
+  }
   renderKoPredictions();
   renderPredProgress();
 }
