@@ -4185,6 +4185,7 @@ function initFilterArrows() {
    TICK
    ============================================================ */
 let _kickedSet = null;
+let _kickedSetKo = null;
 let _lastBackgroundSyncCheck = 0;
 const BACKGROUND_SYNC_INTERVAL_MS = 60000; // one shared poll per minute is plenty for live scores; ESPN's public endpoint needs no key and is generous, and the cross-tab dedup below means many simultaneous viewers still produce only ~one fetch per minute total
 function tick() {
@@ -4222,6 +4223,21 @@ function tick() {
       if (!_kickedSet.has(m.id) && MATCH_UTC[m.id].getTime() <= now) {
         _kickedSet.add(m.id);
         refreshMatch(m.id); // no-op if the card isn't currently in the DOM
+      }
+    });
+  }
+
+  // Same auto-lock for knockout matches: each KO fixture now carries a real
+  // kickoff time, so the moment it passes we re-render just that KO card to
+  // lock its advancer/score/scorers/wildcard — mirroring the group-stage lock.
+  if (_kickedSetKo === null) {
+    _kickedSetKo = new Set(KO_ALL_MATCHES.filter(km => MATCH_UTC[km.match] && MATCH_UTC[km.match].getTime() <= now).map(km => km.match));
+  } else {
+    KO_ALL_MATCHES.forEach(km => {
+      const ko = MATCH_UTC[km.match];
+      if (ko && !_kickedSetKo.has(km.match) && ko.getTime() <= now) {
+        _kickedSetKo.add(km.match);
+        refreshKoMatch(km.match); // no-op if the card isn't currently in the DOM
       }
     });
   }
@@ -4487,7 +4503,7 @@ function renderKoPredictions(){
   for(const rd of rounds){
     const hasOpen = rd.matches.some(id=>{
       const res=DB.results()[id];
-      const locked = res && res.h!=null && res.h!=='';
+      const locked = (res && res.h!=null && res.h!=='') || koKickedOff(id);
       const ko=r.koPredictions[id];
       return !locked && (!ko || !ko.advancer);
     });
@@ -4657,6 +4673,16 @@ function toggleKoRound(head){
   head.nextElementSibling.classList.toggle('open');
 }
 
+/** True once a knockout match has passed its scheduled kickoff time. KO
+ *  fixtures now carry a real MATCH_UTC (added when their UTC times were
+ *  pre-computed), so — exactly like group matches — predictions lock the
+ *  instant the match starts, not only when a result is entered. Returns false
+ *  for any KO match without a known kickoff time (shouldn't happen, but safe). */
+function koKickedOff(matchId){
+  const ko = MATCH_UTC[matchId];
+  return !!ko && ko.getTime() <= Date.now();
+}
+
 /** One knockout match prediction card. */
 /** The advancer chooser block for a KO match. Who advances is tied to the
  *  predicted scoreline: a decisive predicted score (h≠a) auto-advances the
@@ -4669,14 +4695,15 @@ function koAdvancerHtml(matchId, roster){
   if(!home || !away) return '';
   const res = DB.results()[matchId];
   const hasResult = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
+  const kicked = koKickedOff(matchId);
   const pred = (roster.koPredictions && roster.koPredictions[matchId]) || {};
   const ph = pred.h, pa = pred.a;
   const hasScore = ph!=null && pa!=null;
   const isDraw = hasScore && (+ph===+pa);
   const decisive = hasScore && (+ph!==+pa);
 
-  // Locked (result entered): read-only, show the player's stored pick.
-  if(hasResult){
+  // Locked (kicked off OR result entered): read-only, show the player's pick.
+  if(hasResult || kicked){
     const selH = pred.advancer===home, selA = pred.advancer===away;
     return `<div class="ko-advancer">
       <div class="ko-team-btn disabled ${selH?'sel':''}"><img src="${teamFlag(home)}" alt=""><div class="ktb-name">${esc(home)}</div><div class="ktb-adv">Your pick</div></div>
@@ -4716,7 +4743,8 @@ function koMatchCard(matchId, roundKey, roster){
   const venue = meta ? meta.venue : '';
   const res = DB.results()[matchId];
   const hasResult = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
-  const locked = hasResult; // KO matches have no stored kickoff time; lock on result entry
+  const kicked = koKickedOff(matchId);
+  const locked = kicked || hasResult; // lock at kickoff, like group matches
   const pred = roster.koPredictions[matchId] || {};
   const isWild = roster.wildcard===matchId;
   const mult = KO_ROUND_MULT[roundKey]||1;
@@ -4733,12 +4761,23 @@ function koMatchCard(matchId, roundKey, roster){
   if(locked) cardCls += hasResult ? ' locked scored' : ' locked';
   if(isWild) cardCls += ' wildcard';
 
+  // Status chip for the meta row: live/locked once kicked off (no result yet),
+  // otherwise nothing (the points multiplier sits there for open matches).
+  let koStatusChip = '';
+  if(kicked && !hasResult){
+    const liveNow = matchState(matchId)==='live';
+    koStatusChip = liveNow
+      ? `<span style="color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.4px">● Live</span><span class="dot"></span>`
+      : `<span style="color:var(--muted);font-weight:700">🔒 Locked</span><span class="dot"></span>`;
+  }
+
   let html = `<div class="${cardCls}" id="komatch-${matchId}">
     <div class="ko-match-meta">
       <span class="km-id">M${matchId}</span>
       ${MATCH_UTC[matchId]?`<span class="dot"></span><span>${fmtLocalTimeShort(MATCH_UTC[matchId])} ${getTZAbbr()}</span>`:''}
       <span class="dot"></span>
       <span class="km-venue">${esc(venue)}</span>
+      ${koStatusChip}
       <span style="margin-left:auto;color:var(--green-700);font-weight:700">Points ×${mult}${isWild?' · ⭐×2':''}</span>
     </div>`;
 
@@ -4771,6 +4810,23 @@ function koMatchCard(matchId, roundKey, roster){
       ${(res.scorers&&res.scorers.length)?`<span style="font-weight:500;font-size:11px">⚽ ${res.scorers.map(esc).join(', ')}</span>`:''}
       ${predScorers.length?`<span style="font-size:11px">You: ${predScHtml}</span>`:''}
       <span class="pts-badge ${pts===0?'zero':(isWild?'wild':'')}">${Math.round(pts)} pt${Math.round(pts)===1?'':'s'}${isWild?' ⭐':''}</span>
+    </div>`;
+  } else if(locked){
+    // Kicked off but no result yet — show the player's locked-in prediction
+    // read-only (advancer block above already renders it), plus a summary of
+    // their scoreline/scorers/wildcard so they can see exactly what's banked.
+    const ph=pred.h, pa=pred.a;
+    const predScorers=(pred.scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
+    const hasPick = !!pred.advancer;
+    const scoreBit = (ph!=null && pa!=null) ? `<span style="color:var(--muted);font-size:11px">Your score: <b>${ph}–${pa}</b></span>` : '';
+    const scorersBit = predScorers.length ? `<span style="color:var(--muted);font-size:11px">⚽ ${predScorers.map(esc).join(', ')}</span>` : '';
+    const wildBit = isWild ? `<span style="color:#8a6516;font-size:11px;font-weight:700">⭐ Wildcard ×2</span>` : '';
+    html += `<div class="ko-result-strip kicked-strip">
+      <span style="color:var(--muted)">⏳ Locked · result pending</span>
+      ${hasPick ? `<span style="color:var(--muted);font-size:11px">Advancing: <b>${esc(pred.advancer)}</b></span>` : `<span style="color:var(--muted);font-size:11px">No pick set</span>`}
+      ${scoreBit}
+      ${scorersBit}
+      ${wildBit}
     </div>`;
   } else {
     // Optional scoreline + scorers + wildcard toggle
@@ -4816,6 +4872,7 @@ function koScorerRow(matchId, val, idx, team, goalNum, sideTotal){
 }
 
 function pickKoAdvancer(matchId, side){
+  if(koKickedOff(matchId)){ toast('🔒 This match has kicked off — predictions are locked'); return; }
   const r=getRoster(activeName);
   const { home, away } = getKoParticipants(matchId);
   if(!home||!away) return;
@@ -4840,6 +4897,7 @@ function pickKoAdvancer(matchId, side){
 }
 
 function bumpKo(matchId, side, delta){
+  if(koKickedOff(matchId)){ toast('🔒 This match has kicked off — predictions are locked'); return; }
   const r=getRoster(activeName);
   if(!r.koPredictions[matchId]) r.koPredictions[matchId]={advancer:null,h:null,a:null,scorers:[]};
   const p=r.koPredictions[matchId];
@@ -4912,6 +4970,7 @@ function patchKoMatchCard(matchId, roster, changedSide){
 }
 
 function updateKoScorer(matchId, idx, val){
+  if(koKickedOff(matchId)) return; // locked at kickoff
   const r=getRoster(activeName);
   if(r.koPredictions[matchId] && r.koPredictions[matchId].scorers){
     r.koPredictions[matchId].scorers[idx]=val;
@@ -4920,6 +4979,9 @@ function updateKoScorer(matchId, idx, val){
 }
 
 function toggleWildcard(matchId){
+  // Can't set (or clear) a wildcard on a match that has already kicked off —
+  // the points are locked the moment it starts, like the prediction itself.
+  if(koKickedOff(matchId)){ toast('🔒 This match has kicked off — wildcard locked'); return; }
   const r=getRoster(activeName);
   if(r.wildcard===matchId){ r.wildcard=null; toast('Wildcard cleared'); }
   else { r.wildcard=matchId; toast('⭐ Wildcard set — this match now scores double'); }
@@ -5157,8 +5219,9 @@ function predProgressHtml(r){
       if(p && p.advancer){ predicted++; return; }
       const { home, away } = getKoParticipants(id);
       const res = DB.results()[id];
-      const locked = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
-      if(home && away && !locked) openNow++; // resolvable, not played, no pick yet
+      const hasResult = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
+      const locked = hasResult || koKickedOff(id); // kicked off = locked too
+      if(home && away && !locked) openNow++; // resolvable, not started, no pick yet
     });
     const denom = predicted + openNow;                 // exclude unreachable/missed ties
     const pct = denom>0 ? Math.round((predicted/denom)*100) : 100;
