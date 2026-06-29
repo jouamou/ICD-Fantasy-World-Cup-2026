@@ -1523,6 +1523,31 @@
   .ko-result-strip .pts-badge{margin-left:auto;font-family:'Archivo';font-weight:800;font-size:13px;color:#fff;background:var(--gold);padding:4px 11px;border-radius:20px}
   .ko-result-strip .pts-badge.zero{background:var(--muted)}
   .ko-result-strip .pts-badge.wild{background:var(--green-700)}
+
+  /* ===== KO CROWD CONSENSUS ===== */
+  /* What the rest of the staff predicted for a tie. Revealed only AFTER the
+     player has made their own pick (so the crowd's lean can't anchor them),
+     or once the match is locked. Collapses to nothing when empty. */
+  .ko-consensus{margin-top:11px;border-top:1px dashed var(--line);padding-top:11px}
+  .ko-consensus:empty{display:none;margin:0;padding:0;border:0}
+  .ko-consensus .kc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+  .ko-consensus .kc-head .kc-count{font-weight:700;text-transform:none;letter-spacing:0}
+  .ko-consensus .kc-bar{display:flex;height:22px;border-radius:7px;overflow:hidden;background:var(--bg);border:1px solid var(--line)}
+  .ko-consensus .kc-seg{display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;font-size:12px;min-width:0;white-space:nowrap;transition:width .45s ease}
+  .ko-consensus .kc-seg.home{background:var(--green-700);color:#fff}
+  .ko-consensus .kc-seg.away{background:var(--gold);color:#4a3608}
+  .ko-consensus .kc-seg.mine{box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+  .ko-consensus .kc-ends{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;font-size:11.5px;color:var(--head);font-weight:600}
+  .ko-consensus .kc-end{display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
+  .ko-consensus .kc-end.right{justify-content:flex-end;text-align:right}
+  .ko-consensus .kc-end img{width:18px;height:12px;border-radius:2px;object-fit:cover;flex:0 0 auto}
+  .ko-consensus .kc-end b{color:var(--green-700)}
+  .ko-consensus .kc-end.right b{color:#8a6516}
+  .ko-consensus .kc-flag{margin-top:9px;font-size:11.5px;font-weight:700;border-radius:8px;padding:7px 11px;line-height:1.4}
+  .ko-consensus .kc-flag.contrarian{color:#8a4b00;background:linear-gradient(135deg,#fff3e0,#fff 70%);border:1px solid var(--gold)}
+  .ko-consensus .kc-flag.majority{color:var(--green-800);background:var(--green-100);border:1px solid rgba(45,107,21,.18)}
+  .ko-consensus .kc-flag.even{color:var(--muted);background:var(--bg);border:1px solid var(--line)}
+
   @media(max-width:560px){
     .ko-team-btn img{width:40px;height:27px}
     .ko-team-btn .ktb-name{font-size:11px}
@@ -4798,6 +4823,77 @@ function koAdvancerHtml(matchId, roster){
   </div>${note}`;
 }
 
+/** Crowd consensus for a knockout tie: how many players backed each side to
+ *  advance (using each roster's effective advancer, so a decisive predicted
+ *  scoreline counts too). Returns null until both teams are known. Counts only
+ *  players who actually made a pick for this tie. */
+function koConsensus(matchId){
+  const { home, away } = getKoParticipants(matchId);
+  if(!home || !away) return null;
+  const rosters = DB.rosters();
+  let homeCount=0, awayCount=0;
+  Object.keys(rosters).forEach(n=>{
+    const ko = rosters[n].koPredictions;
+    const pred = ko && ko[matchId];
+    if(!pred) return;
+    const adv = effectiveKoAdvancer(matchId, pred, home, away);
+    if(adv===home) homeCount++;
+    else if(adv===away) awayCount++;
+  });
+  const total = homeCount+awayCount;
+  return {
+    home, away, homeCount, awayCount, total,
+    players: Object.keys(rosters).length,
+    homePct: total ? Math.round((homeCount/total)*100) : 0,
+    awayPct: total ? Math.round((awayCount/total)*100) : 0,
+  };
+}
+
+/** The consensus strip for one KO card. Returns '' (collapses) until the active
+ *  player has committed their own pick — so seeing the crowd's lean can't anchor
+ *  their choice — or the match is locked, after which it's just hindsight. Also
+ *  flags whether the player went with the crowd or against the grain. */
+function koConsensusHtml(matchId, roster){
+  const c = koConsensus(matchId);
+  if(!c) return '';
+  const { home, away } = c;
+  const r = DB.results()[matchId];
+  const hasResult = r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='';
+  const locked = koKickedOff(matchId) || hasResult;
+  const myPred = roster && roster.koPredictions && roster.koPredictions[matchId];
+  const myAdv = effectiveKoAdvancer(matchId, myPred, home, away);
+  if(!myAdv && !locked) return '';          // don't reveal before they pick
+  if(c.total < 2) return '';                // not enough picks to mean anything
+  const hp=c.homePct, ap=c.awayPct;
+  const homeMine = myAdv===home, awayMine = myAdv===away;
+
+  let flag='';
+  if(myAdv){
+    const myCount    = myAdv===home ? c.homeCount : c.awayCount;
+    const otherCount = myAdv===home ? c.awayCount : c.homeCount;
+    if(myCount < otherCount){
+      flag = `<div class="kc-flag contrarian">🦅 Against the grain — you're 1 of ${myCount} backing <b>${esc(myAdv)}</b></div>`;
+    } else if(myCount > otherCount){
+      const pct = Math.round((myCount/c.total)*100);
+      flag = `<div class="kc-flag majority">👥 With the crowd — ${pct}% also backed <b>${esc(myAdv)}</b></div>`;
+    } else {
+      flag = `<div class="kc-flag even">⚖️ Staff are split right down the middle on this one</div>`;
+    }
+  }
+
+  return `
+    <div class="kc-head"><span>👥 Staff consensus</span><span class="kc-count">${c.total} of ${c.players} picked</span></div>
+    <div class="kc-bar" role="img" aria-label="${esc(home)} ${hp} percent, ${esc(away)} ${ap} percent">
+      <div class="kc-seg home ${homeMine?'mine':''}" style="width:${hp}%">${hp>=18?hp+'%':''}</div>
+      <div class="kc-seg away ${awayMine?'mine':''}" style="width:${ap}%">${ap>=18?ap+'%':''}</div>
+    </div>
+    <div class="kc-ends">
+      <span class="kc-end"><img src="${teamFlag(home)}" alt="">${esc(home)} <b>${hp}%</b></span>
+      <span class="kc-end right"><b>${ap}%</b> ${esc(away)} <img src="${teamFlag(away)}" alt=""></span>
+    </div>
+    ${flag}`;
+}
+
 function koMatchCard(matchId, roundKey, roster){
   const { home, away } = getKoParticipants(matchId);
   const meta = KO_ALL_MATCHES.find(m=>m.match===matchId);
@@ -4846,6 +4942,10 @@ function koMatchCard(matchId, roundKey, roster){
   // score forces the leading team to advance; only a level (draw) score lets
   // the player choose who goes through on penalties. (See koAdvancerHtml.)
   html += `<div id="koadv-${matchId}">${koAdvancerHtml(matchId, roster)}</div>`;
+
+  // Crowd consensus — what the rest of the staff predicted for this tie.
+  // Hidden until the player has made their own pick (see koConsensusHtml).
+  html += `<div class="ko-consensus" id="koconsensus-${matchId}">${koConsensusHtml(matchId, roster)}</div>`;
 
   if(locked && hasResult){
     // Is the match actually OVER, or is this a LIVE score still ticking? A KO
@@ -4983,6 +5083,9 @@ function pickKoAdvancer(matchId, side){
       btns[1].classList.toggle('sel', side==='a'); // second = away
     }
   }
+  // Reveal / refresh the crowd consensus now that the player has committed.
+  const cb=document.getElementById('koconsensus-'+matchId);
+  if(cb) cb.innerHTML = koConsensusHtml(matchId, r);
   renderScorebar();
   renderPredProgress();
 }
@@ -5057,6 +5160,9 @@ function patchKoMatchCard(matchId, roster, changedSide){
   // draw → penalty chooser, no score → free pick), so refresh it in place too.
   const advWrap=document.getElementById('koadv-'+matchId);
   if(advWrap) advWrap.innerHTML = koAdvancerHtml(matchId, r);
+  // A decisive score sets the advancer, which can reveal/flip the consensus.
+  const cWrap=document.getElementById('koconsensus-'+matchId);
+  if(cWrap) cWrap.innerHTML = koConsensusHtml(matchId, r);
   return true;
 }
 
