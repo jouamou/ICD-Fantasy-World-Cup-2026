@@ -50,46 +50,42 @@
   .hero{
     position:relative;
     background:
-      radial-gradient(circle at 50% 120%, rgba(127,187,66,.35), transparent 60%),
-      linear-gradient(135deg,var(--green-900),var(--green-700));
+      radial-gradient(130% 100% at 50% -12%, rgba(127,187,66,.16), transparent 55%),
+      linear-gradient(165deg, var(--green-900) 0%, var(--green-800) 80%);
     color:#fff;
     overflow:hidden;
-    border-bottom:5px solid var(--green-500);
+    border-bottom:1px solid rgba(127,187,66,.3);
   }
-  .pitch-lines{position:absolute;inset:0;opacity:.13;pointer-events:none}
-  .pitch-lines div{position:absolute;border:2px solid #fff}
-  .pl-circle{width:200px;height:200px;border-radius:50%;left:calc(50% - 100px);top:calc(50% - 100px)}
-  .pl-mid{width:2px;height:100%;left:50%;top:0;border:none;background:#fff}
-  .pl-box{width:160px;height:90px;left:-40px;top:calc(50% - 45px)}
-  .pl-box2{width:160px;height:90px;right:-40px;top:calc(50% - 45px)}
-  .hero-inner{position:relative;padding:30px 16px 26px;text-align:center}
-  .brand-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px}
-  .icd-badge{
-    background:#fff;color:var(--green-700);
-    font-family:'Archivo';font-weight:900;font-size:20px;letter-spacing:1px;
-    padding:6px 12px;border-radius:6px;line-height:1
-  }
-  .brand-row span{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.85;font-weight:600;text-align:left}
+  /* a single, barely-there pitch motif for depth — no clutter */
+  .pitch-lines{position:absolute;inset:0;opacity:.05;pointer-events:none}
+  .pitch-lines div{position:absolute;border:1px solid #fff}
+  .pl-circle{width:230px;height:230px;border-radius:50%;left:calc(50% - 115px);top:calc(50% - 115px)}
+  .pl-mid{width:1px;height:100%;left:50%;top:0;border:none;background:#fff}
+  .hero-inner{position:relative;padding:24px 16px 22px;text-align:center}
+  .brand-row{display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .brand-row img{height:46px;width:auto}
   .hero h1{
-    font-family:'Archivo';font-weight:900;font-size:clamp(28px,6vw,46px);
-    line-height:1.02;letter-spacing:-.5px;text-transform:uppercase
+    font-family:'Archivo';font-weight:800;font-size:clamp(27px,6vw,44px);
+    line-height:1.04;letter-spacing:.5px;text-transform:uppercase
   }
   .hero h1 em{font-style:normal;color:var(--green-500)}
-  .hero-sub{margin-top:10px;font-size:14px;opacity:.9;font-weight:500}
-  .ball{display:inline-block;font-size:.9em}
+  .hero-sub{margin-top:12px;font-size:13px;font-weight:600;letter-spacing:.4px;opacity:.92}
+  .hero-host{margin-top:5px;font-size:10.5px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;opacity:.5}
 
-  /* scoreboard chip */
-  .scorebar{
-    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px
-  }
+  /* scoreboard chips — refined glass, one green accent (your identity) */
+  .scorebar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
   .chip{
-    background:rgba(255,255,255,.12);
-    border:1px solid rgba(255,255,255,.22);
-    border-radius:30px;padding:7px 16px;display:flex;align-items:center;gap:8px;
-    font-size:13px;font-weight:600;backdrop-filter:blur(4px)
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.13);
+    border-radius:12px;padding:8px 13px;display:flex;align-items:center;gap:7px;
+    font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);
+    backdrop-filter:blur(6px);
   }
-  .chip b{font-family:'Oswald';font-weight:700;font-size:18px;color:var(--green-500)}
+  .chip span{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,255,255,.5)}
+  .chip b{font-family:'Oswald';font-weight:700;font-size:18px;line-height:1;color:#fff}
+  .chip i{font-style:normal;font-size:11px;font-weight:600;color:rgba(255,255,255,.45)}
   .chip img{width:20px;height:14px;border-radius:2px;object-fit:cover}
+  .chip-id{background:rgba(127,187,66,.15);border-color:rgba(127,187,66,.38);color:#fff;font-size:13px;font-weight:700}
 
   /* ===== TABS ===== */
   .tabbar{
@@ -1559,15 +1555,14 @@
 <header class="hero">
   <div class="pitch-lines">
     <div class="pl-circle"></div><div class="pl-mid"></div>
-    <div class="pl-box"></div><div class="pl-box2"></div>
   </div>
   <div class="hero-inner">
     <div class="brand-row">
-      <img src="https://i.ibb.co/hFvmBTj9/ICD-25-Logo-3.png" alt="ICD 25 Logo" style="height:40px;width:auto;flex:0 0 auto">
-      <span>Islamic Corporation for the<br>Development of the Private Sector</span>
+      <img src="https://i.ibb.co/hFvmBTj9/ICD-25-Logo-3.png" alt="ICD — Islamic Corporation for the Development of the Private Sector">
     </div>
-    <h1><span class="ball">⚽</span> Fantasy <em>World Cup</em> 2026</h1>
-    <div class="hero-sub">Staff Prediction Championship &middot; United States &middot; Canada &middot; Mexico</div>
+    <h1>Fantasy <em>World Cup</em> 2026</h1>
+    <div class="hero-sub">Staff Prediction Championship</div>
+    <div class="hero-host">United States &middot; Canada &middot; Mexico</div>
     <div class="scorebar" id="scorebar"></div>
   </div>
 </header>
@@ -5675,11 +5670,11 @@ function renderScorebar(){
   const koOpen = allGroupsComplete();
   const koPc = koOpen ? koPredictedCount(r) : 0;
   bar.innerHTML=`
-    <div class="chip"><img src="${teamFlag(r.team)}" alt=""> ${activeName}</div>
-    <div class="chip">Points <b>${pts}</b></div>
-    <div class="chip">Predicted <b>${pc}</b>/72</div>
-    ${koOpen?`<div class="chip">🏆 KO <b>${koPc}</b>/${KO_ALL_MATCHES.length}</div>`:''}
-    ${rank?`<div class="chip">Rank <b>#${rank}</b></div>`:''}`;
+    <div class="chip chip-id"><img src="${teamFlag(r.team)}" alt=""> ${esc(activeName)}</div>
+    <div class="chip"><span>Points</span> <b>${pts}</b></div>
+    <div class="chip"><span>Predicted</span> <b>${pc}</b><i>/72</i></div>
+    ${koOpen?`<div class="chip"><span>KO</span> <b>${koPc}</b><i>/${KO_ALL_MATCHES.length}</i></div>`:''}
+    ${rank?`<div class="chip"><span>Rank</span> <b>#${rank}</b></div>`:''}`;
 }
 function getRank(name){
   const rosters=DB.rosters();
