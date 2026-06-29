@@ -1632,7 +1632,7 @@
     <div class="lb-stats">
       <div class="stat"><div class="l">Players</div><div class="v" id="stPlayers">0</div></div>
       <div class="stat"><div class="l">Matches played</div><div class="v" id="stPlayed">0</div></div>
-      <div class="stat"><div class="l">Total matches</div><div class="v">72</div></div>
+      <div class="stat"><div class="l">Total matches</div><div class="v" id="stTotal">72</div></div>
       <div class="stat"><div class="l">Top score</div><div class="v" id="stTop">0</div></div>
     </div>
     <div id="lastResultHero"></div>
@@ -5542,36 +5542,68 @@ function computeStandingsArray(){
   })).sort((a,b)=> b.pts-a.pts || b.pred-a.pred || a.name.localeCompare(b.name));
 }
 
-/** The most recently finished GROUP match (players only predict 1–72). "Most
- *  recent" = the finished match with the latest kickoff time, which is stable
- *  and needs no extra history. Returns the MATCHES entry or null. */
-function lastFinishedGroupMatch(){
+/** The most recently finished match anywhere in the tournament — group stage
+ *  OR knockout. "Most recent" = the finished fixture with the latest kickoff
+ *  time. Returns a normalised { id, h, a, isKo } (h/a are real team names; a KO
+ *  tie resolves to its actual participants via liveMatchInfo), or null. Once the
+ *  knockouts begin this is what keeps the leaderboard's "best of the last match"
+ *  pointing at the latest knockout result instead of staying frozen on the final
+ *  group game. */
+function lastFinishedMatchAny(){
   const res = DB.results();
-  let best = null;
-  MATCHES.forEach(m=>{
-    const r = res[m.id];
+  let bestId = null, bestKo = -Infinity;
+  liveScannableIds().forEach(id=>{
+    const r = res[id];
     const hasResult = r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='';
     if(!hasResult) return;
-    if(matchState(m.id) !== 'finished') return; // ignore still-live scores
-    if(!best || MATCH_UTC[m.id] > MATCH_UTC[best.id]) best = m;
+    if(matchState(id) !== 'finished') return; // ignore still-live scores
+    const ko = MATCH_UTC[id];
+    if(!ko) return;
+    if(ko.getTime() > bestKo){ bestKo = ko.getTime(); bestId = id; }
   });
-  return best;
+  if(bestId == null) return null;
+  const info = liveMatchInfo(bestId);
+  if(!info) return null;
+  return { id: bestId, h: info.h, a: info.a, isKo: info.isKo };
+}
+
+/** Points a roster earned on ONE specific match — group stage or knockout — or
+ *  null if they didn't engage with it (no group prediction / no KO advancer) or
+ *  it has no result yet. KO points are the headline value: base score × round
+ *  multiplier × wildcard. The per-player Underdog Boost is a leaderboard-total
+ *  mechanic and is intentionally NOT folded into this per-match figure, so the
+ *  same KO prediction reads the same for everyone in the "best of the last
+ *  match" hero. Lets that hero score knockout results, not just group games. */
+function pointsOnMatch(roster, matchId){
+  const res = DB.results()[matchId];
+  if(!res || res.h==null || res.h==='' || res.a==null || res.a==='') return null;
+  if(koRoundOf(matchId)){ // a knockout fixture
+    const pred = roster.koPredictions && roster.koPredictions[matchId];
+    if(!pred || !pred.advancer) return null; // didn't engage with this tie
+    const base = scoreKoMatch(matchId, pred, res);
+    if(base == null) return null;
+    let pts = base * (KO_ROUND_MULT[koRoundOf(matchId)] || 1);
+    if(roster.wildcard === matchId) pts *= 2;
+    return Math.round(pts);
+  }
+  const pred = roster.predictions && roster.predictions[matchId];
+  if(!pred || pred.h==null || pred.a==null) return null; // didn't predict
+  return scoreMatch(pred, res);
 }
 
 /** For a given match, who scored the most points on it, and how many. Returns
  *  { match, top:[{name,team,pts}], pts, total } — top may hold ties. Only
  *  counts players who actually predicted the match (pts != null). */
 function lastResultHero(){
-  const m = lastFinishedGroupMatch();
+  const m = lastFinishedMatchAny();
   if(!m) return null;
   const res = DB.results()[m.id];
   const rosters = DB.rosters();
   let topPts = -1;
   const scored = [];
   Object.keys(rosters).forEach(n=>{
-    const pred = rosters[n].predictions && rosters[n].predictions[m.id];
-    const pts = scoreMatch(pred, res);
-    if(pts == null) return;            // didn't predict this match
+    const pts = pointsOnMatch(rosters[n], m.id);
+    if(pts == null) return;            // didn't predict / engage with this match
     scored.push({ name:n, team:rosters[n].team, pts });
     if(pts > topPts) topPts = pts;
   });
@@ -5655,6 +5687,12 @@ function renderLeaderboard(){
   document.getElementById('stPlayers').textContent=players.length;
   document.getElementById('stPlayed').textContent=played;
   document.getElementById('stTop').textContent=players.length?players[0].pts:0;
+  // Total matches spans the whole tournament once the knockouts begin: the 72
+  // group games plus the 32 knockout fixtures (104). Before the groups finish
+  // it stays at 72 so the group-stage framing is unchanged. This is what keeps
+  // "Matches played" from ever exceeding "Total matches" in the knockout stage.
+  const stTotalEl=document.getElementById('stTotal');
+  if(stTotalEl) stTotalEl.textContent = allGroupsComplete() ? (72 + KO_ALL_MATCHES.length) : 72;
 
   renderLastResultHero();
   renderClosestRivals();
@@ -5716,9 +5754,15 @@ function renderLastResultHero(){
   const names = h.top.map(t=>esc(t.name)).join(', ');
   const isMe = h.top.some(t=>t.name===activeName);
   const flag = h.top.length===1 ? `<img src="${teamFlag(h.top[0].team)}" alt="" class="lrh-flag">` : '';
-  // tone the verb to the points earned
+  // tone the verb to the points earned (knockout points run much higher, and a
+  // KO pick is about who advances rather than an exact group-stage scoreline).
   let verb;
-  if(h.pts>=13) verb = h.top.length>1 ? 'nailed it' : 'nailed it';
+  if(m.isKo){
+    if(h.pts>=40) verb = 'ran the bracket';
+    else if(h.pts>=20) verb = 'cleaned up';
+    else if(h.pts>=10) verb = 'called the tie';
+    else verb = 'topped the table';
+  } else if(h.pts>=13) verb = 'nailed it';
   else if(h.pts>=10) verb = 'called the exact score';
   else if(h.pts>=5) verb = 'called it right';
   else verb = 'topped the table';
