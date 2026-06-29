@@ -2692,6 +2692,25 @@ function koRoundLabel(key){
  *  Returns null if the match has no result yet, else a number ≥ 0.
  *  pred = {advancer, h, a, scorers}. We need the real participants to know who
  *  actually advanced. */
+/** The advancer a prediction effectively backs. A DECISIVE predicted scoreline
+ *  authoritatively implies the winner — this mirrors the predictor UI, which
+ *  auto-marks the leading team "✓ Advances" straight from the score and makes
+ *  the advancer buttons read-only. We derive from the score FIRST so a tie still
+ *  scores correctly even when pred.advancer was never written to (a score set in
+ *  an earlier build, or any path where the auto-tie didn't persist the field).
+ *  Only a level/no predicted score falls back to the explicitly stored pick
+ *  (draw → the penalty-shootout chooser; no score → a plain advancer-only pick).
+ *  homeHint/awayHint let callers that already resolved the tie skip a lookup. */
+function effectiveKoAdvancer(matchId, pred, homeHint, awayHint){
+  if(!pred) return null;
+  const ph=pred.h, pa=pred.a;
+  if(ph!=null && ph!=='' && pa!=null && pa!=='' && +ph!==+pa){
+    let home=homeHint, away=awayHint;
+    if(home===undefined || away===undefined){ const p=getKoParticipants(matchId); home=p.home; away=p.away; }
+    if(home && away) return (+ph>+pa) ? home : away;
+  }
+  return pred.advancer || null;
+}
 function scoreKoMatch(matchId, pred, res){
   if(!res || res.h===''||res.h==null||res.a===''||res.a==null) return null;
   if(!pred) return 0;
@@ -2703,8 +2722,11 @@ function scoreKoMatch(matchId, pred, res){
   const realAdvancer = advSide==='h' ? home : (advSide==='a' ? away : null);
   let pts=0;
   // Correct advancer (the headline pick) — pays out even when the tie went to
-  // penalties, as long as the player picked the team that actually went through.
-  if(pred.advancer && realAdvancer && pred.advancer===realAdvancer) pts+=10;
+  // penalties, as long as the player backed the team that actually went through.
+  // Uses the effective advancer so a decisive predicted scoreline counts even if
+  // pred.advancer was never persisted (see effectiveKoAdvancer).
+  const predAdvancer = effectiveKoAdvancer(matchId, pred, home, away);
+  if(predAdvancer && realAdvancer && predAdvancer===realAdvancer) pts+=10;
   // Exact scoreline — checked against the real 90/120-minute score (so a 1–1
   // that went to pens still rewards a predicted 1–1). Penalties don't change it.
   if(pred.h!=null && pred.a!=null && +pred.h===rh && +pred.a===ra) pts+=6;
@@ -2793,7 +2815,7 @@ function _rosterName(roster){
 /** How many KO matches a player has predicted an advancer for. */
 function koPredictedCount(roster){
   const ko=roster.koPredictions||{};
-  return Object.keys(ko).filter(id=>ko[id] && ko[id].advancer).length;
+  return Object.keys(ko).filter(id=>!!effectiveKoAdvancer(+id, ko[id])).length;
 }
 
 /* ============================================================
@@ -2864,9 +2886,11 @@ function roundAllAdvancersCorrect(roster, ids){
   const ko=roster.koPredictions||{};
   return ids.every(id=>{
     const pred=ko[id];
-    if(!pred || !pred.advancer) return false;
+    if(!pred) return false;
+    const adv=effectiveKoAdvancer(id, pred);
+    if(!adv) return false;
     const winner=getKoWinner(id);
-    return winner && pred.advancer===winner;
+    return winner && adv===winner;
   });
 }
 /** Sum of perfect-round bonuses a roster has earned across completed rounds. */
@@ -4831,7 +4855,7 @@ function koMatchCard(matchId, roundKey, roster){
     if(isWild) pts*=2;
     const advSide = koAdvancerSide(res);
     const realAdvancer = advSide==='h' ? home : (advSide==='a' ? away : (+res.h>+res.a ? home : away));
-    const advOk = pred.advancer===realAdvancer;
+    const advOk = effectiveKoAdvancer(matchId, pred, home, away)===realAdvancer;
     const advResolved = advSide!=null || (+res.h!==+res.a); // decided (or clearly leading)
     const wentToPens = (+res.h===+res.a) && (res.pkWinner==='h' || res.pkWinner==='a');
     const pensLabel = wentToPens ? `<span style="font-size:10.5px;color:#8a6516;font-weight:700">(${esc(realAdvancer)} won on pens${res.pkH!=null&&res.pkA!=null?` ${res.pkH}–${res.pkA}`:''})</span>` : '';
@@ -4879,13 +4903,14 @@ function koMatchCard(matchId, roundKey, roster){
     // their scoreline/scorers/wildcard so they can see exactly what's banked.
     const ph=pred.h, pa=pred.a;
     const predScorers=(pred.scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
-    const hasPick = !!pred.advancer;
+    const effAdv = effectiveKoAdvancer(matchId, pred, home, away);
+    const hasPick = !!effAdv;
     const scoreBit = (ph!=null && pa!=null) ? `<span style="color:var(--muted);font-size:11px">Your score: <b>${ph}–${pa}</b></span>` : '';
     const scorersBit = predScorers.length ? `<span style="color:var(--muted);font-size:11px">⚽ ${predScorers.map(esc).join(', ')}</span>` : '';
     const wildBit = isWild ? `<span style="color:#8a6516;font-size:11px;font-weight:700">⭐ Wildcard ×2</span>` : '';
     html += `<div class="ko-result-strip kicked-strip">
       <span style="color:var(--muted)">⏳ Locked · result pending</span>
-      ${hasPick ? `<span style="color:var(--muted);font-size:11px">Advancing: <b>${esc(pred.advancer)}</b></span>` : `<span style="color:var(--muted);font-size:11px">No pick set</span>`}
+      ${hasPick ? `<span style="color:var(--muted);font-size:11px">Advancing: <b>${esc(effAdv)}</b></span>` : `<span style="color:var(--muted);font-size:11px">No pick set</span>`}
       ${scoreBit}
       ${scorersBit}
       ${wildBit}
