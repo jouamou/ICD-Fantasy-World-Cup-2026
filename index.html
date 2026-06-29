@@ -3781,20 +3781,24 @@ function detectAndCelebrateGoals(changedIds){
     const key = r.h+'-'+r.a;
     const prev = window._lastKnownScores[id];
     const live = matchState(id)==='live';
-    if(prev!==undefined && prev!==key && live){
-      const prevTotal = prev.split('-').reduce((s,n)=>s+(+n||0),0);
-      const newTotal = (+r.h)+(+r.a);
-      if(newTotal>prevTotal){
-        // find the fixture's team names
-        const fx = allFixtures().find(f=>f.id===id);
-        const home = fx ? fx.home : '';
-        const away = fx ? fx.away : '';
-        // most recent scorer = last in the list
-        const lastScorer = (r.scorers && r.scorers.length) ? r.scorers[r.scorers.length-1] : '';
-        // crude side guess for the celebration banner team label
-        const team = (+r.h > (prev.split('-')[0]||0)) ? home : away;
-        celebrateGoal(team, lastScorer, r.h, r.a, home, away);
-      }
+    // Treat a never-before-seen match as a 0–0 baseline so the FIRST goal of a
+    // live match still celebrates (common in the knockouts, where a fixture's
+    // first ESPN record can already carry a goal). Pre-existing goals are seeded
+    // before celebrations are armed, so this can't retro-fire on page load.
+    const prevHome = prev===undefined ? 0 : (+prev.split('-')[0]||0);
+    const prevTotal = prev===undefined ? 0 : prev.split('-').reduce((s,n)=>s+(+n||0),0);
+    const newTotal = (+r.h)+(+r.a);
+    if(prev!==key && live && newTotal>prevTotal){
+      // id can arrive as a string (Firebase listener) or number (ESPN sync) —
+      // loose-compare so the team names always resolve.
+      const fx = allFixtures().find(f=>f.id==id);
+      const home = fx ? fx.home : '';
+      const away = fx ? fx.away : '';
+      // most recent scorer = last in the list
+      const lastScorer = (r.scorers && r.scorers.length) ? r.scorers[r.scorers.length-1] : '';
+      // crude side guess for the celebration banner team label
+      const team = (+r.h > prevHome) ? home : away;
+      celebrateGoal(team, lastScorer, r.h, r.a, home, away);
     }
     window._lastKnownScores[id] = key;
   });
@@ -6674,7 +6678,15 @@ async function fetchLiveScoresFromAPI(opts){
       if(hVal == null || aVal == null) return;
 
       // Real goalscorers (both teams); own goals recorded as "Own goal".
-      const scorers = parsed.goals.map(g => g.ownGoal ? 'Own goal' : g.name).filter(Boolean);
+      let scorers = parsed.goals.map(g => g.ownGoal ? 'Own goal' : g.name).filter(Boolean);
+      // ESPN usually publishes a goal's scorer (play-by-play detail) a poll
+      // BEFORE it increments the aggregate score. Capping the named scorers to
+      // the goals the score actually shows stops the banner listing a scorer the
+      // score doesn't yet support ("scorer then score"), and lines the score and
+      // its scorer up in the SAME poll so the goal celebration fires reliably,
+      // with the scorer present. Any held-back scorer lands once the score ticks.
+      const _goalSum = (hVal||0) + (aVal||0);
+      if(scorers.length > _goalSum) scorers = scorers.slice(0, _goalSum);
 
       const existing = results[local.id];
       const scoreChanged   = !existing || existing.h !== hVal || existing.a !== aVal;
