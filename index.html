@@ -2333,6 +2333,26 @@ const THIRD_PLACE_SLOTS = [
   {match:87, groups:['D','E','I','J','L']},
 ];
 
+/* FIFA's third-placed allocation (Annexe C of the tournament regulations) is a
+   FIXED lookup, not a free constraint problem: for a given set of 8 qualifying
+   groups it prescribes exactly which group's third-placed team meets which group
+   winner. Several different assignments can all satisfy the per-slot eligibility
+   pools above, so the generic solver below could pick a valid-but-non-official
+   permutation (e.g. crossing two thirds into each other's tie). This table pins
+   the official assignment for known combinations; the solver stays as a fallback
+   for any combination not listed here.
+
+   Key  = the 8 qualifying group letters, sorted and joined.
+   Value= { <R32 match id> : <group letter whose 3rd-placed team takes that slot> }.
+
+   {B,D,E,F,I,J,K,L} — actual qualifiers, 2026 group stage (verified against the
+   official FIFA Round-of-32 fixtures, 28 Jun 2026): Germany–Paraguay(D),
+   France–Sweden(F), Mexico–Ecuador(E), England–DR Congo(K), USA–Bosnia(B),
+   Belgium–Senegal(I), Switzerland–Algeria(J), Colombia–Ghana(L). */
+const OFFICIAL_THIRD_PLACE_ASSIGNMENTS = {
+  'BDEFIJKL': {74:'D', 77:'F', 79:'E', 80:'K', 81:'B', 82:'I', 85:'J', 87:'L'},
+};
+
 const KO_R16 = [
   {match:89, venue:"Philadelphia",  date:"2026-07-04", time:"5:00 PM ET", a:74, b:77},
   {match:90, venue:"Houston",       date:"2026-07-04", time:"1:00 PM ET", a:73, b:75},
@@ -2987,6 +3007,18 @@ function assignThirdPlaceSlots(){
   const qualByGroup = {};
   best8.forEach(t=>{ qualByGroup[t.group] = t.team; });
   const groups = Object.keys(qualByGroup);
+
+  // Official FIFA allocation first: if this exact set of 8 qualifying groups is
+  // in the published table, use its prescribed slot→group mapping verbatim so
+  // the bracket matches the real fixtures. Resolve each slot to the live
+  // third-placed team of the prescribed group (robust to name spelling).
+  const officialSig = groups.slice().sort().join('');
+  const official = OFFICIAL_THIRD_PLACE_ASSIGNMENTS[officialSig];
+  if(official){
+    const out = {};
+    for(const mid in official){ out[mid] = qualByGroup[official[mid]] || null; }
+    return out;
+  }
 
   // Each best-3rd slot accepts a third-placed team from only a fixed 5-group
   // set. A plain greedy "fewest-eligible-first" pass can strand a later slot
