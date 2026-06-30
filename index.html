@@ -1345,6 +1345,7 @@
   #predict.groups-wrapped #syncBanner{ order:1; }
   #predict.groups-wrapped .toolbar{ order:1; }
   #predict.groups-wrapped #predProgress{ order:2; }
+  #predict.groups-wrapped #locksTodayStrip{ order:2; }
   #predict.groups-wrapped #unpredictedPill{ order:0; }
 
   .groups-wrapped-note{
@@ -1566,6 +1567,87 @@
     .ko-team-btn img{width:40px;height:27px}
     .ko-team-btn .ktb-name{font-size:11px}
   }
+
+  /* ===== QUICK-SCORE CHIPS =====
+     One-tap common scorelines under each open match. Tapping fills the
+     steppers instantly — far faster than tapping ▲ several times on mobile. */
+  .quick-scores{
+    display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+    margin:2px 0 2px;padding-top:10px;border-top:1px dashed var(--line);
+  }
+  .quick-scores .qs-label{
+    flex:0 0 100%;text-align:center;font-size:10px;font-weight:700;
+    letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;
+  }
+  .quick-chip{
+    flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:var(--head);
+    border-radius:20px;padding:6px 13px;font-family:'Oswald';font-weight:700;font-size:14px;
+    cursor:pointer;transition:.12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    line-height:1;letter-spacing:.3px;
+  }
+  .quick-chip:hover{border-color:var(--green-500);color:var(--green-700);background:var(--green-100)}
+  .quick-chip:active{transform:scale(.95)}
+  .quick-chip.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+  @media(max-width:560px){
+    .quick-chip{padding:7px 12px;font-size:14px}
+  }
+
+  /* ===== LOCKS-TODAY FOCUS STRIP =====
+     Surfaces just the matches locking within the next ~24h, so players see
+     what's urgent without scrolling the groups. Collapses to nothing when
+     there's nothing imminent. */
+  #locksTodayStrip{margin-bottom:14px}
+  .lts-card{
+    background:linear-gradient(135deg,#fff7e6,#fff 72%);
+    border:1.5px solid var(--gold);border-radius:14px;padding:14px 16px;
+    box-shadow:0 2px 12px rgba(224,168,46,.14);
+  }
+  .lts-head{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+  .lts-head .lts-title{font-family:'Archivo';font-weight:800;font-size:14px;color:#8a6516;flex:1;min-width:0}
+  .lts-head .lts-count{
+    font-size:10px;font-weight:800;color:#fff;background:var(--gold);
+    border-radius:20px;padding:2px 9px;letter-spacing:.3px;flex:0 0 auto;
+  }
+  .lts-row{
+    display:flex;align-items:center;gap:10px;padding:9px 11px;margin-bottom:7px;
+    background:rgba(255,255,255,.7);border:1px solid rgba(224,168,46,.22);border-radius:10px;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;transition:.12s;
+  }
+  .lts-row:last-child{margin-bottom:0}
+  .lts-row:active{background:var(--green-100)}
+  .lts-row.done{opacity:.72}
+  .lts-teams{flex:1;min-width:0;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--head)}
+  .lts-teams img{width:22px;height:15px;border-radius:2px;object-fit:cover;flex:0 0 auto;box-shadow:0 0 0 1px rgba(0,0,0,.05)}
+  .lts-teams .lts-vs{color:var(--muted);font-weight:600;font-size:11px;flex:0 0 auto}
+  .lts-teams .lts-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .lts-meta{flex:0 0 auto;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+  .lts-when{font-family:'Oswald';font-weight:700;font-size:12px;color:#a07000;white-space:nowrap}
+  .lts-state{font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;border-radius:20px;padding:2px 8px;white-space:nowrap}
+  .lts-state.todo{color:#fff;background:var(--gold)}
+  .lts-state.done{color:var(--green-700);background:var(--green-100)}
+  @media(max-width:560px){
+    .lts-teams{font-size:12px}
+    .lts-teams .lts-vs{display:none}
+  }
+
+  /* ===== COLLAPSIBLE KO EXPLAINER =====
+     The Underdog/Wildcard/scoring banner is dense, so it's closed by default
+     and opens on tap. The cards below carry the essentials regardless. */
+  .ko-catchup.collapsible{padding:0;overflow:hidden}
+  .ko-catchup.collapsible .kc-toggle{
+    display:flex;align-items:center;gap:9px;width:100%;
+    background:none;border:none;cursor:pointer;text-align:left;
+    padding:14px 17px;font-family:'Archivo';font-weight:800;font-size:14px;color:#8a6516;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .ko-catchup.collapsible .kc-toggle .kc-chev{
+    margin-left:auto;flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+    background:rgba(224,168,46,.18);color:#8a6516;font-size:9px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;transition:transform .2s;
+  }
+  .ko-catchup.collapsible.open .kc-toggle .kc-chev{transform:rotate(180deg)}
+  .ko-catchup.collapsible .kc-body{display:none;padding:0 17px 15px}
+  .ko-catchup.collapsible.open .kc-body{display:block}
 </style>
 </head>
 <body>
@@ -1652,6 +1734,8 @@
       </div>
       <!-- prediction progress bar -->
       <div id="predProgress"></div>
+      <!-- LOCKS TODAY: matches kicking off within ~24h, surfaced for quick action -->
+      <div id="locksTodayStrip"></div>
       <!-- Floating unpredicted-matches pill -->
       <button id="unpredictedPill" onclick="scrollToFirstUnpredicted()"></button>
       <div class="filter-wrap" id="groupFilterWrap">
@@ -2526,7 +2610,7 @@ function refreshAll(){
   renderLeaderboard();
   renderScorebar();
   const pr = document.getElementById('predict');
-  if(pr && pr.style.display !== 'none') renderGroups();
+  if(pr && pr.style.display !== 'none'){ renderGroups(); renderLocksTodayStrip(); }
   const sv = document.getElementById('view-standings');
   if(sv && sv.classList.contains('active')) renderStandingsTab();
   const tsv = document.getElementById('view-scorers');
@@ -4302,6 +4386,18 @@ function tick() {
   updateLocksSoonBadges();
   const now = Date.now();
 
+  // Keep the "Locking soon" strip's countdowns / states fresh (every ~30s is
+  // plenty — it shows minute-resolution countdowns), only while the Play view
+  // is open and predictions are visible.
+  const pv = document.getElementById('view-play');
+  const pe = document.getElementById('predict');
+  if(pv && pv.classList.contains('active') && pe && pe.style.display!=='none'){
+    if(!window._lastLocksTick || now - window._lastLocksTick > 30000){
+      window._lastLocksTick = now;
+      renderLocksTodayStrip();
+    }
+  }
+
   // Keep the Matches hub's live minutes / countdown ticking when it's open.
   const mv = document.getElementById('view-matches');
   if(mv && mv.classList.contains('active')){
@@ -4430,6 +4526,7 @@ function enterPredict(){
   renderGroups();
   renderScorebar();
   renderPredProgress();
+  renderLocksTodayStrip();
   renderSyncBanner();
   renderNextMatchCard();
   renderLiveBanner();
@@ -4626,8 +4723,12 @@ function renderKoPredictions(){
     </div>`;
 
   // Catch-up explainer
-  html += `<div class="ko-catchup">
-    <h4>⚡ The comeback is on — two ways to climb</h4>
+  html += `<div class="ko-catchup collapsible ${window._koExplainerOpen?'open':''}" id="koCatchup">
+    <button class="kc-toggle" onclick="toggleKoExplainer()">
+      <span>⚡ The comeback is on — how knockout scoring works</span>
+      <span class="kc-chev">▾</span>
+    </button>
+    <div class="kc-body">
     <div class="kc-row">
       <div class="kc-item">
         <div class="kc-t">📈 Underdog Boost <span style="font-weight:600;color:var(--muted)">(automatic)</span></div>
@@ -4641,6 +4742,7 @@ function renderKoPredictions(){
       </div>
     </div>
     <div style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.4">Points per KO match: <b>10</b> correct advancer · <b>+6</b> exact score · <b>+4</b> per scorer (max 3), then ×<b>round multiplier</b> (R32 ×1 → Final ×4). Plus a <b>👑 Champion Pick</b> bonus (up to +50) and <b>✨ Perfect Round</b> bonuses for getting every advancer in a round right.</div>
+    </div>
   </div>`;
 
   // Champion Pick card
@@ -4777,6 +4879,15 @@ function setChampion(team){
 function toggleKoRound(head){
   head.classList.toggle('open');
   head.nextElementSibling.classList.toggle('open');
+}
+
+/** Open/close the knockout scoring explainer. State is held on a module flag so
+ *  it survives the KO section's frequent re-renders (closed by default — the
+ *  cards below carry the essentials, this is reference detail on demand). */
+function toggleKoExplainer(){
+  window._koExplainerOpen = !window._koExplainerOpen;
+  const el = document.getElementById('koCatchup');
+  if(el) el.classList.toggle('open', window._koExplainerOpen);
 }
 
 /** True once a knockout match has passed its scheduled kickoff time. KO
@@ -5048,6 +5159,9 @@ function koMatchCard(matchId, roundKey, roster){
       <div class="score-sep">:</div>
       ${koStepper(matchId,'a',pa)}
     </div>`;
+    // Quick-score chips — one tap fills the scoreline (and sets the advancer to
+    // the leading team for a decisive score, per the same rule as the steppers).
+    html += koQuickScoresHtml(matchId, ph, pa);
     const hGoals=(ph!=null?+ph:0), aGoals=(pa!=null?+pa:0), predTotal=hGoals+aGoals;
     html += `<div class="scorers" id="koscorers-${matchId}" style="margin-top:10px;${predTotal>0?'':'display:none'}"><div class="slab">⚽ Goalscorers <span style="font-weight:500;text-transform:none;color:var(--muted)">(+4 each, max 3)</span></div><div id="kosc-${matchId}">`;
     if(predTotal>0){
@@ -5072,6 +5186,56 @@ function koStepper(id,side,val){
       <div class="score-val" id="koval-${id}-${side}">${v}</div>
       <button onclick="bumpKo(${id},'${side}',-1)">▼</button>
     </div>`;
+}
+
+/* ============================================================
+   QUICK-SCORE CHIPS — KNOCKOUT
+   Same one-tap convenience as the group cards, on a KO tie's optional scoreline.
+   A decisive chip (e.g. 2–1) sets the advancer to the leading team, exactly like
+   the steppers do. A draw chip (1–1, 0–0) keeps the player's existing advancer
+   pick if they made one (and otherwise leaves it for the penalty-winner chooser),
+   so tapping a draw never silently wipes who they backed to go through.
+   ============================================================ */
+function koQuickScoresHtml(matchId, ph, pa){
+  const cur = (ph!=null && pa!=null) ? `${+ph}-${+pa}` : null;
+  const chips = QUICK_SCORES.map(([h,a])=>{
+    const on = cur === `${h}-${a}`;
+    return `<button class="quick-chip ${on?'on':''}" data-qs="${h}-${a}" onclick="setKoScore(${matchId},${h},${a})">${h}–${a}</button>`;
+  }).join('');
+  return `<div class="quick-scores" id="koquick-${matchId}">
+    <span class="qs-label">Quick pick</span>${chips}
+  </div>`;
+}
+
+/** Set a KO tie's predicted scoreline in one tap (quick-score chip). Mirrors
+ *  bumpKo's save + in-place patch path so scroll never jumps. A decisive score
+ *  sets the advancer to the leader; a draw keeps any existing advancer pick. */
+function setKoScore(matchId, h, a){
+  if(koKickedOff(matchId)){ toast('🔒 This match has kicked off — predictions are locked'); return; }
+  const r=getRoster(activeName);
+  if(!r.koPredictions[matchId]) r.koPredictions[matchId]={advancer:null,h:null,a:null,scorers:[]};
+  const p=r.koPredictions[matchId];
+  const prevH=p.h==null?0:+p.h, prevA=p.a==null?0:+p.a;
+  p.h=h; p.a=a;
+  // realign scorers per side (same model as bumpKo)
+  const oldSc=p.scorers||[];
+  const oldHome=oldSc.slice(0,prevH), oldAway=oldSc.slice(prevH,prevH+prevA);
+  const fit=(arr,n)=>{const out=arr.slice(0,n);while(out.length<n)out.push('');return out;};
+  p.scorers=[...fit(oldHome,h),...fit(oldAway,a)];
+  // Decisive score sets the advancer to the leader. A draw KEEPS the existing
+  // advancer pick (whoever they backed to go through on penalties) — never wipes it.
+  const { home: koHome, away: koAway } = getKoParticipants(matchId);
+  if(koHome && koAway){
+    if(h>a) p.advancer = koHome;
+    else if(a>h) p.advancer = koAway;
+    // h===a → leave p.advancer untouched
+  }
+  saveRoster(r);
+  patchKoMatchCard(matchId, r, h!==prevH ? 'h' : (a!==prevA ? 'a' : 'h'));
+  hapticTap();
+  renderScorebar();
+  renderPredProgress();
+  renderLocksTodayStrip();
 }
 
 function koScorerRow(matchId, val, idx, team, goalNum, sideTotal){
@@ -5108,6 +5272,7 @@ function pickKoAdvancer(matchId, side){
   if(cb) cb.innerHTML = koConsensusHtml(matchId, r);
   renderScorebar();
   renderPredProgress();
+  renderLocksTodayStrip();
 }
 
 function bumpKo(matchId, side, delta){
@@ -5140,6 +5305,7 @@ function bumpKo(matchId, side, delta){
   patchKoMatchCard(matchId, r, side);
   hapticTap();
   renderPredProgress();
+  renderLocksTodayStrip();
 }
 
 /** In-place updater for a KO card after a score bump — updates the two score
@@ -5183,6 +5349,15 @@ function patchKoMatchCard(matchId, roster, changedSide){
   // A decisive score sets the advancer, which can reveal/flip the consensus.
   const cWrap=document.getElementById('koconsensus-'+matchId);
   if(cWrap) cWrap.innerHTML = koConsensusHtml(matchId, r);
+
+  // Quick-score chip highlight — light up the chip matching the current pick.
+  const qs=document.getElementById('koquick-'+matchId);
+  if(qs){
+    const cur = (ph!=null && pa!=null) ? `${+ph}-${+pa}` : null;
+    qs.querySelectorAll('.quick-chip').forEach(c=>{
+      c.classList.toggle('on', c.dataset.qs===cur);
+    });
+  }
   return true;
 }
 
@@ -5297,6 +5472,10 @@ function matchCard(m,roster,result){
     <div class="winner-line" id="winline-${m.id}">${winLine}</div>`;
 
   if(!locked){
+    // Quick-score chips: one tap fills a common scoreline. The biggest mobile
+    // speed win — beats tapping ▲ several times. The chip matching the current
+    // prediction is highlighted so the player sees their pick at a glance.
+    html+=quickScoresHtml(m, ph, pa);
     const hGoals=(ph!=null?+ph:0);
     const aGoals=(pa!=null?+pa:0);
     const predTotal=hGoals+aGoals;
@@ -5408,6 +5587,7 @@ function bump(id,side,delta){
   hapticTap();
   renderScorebar();
   renderPredProgress();
+  renderLocksTodayStrip();
   updateUnpredictedPill();
 }
 
@@ -5416,6 +5596,57 @@ function bump(id,side,delta){
  *  a tap, not a buzz. */
 function hapticTap(){
   try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+}
+
+/* ============================================================
+   QUICK-SCORE CHIPS
+   The common scorelines offered under every open match. Tapping one fills the
+   steppers in a single tap — the biggest time-saver on mobile, where reaching
+   2–2 via the ▲ button takes four taps. The chip matching the player's current
+   pick is highlighted so they can see their selection at a glance.
+   ============================================================ */
+const QUICK_SCORES = [[1,0],[2,1],[2,0],[1,1],[0,0],[3,1]];
+
+/** Markup for the quick-score chip row of one open match. */
+function quickScoresHtml(m, ph, pa){
+  const cur = (ph!=null && pa!=null) ? `${+ph}-${+pa}` : null;
+  const chips = QUICK_SCORES.map(([h,a])=>{
+    const on = cur === `${h}-${a}`;
+    return `<button class="quick-chip ${on?'on':''}" data-qs="${h}-${a}" onclick="setScore(${m.id},${h},${a})">${h}–${a}</button>`;
+  }).join('');
+  return `<div class="quick-scores" id="quick-${m.id}">
+    <span class="qs-label">Quick pick</span>${chips}
+  </div>`;
+}
+
+/** Set a match prediction to an exact scoreline in one tap (quick-score chip).
+ *  Mirrors bump()'s save + in-place patch path so scroll never jumps, then
+ *  refreshes the chip highlights. Realigns the scorers array to the new totals,
+ *  preserving any names already typed for goals that still exist. */
+function setScore(id, h, a){
+  if(MATCH_UTC[id] && MATCH_UTC[id].getTime() <= Date.now()){
+    toast('🔒 This match has kicked off — predictions are locked'); return;
+  }
+  const r=getRoster(activeName);
+  if(!r.predictions[id]) r.predictions[id]={h:null,a:null,scorers:[]};
+  const p=r.predictions[id];
+  const prevH = p.h==null?0:+p.h;
+  const prevA = p.a==null?0:+p.a;
+  p.h=h; p.a=a;
+  // Realign scorers to the new scoreline, preserving names per side (same model
+  // as bump): keep the first min(old,new) home names, then the away names.
+  const oldScorers = p.scorers || [];
+  const oldHome = oldScorers.slice(0, prevH);
+  const oldAway = oldScorers.slice(prevH, prevH+prevA);
+  const fit=(arr,n)=>{ const out=arr.slice(0,n); while(out.length<n) out.push(""); return out; };
+  p.scorers = [...fit(oldHome,h), ...fit(oldAway,a)];
+  saveRoster(r);
+  patchMatchCard(id, r, h!==prevH ? 'h' : (a!==prevA ? 'a' : 'h'));
+  hapticTap();
+  renderScorebar();
+  renderPredProgress();
+  renderLocksTodayStrip();
+  updateUnpredictedPill();
 }
 
 /** Slim prediction-progress bar at the top of the Play view. Counts how many
@@ -5504,6 +5735,116 @@ function renderPredProgress(){
   if(!el) return;
   const r = activeName ? getRoster(activeName) : null;
   el.innerHTML = predProgressHtml(r);
+}
+
+/* ============================================================
+   LOCKS-TODAY FOCUS STRIP
+   A compact list of the matches kicking off within the next ~24 hours — the
+   ones that lock soonest. Lets a player jump straight to what's urgent without
+   scrolling. Works in BOTH phases: during the group stage it scans the 72 group
+   fixtures; once the groups finish it scans the knockout ties (resolved ones),
+   showing whether an advancer has been picked and tapping through to the KO
+   card. Each row is tappable and shows its predicted / not-predicted state.
+   Collapses to nothing when nothing's imminent. Refreshed by tick() so
+   countdowns and states stay current. */
+const LOCKS_TODAY_WINDOW_MS = 24 * 3600 * 1000;
+function renderLocksTodayStrip(){
+  const el = document.getElementById('locksTodayStrip');
+  if(!el) return;
+  const r = activeName ? getRoster(activeName) : null;
+  if(!r){ el.innerHTML=''; return; }
+  const now = Date.now();
+  const res = DB.results();
+
+  // ---- Knockout phase: scan resolved KO ties locking within 24h ----
+  if(allGroupsComplete()){
+    const koSoon = KO_ALL_MATCHES.filter(km=>{
+      const ko = MATCH_UTC[km.match];
+      if(!ko) return false;
+      const t = ko.getTime();
+      if(t <= now) return false;                          // kicked off / locked
+      if(t - now > LOCKS_TODAY_WINDOW_MS) return false;   // not within 24h
+      const rr = res[km.match];
+      if(rr && rr.h!=null && rr.h!=='') return false;     // already has a result
+      const { home, away } = getKoParticipants(km.match);
+      return !!(home && away);                            // both teams known
+    }).sort((a,b)=> MATCH_UTC[a.match]-MATCH_UTC[b.match]);
+
+    if(!koSoon.length){ el.innerHTML=''; return; }
+
+    const shorten = t => (t||'').replace('Bosnia & Herzegovina','Bosnia').replace('Korea Republic','Korea Rep.').replace('United States','USA');
+    const rows = koSoon.map(km=>{
+      const id = km.match;
+      const { home, away } = getKoParticipants(id);
+      const pred = r.koPredictions && r.koPredictions[id];
+      const picked = !!effectiveKoAdvancer(id, pred, home, away);
+      const mins = Math.floor((MATCH_UTC[id].getTime()-now)/60000);
+      const whenLbl = mins>=60 ? `${Math.floor(mins/60)}h ${mins%60}m` : `${mins}m`;
+      const isWild = r.wildcard===id;
+      return `<div class="lts-row ${picked?'done':''}" onclick="scrollToKoMatch(${id})">
+        <div class="lts-teams">
+          <img src="${teamFlag(home)}" alt=""><span class="lts-nm">${esc(shorten(home))}</span>
+          <span class="lts-vs">v</span>
+          <span class="lts-nm">${esc(shorten(away))}</span><img src="${teamFlag(away)}" alt="">
+          ${isWild?'<span style="flex:0 0 auto;font-size:11px" title="Your Wildcard">⭐</span>':''}
+        </div>
+        <div class="lts-meta">
+          <span class="lts-when">🔒 ${whenLbl}</span>
+          <span class="lts-state ${picked?'done':'todo'}">${picked?'✓ Picked':'Pick →'}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="lts-card">
+      <div class="lts-head">
+        <span style="font-size:16px;flex:0 0 auto">⏰</span>
+        <span class="lts-title">Ties locking soon — pick now</span>
+        <span class="lts-count">${koSoon.length}</span>
+      </div>
+      ${rows}
+    </div>`;
+    return;
+  }
+
+  // ---- Group stage: scan the 72 group fixtures locking within 24h ----
+  const soon = MATCHES.filter(m=>{
+    const ko = MATCH_UTC[m.id].getTime();
+    if(ko <= now) return false;                       // already kicked off / locked
+    if(ko - now > LOCKS_TODAY_WINDOW_MS) return false; // not within 24h
+    const rr = res[m.id];
+    if(rr && rr.h!=null && rr.h!=='') return false;    // already has a result
+    return true;
+  }).sort((a,b)=> MATCH_UTC[a.id]-MATCH_UTC[b.id]);
+
+  if(!soon.length){ el.innerHTML=''; return; }
+
+  const rows = soon.map(m=>{
+    const p = r.predictions[m.id];
+    const predicted = !!(p && p.h!=null && p.a!=null);
+    const mins = Math.floor((MATCH_UTC[m.id].getTime()-now)/60000);
+    const whenLbl = mins>=60 ? `${Math.floor(mins/60)}h ${mins%60}m` : `${mins}m`;
+    const shorten = t => t.replace('Bosnia & Herzegovina','Bosnia').replace('Korea Republic','Korea Rep.').replace('United States','USA');
+    return `<div class="lts-row ${predicted?'done':''}" onclick="scrollToMatch(${m.id})">
+      <div class="lts-teams">
+        <img src="${teamFlag(m.h)}" alt=""><span class="lts-nm">${esc(shorten(m.h))}</span>
+        <span class="lts-vs">v</span>
+        <span class="lts-nm">${esc(shorten(m.a))}</span><img src="${teamFlag(m.a)}" alt="">
+      </div>
+      <div class="lts-meta">
+        <span class="lts-when">🔒 ${whenLbl}</span>
+        <span class="lts-state ${predicted?'done':'todo'}">${predicted?'✓ Predicted':'Predict →'}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="lts-card">
+    <div class="lts-head">
+      <span style="font-size:16px;flex:0 0 auto">⏰</span>
+      <span class="lts-title">Locking soon — predict now</span>
+      <span class="lts-count">${soon.length}</span>
+    </div>
+    ${rows}
+  </div>`;
 }
 
 /** Same progress bar, surfaced at the top of the Matches hub. Hidden until the
@@ -5604,6 +5945,15 @@ function patchMatchCard(id, roster, changedSide){
     } else if(predTotal>0 && note){
       note.remove();
     }
+  }
+
+  // 4) quick-score chip highlight — light up the chip matching the current pick
+  const qs = document.getElementById('quick-'+id);
+  if(qs){
+    const cur = (ph!=null && pa!=null) ? `${+ph}-${+pa}` : null;
+    qs.querySelectorAll('.quick-chip').forEach(c=>{
+      c.classList.toggle('on', c.dataset.qs===cur);
+    });
   }
   return true;
 }
