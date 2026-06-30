@@ -87,6 +87,24 @@
   .chip img{width:20px;height:14px;border-radius:2px;object-fit:cover}
   .chip-id{background:rgba(127,187,66,.15);border-color:rgba(127,187,66,.38);color:#fff;font-size:13px;font-weight:700}
 
+  /* ===== SHARE CARD BUTTON ===== */
+  #shareCardRow{margin:0 0 22px}
+  .share-card-btn{
+    width:100%;display:flex;align-items:center;gap:14px;
+    background:linear-gradient(135deg,var(--green-700),var(--green-800));
+    color:#fff;border:none;border-radius:14px;padding:15px 18px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(20,40,10,.18);transition:.15s;text-align:left;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .share-card-btn:hover{box-shadow:0 8px 24px rgba(20,40,10,.26);transform:translateY(-1px)}
+  .share-card-btn:active{transform:scale(.99)}
+  .share-card-btn:disabled{opacity:.65;cursor:default;transform:none}
+  .share-card-btn .scb-ico{font-size:22px;flex:0 0 auto;line-height:1}
+  .share-card-btn .scb-text{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+  .share-card-btn .scb-text b{font-family:'Archivo';font-weight:800;font-size:15px}
+  .share-card-btn .scb-text small{font-weight:500;font-size:11.5px;color:rgba(255,255,255,.7)}
+  .share-card-btn .scb-arrow{font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-500);flex:0 0 auto}
+
   /* ===== TABS ===== */
   .tabbar{
     position:sticky;top:0;z-index:30;background:var(--card);
@@ -1654,6 +1672,13 @@
       <div class="stat"><div class="l">Matches played</div><div class="v" id="stPlayed">0</div></div>
       <div class="stat"><div class="l">Total matches</div><div class="v" id="stTotal">72</div></div>
       <div class="stat"><div class="l">Top score</div><div class="v" id="stTop">0</div></div>
+    </div>
+    <div id="shareCardRow" style="display:none">
+      <button class="share-card-btn" onclick="shareMyCard(this)">
+        <span class="scb-ico">📤</span>
+        <span class="scb-text"><b>Share my card</b><small>Post your standing to the group chat</small></span>
+        <span class="scb-arrow">→</span>
+      </button>
     </div>
     <div id="lastResultHero"></div>
     <div id="closestRivals"></div>
@@ -5840,6 +5865,243 @@ function refreshStandingsBaseline(){
   return snap.prevRanks || snap.ranks || {};
 }
 
+/* ============================================================
+   SHAREABLE RESULT CARD
+   Renders the player's standing onto an off-screen 1080×1080 <canvas> and
+   shares it as a PNG — Web Share API on mobile (one tap to WhatsApp/Teams),
+   download fallback on desktop. Matches the redesigned hero: deep-green
+   gradient, faint pitch circle, "World Cup" green accent, same chip language.
+   Remote images (logo, flags) are loaded CORS-clean and each is tested for
+   export-safety before use, with a clean text/shape fallback — so a tainted
+   canvas can never block the export.
+   ============================================================ */
+function loadCorsImage(url){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>resolve(img);
+    img.onerror=()=>resolve(null);
+    // cache-bust so a previously cached non-CORS copy can't taint the canvas
+    img.src=url + (url.includes('?')?'&':'?') + 'cors=1';
+  });
+}
+function imageExportSafe(img){
+  if(!img) return false;
+  try{
+    const t=document.createElement('canvas'); t.width=t.height=2;
+    t.getContext('2d').drawImage(img,0,0,2,2);
+    t.toDataURL(); return true;
+  }catch(e){ return false; }
+}
+function _rr(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function _ls(ctx,v){ try{ ctx.letterSpacing=v; }catch(e){} }
+function cardFlagUrl(team){ const c=TEAMS[team]||'xx'; return `https://flagcdn.com/h120/${c}.png`; }
+
+async function buildShareCardCanvas(){
+  const r=getRoster(activeName);
+  if(!r) return null;
+  const pts=totalPoints(r);
+  const pc=predictedCount(r);
+  const rank=getRank(activeName);
+  const koOpen=allGroupsComplete();
+  const koPc=koOpen?koPredictedCount(r):0;
+  const champ=(r.champion && r.champion.team)||null;
+
+  try{
+    await Promise.all([
+      document.fonts.load('800 66px Archivo'),
+      document.fonts.load('700 200px Oswald'),
+      document.fonts.load('700 26px Inter'),
+      document.fonts.ready
+    ]);
+  }catch(e){}
+
+  const [logoRaw, favRaw, champRaw] = await Promise.all([
+    loadCorsImage('https://i.ibb.co/hFvmBTj9/ICD-25-Logo-3.png'),
+    loadCorsImage(cardFlagUrl(r.team)),
+    champ ? loadCorsImage(cardFlagUrl(champ)) : Promise.resolve(null)
+  ]);
+  const logo = imageExportSafe(logoRaw)?logoRaw:null;
+  const fav  = imageExportSafe(favRaw)?favRaw:null;
+  const champFlag = imageExportSafe(champRaw)?champRaw:null;
+
+  const W=1080, H=1080, CX=W/2;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+
+  // background
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#1c4a0e'); g.addColorStop(1,'#225a11');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(CX,-120,80,CX,-120,820);
+  glow.addColorStop(0,'rgba(127,187,66,.20)'); glow.addColorStop(1,'rgba(127,187,66,0)');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(CX,H/2,250,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+  ctx.fillStyle='rgba(127,187,66,.45)'; ctx.fillRect(0,H-6,W,6);
+
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic'; _ls(ctx,'0px');
+
+  // logo or wordmark
+  if(logo){
+    const lh=78, lw=logo.naturalWidth*(lh/logo.naturalHeight);
+    ctx.drawImage(logo, CX-lw/2, 120-lh, lw, lh);
+  }else{
+    ctx.fillStyle='#fff'; _ls(ctx,'5px'); ctx.font='900 46px Archivo';
+    ctx.fillText('ICD', CX, 116); _ls(ctx,'0px');
+  }
+
+  // title (two lines, "WORLD CUP" green)
+  ctx.font='800 66px Archivo'; _ls(ctx,'1px');
+  const seg1='FANTASY ', seg2='WORLD CUP';
+  const w1=ctx.measureText(seg1).width, w2=ctx.measureText(seg2).width;
+  let sx=CX-(w1+w2)/2;
+  ctx.textAlign='left';
+  ctx.fillStyle='#fff'; ctx.fillText(seg1, sx, 250);
+  ctx.fillStyle='#7fbb42'; ctx.fillText(seg2, sx+w1, 250);
+  ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.fillText('2026', CX, 326);
+  _ls(ctx,'0px');
+
+  // subtitle
+  ctx.font='600 22px Inter'; ctx.fillStyle='rgba(255,255,255,.55)'; _ls(ctx,'4px');
+  ctx.fillText('STAFF PREDICTION CHAMPIONSHIP', CX, 372); _ls(ctx,'0px');
+
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(CX-140,410); ctx.lineTo(CX+140,410); ctx.stroke();
+
+  // identity (flag + name)
+  ctx.font='700 42px Archivo';
+  const name=activeName||'';
+  const nameW=ctx.measureText(name).width;
+  const fw=72, fh=48, gp=18;
+  let gx=CX-((fav?fw+gp:0)+nameW)/2;
+  if(fav){
+    ctx.save(); _rr(ctx,gx,470-fh+6,fw,fh,6); ctx.clip();
+    ctx.drawImage(fav,gx,470-fh+6,fw,fh); ctx.restore();
+    ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1.5; _rr(ctx,gx,470-fh+6,fw,fh,6); ctx.stroke();
+    gx+=fw+gp;
+  }
+  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.fillText(name, gx, 470);
+  ctx.textAlign='center';
+
+  // big points
+  ctx.fillStyle='#7fbb42'; ctx.font='700 200px Oswald';
+  ctx.fillText(String(pts), CX, 690);
+  ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='700 26px Inter'; _ls(ctx,'5px');
+  ctx.fillText('POINTS', CX, 738); _ls(ctx,'0px');
+
+  // stat chips
+  const chips=[['RANK', rank?('#'+rank):'—'],['PREDICTED', pc+'/72']];
+  if(koOpen) chips.push(['KO', koPc+'/'+KO_ALL_MATCHES.length]);
+  drawCardChips(ctx, CX, 800, 64, chips);
+
+  if(champ) drawCardChampChip(ctx, CX, 892, 70, champ, champFlag);
+
+  // footer
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='600 22px Inter'; _ls(ctx,'1.5px');
+  ctx.fillText('ICD · FANTASY WORLD CUP 2026', CX, 1010); _ls(ctx,'0px');
+  ctx.fillStyle='rgba(255,255,255,.32)'; ctx.font='500 18px Inter';
+  ctx.fillText('United States · Canada · Mexico', CX, 1040);
+
+  return cv;
+}
+
+function _cardChipW(ctx,label,value){
+  ctx.font='700 17px Inter'; const lw=ctx.measureText(label).width;
+  ctx.font='700 26px Oswald'; const vw=ctx.measureText(value).width;
+  return 30+lw+12+vw+30;
+}
+function drawCardChips(ctx, cx, y, h, chips){
+  const gap=12;
+  const widths=chips.map(c=>_cardChipW(ctx,c[0],c[1]));
+  const total=widths.reduce((s,w)=>s+w,0)+gap*(chips.length-1);
+  let x=cx-total/2;
+  chips.forEach((c,i)=>{
+    const w=widths[i];
+    _rr(ctx,x,y,w,h,16);
+    ctx.fillStyle='rgba(255,255,255,.06)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.14)'; ctx.lineWidth=1.5; ctx.stroke();
+    const cy=y+h/2;
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    _ls(ctx,'1px'); ctx.font='700 17px Inter'; ctx.fillStyle='rgba(255,255,255,.55)';
+    ctx.fillText(c[0], x+30, cy+1);
+    const lw=ctx.measureText(c[0]).width; _ls(ctx,'0px');
+    ctx.font='700 26px Oswald'; ctx.fillStyle='#fff';
+    ctx.fillText(c[1], x+30+lw+12, cy);
+    x+=w+gap;
+  });
+  ctx.textBaseline='alphabetic'; ctx.textAlign='center';
+}
+function drawCardChampChip(ctx, cx, y, h, team, flag){
+  const label='CHAMPION PICK';
+  ctx.font='700 17px Inter'; const lw=ctx.measureText(label).width;
+  ctx.font='700 30px Archivo'; const tw=ctx.measureText(team).width;
+  const fw= flag?40:0, fgap= flag?12:0;
+  const w=30+lw+16+fw+fgap+tw+30;
+  let x=cx-w/2;
+  _rr(ctx,x,y,w,h,16);
+  ctx.fillStyle='rgba(127,187,66,.16)'; ctx.fill();
+  ctx.strokeStyle='rgba(127,187,66,.5)'; ctx.lineWidth=2; ctx.stroke();
+  const cy=y+h/2;
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  _ls(ctx,'1px'); ctx.font='700 17px Inter'; ctx.fillStyle='rgba(255,255,255,.6)';
+  ctx.fillText(label, x+30, cy+1); _ls(ctx,'0px');
+  let vx=x+30+lw+16;
+  if(flag){
+    const fhh=27;
+    ctx.save(); _rr(ctx,vx,cy-fhh/2,fw,fhh,4); ctx.clip();
+    ctx.drawImage(flag,vx,cy-fhh/2,fw,fhh); ctx.restore();
+    vx+=fw+fgap;
+  }
+  ctx.font='700 30px Archivo'; ctx.fillStyle='#fff';
+  ctx.fillText(team, vx, cy);
+  ctx.textBaseline='alphabetic'; ctx.textAlign='center';
+}
+
+async function shareMyCard(btn){
+  if(!activeName || !getRoster(activeName)){ toast('Add your name & team first'); return; }
+  const orig = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="scb-ico">⏳</span><span class="scb-text"><b>Creating your card…</b><small>One moment</small></span>'; }
+  try{
+    const cv = await buildShareCardCanvas();
+    if(!cv){ toast('Could not build the card'); return; }
+    const blob = await new Promise(res=> cv.toBlob(res,'image/png'));
+    if(!blob){ toast('Could not export the card'); return; }
+    const file = new File([blob], 'ICD-Fantasy-World-Cup-2026.png', {type:'image/png'});
+    const rk = getRank(activeName);
+    const shareData = {
+      files:[file],
+      title:'ICD Fantasy World Cup 2026',
+      text:`My ICD Fantasy World Cup 2026 standing — ${totalPoints(getRoster(activeName))} pts${rk?`, rank #${rk}`:''}!`
+    };
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share(shareData); }
+      catch(e){ /* user dismissed the share sheet — no-op */ }
+    }else{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      toast('📥 Card saved — share it in your group chat!');
+    }
+  }catch(e){
+    console.error('Share card failed:', e);
+    toast('Sorry — couldn\'t create the card');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML=orig; }
+  }
+}
+
 function renderLeaderboard(){
   const players=computeStandingsArray();
   const baseline = refreshStandingsBaseline();
@@ -5858,6 +6120,10 @@ function renderLeaderboard(){
 
   renderLastResultHero();
   renderClosestRivals();
+
+  // Share-card CTA: only meaningful once the viewer has joined.
+  const scRow=document.getElementById('shareCardRow');
+  if(scRow) scRow.style.display = (activeName && getRoster(activeName)) ? 'block' : 'none';
 
   const pod=document.getElementById('podium');
   if(players.length===0){ pod.innerHTML=""; }
