@@ -1652,6 +1652,86 @@
 </head>
 <body>
 
+<!-- ===== World Cup opening splash ===== -->
+<style>
+  #wcSplash{
+    position:fixed; inset:0; z-index:99999;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px; padding:24px;
+    background:radial-gradient(120% 120% at 50% 35%, var(--green-700,#2d6b15) 0%, var(--green-800,#225a11) 45%, var(--green-900,#1c4a0e) 100%);
+    opacity:1; transition:opacity .45s ease;
+    -webkit-tap-highlight-color:transparent; cursor:pointer;
+  }
+  #wcSplash.wcSplash--out{ opacity:0; pointer-events:none; }
+  .wcSplash-frame{
+    width:min(70vw,340px); aspect-ratio:1/1;
+    border-radius:22px; overflow:hidden; background:rgba(255,255,255,.04);
+    box-shadow:0 18px 50px rgba(0,0,0,.35), 0 0 0 1px rgba(127,187,66,.4) inset;
+  }
+  #wcSplashVid, .wcSplash-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .wcSplash-tag{
+    color:var(--green-100,#eaf3de); font-family:'Oswald','Archivo',sans-serif;
+    letter-spacing:.16em; text-transform:uppercase; font-size:13px; font-weight:600;
+    opacity:.92; text-align:center;
+  }
+  .wcSplash-tag b{ color:var(--gold,#e0a82e); font-weight:700; }
+  .wcSplash-skip{
+    position:absolute; right:16px; bottom:16px; appearance:none; border:0; cursor:pointer;
+    background:rgba(255,255,255,.12); color:var(--green-100,#eaf3de);
+    font:inherit; font-size:13px; padding:8px 14px; border-radius:999px; backdrop-filter:blur(4px);
+  }
+  @media (prefers-reduced-motion: reduce){ #wcSplash{ display:none !important; } }
+</style>
+<div id="wcSplash" role="presentation" aria-hidden="true">
+  <div class="wcSplash-frame">
+    <video id="wcSplashVid" muted autoplay playsinline preload="auto" disablepictureinpicture>
+      <source src="https://media.tenor.com/Hm5Hk1U_uVoAAAPo/fifa-world-cup-2026-fifa.mp4" type="video/mp4">
+      <source src="https://media.tenor.com/Hm5Hk1U_uVoAAAPs/fifa-world-cup-2026-fifa.webm" type="video/webm">
+      <img src="https://media1.tenor.com/m/Hm5Hk1U_uVoAAAAC/fifa-world-cup-2026-fifa.gif" alt="">
+    </video>
+  </div>
+  <div class="wcSplash-tag">Fantasy <b>World Cup</b> 2026 &middot; ICD</div>
+  <button class="wcSplash-skip" type="button" aria-label="Skip intro">Skip &rsaquo;</button>
+</div>
+<script>
+(function(){
+  var el = document.getElementById('wcSplash');
+  if(!el) return;
+
+  /* Plays once per browser session. Set SHOW_EVERY_TIME = true to play on every load. */
+  var SHOW_EVERY_TIME = false;
+  var KEY = 'ffwc26_splash_seen';
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var seen = false;
+  try { seen = sessionStorage.getItem(KEY) === '1'; } catch(e){}
+  if (reduce || (!SHOW_EVERY_TIME && seen)) { kill(); return; }
+  try { sessionStorage.setItem(KEY,'1'); } catch(e){}
+
+  var done = false;
+  function kill(){ if(el && el.parentNode){ el.parentNode.removeChild(el); } }
+  function dismiss(){
+    if(done) return; done = true;
+    el.classList.add('wcSplash--out');
+    setTimeout(kill, 480);
+  }
+
+  var vid = document.getElementById('wcSplashVid');
+  if (vid){
+    vid.addEventListener('ended', dismiss, { once:true });
+    try { var p = vid.play(); if (p && p.catch) p.catch(function(){}); } catch(e){}
+    /* If autoplay is blocked, don't sit on a frozen frame */
+    setTimeout(function(){
+      if(!done && (vid.paused || vid.currentTime === 0)){ setTimeout(dismiss, 900); }
+    }, 750);
+  }
+
+  el.addEventListener('click', dismiss);
+  setTimeout(dismiss, 6000); /* absolute backstop */
+})();
+</script>
+<!-- ===== /World Cup opening splash ===== -->
+
 <header class="hero">
   <div class="pitch-lines">
     <div class="pl-circle"></div><div class="pl-mid"></div>
