@@ -6761,7 +6761,9 @@ function predictionShareText(matchId, isKo){
   const sc = ((pred&&pred.scorers)||[]).map(s=>(s||'').trim()).filter(Boolean);
   let t = `My ICD Fantasy World Cup 2026 pick: ${home} ${scoreStr} ${away}`;
   if(sc.length) t += ` (${sc.join(', ')})`;
-  return t + ' ⚽';
+  t += ' ⚽';
+  t += `\n\nWhat's your prediction? 👉 https://jouamou.github.io/ICD-Fantasy-World-Cup-2026`;
+  return t;
 }
 
 async function sharePrediction(matchId, isKo, btn){
