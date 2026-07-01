@@ -2606,6 +2606,11 @@ const DB = {
         console.warn('Skipped roster cloud write — cloud copy not loaded yet (protects other players\' data).');
         return;
       }
+      // Mark this as a local write so the listener can recognise (and ignore)
+      // the echo Firebase sends straight back — that echo used to trigger a full
+      // group/KO rebuild, collapsing the open group and dropping a focused
+      // scorer input mid-typing.
+      window._lastLocalRosterWrite = Date.now();
       db.ref('rosters').set(r).catch(err => console.error('Cloud save (rosters) failed:', err));
     }
   },
@@ -2676,11 +2681,20 @@ const DB = {
 
 let isInitialized = false;
 
-function refreshAll(){
+function refreshAll(opts){
+  opts = opts || {};
   renderLeaderboard();
   renderScorebar();
   const pr = document.getElementById('predict');
-  if(pr && pr.style.display !== 'none'){ renderGroups(); renderLocksTodayStrip(); }
+  // Don't rebuild the group/KO cards if asked to skip (an echo of the user's own
+  // save) or while a scorer input is focused — a rebuild would collapse the open
+  // group and yank focus out of the field being typed in.
+  const ae = document.activeElement;
+  const editingHere = ae && ae.tagName === 'INPUT' &&
+    (ae.closest('#groupsContainer') || ae.closest('#koPredictContainer'));
+  if(pr && pr.style.display !== 'none' && !opts.skipGroups && !editingHere){
+    renderGroups(); renderLocksTodayStrip();
+  }
   const sv = document.getElementById('view-standings');
   if(sv && sv.classList.contains('active')) renderStandingsTab();
   const tsv = document.getElementById('view-scorers');
@@ -2694,7 +2708,14 @@ if(firebaseReady){
     window._rosterCache = snap.val() || {};
     window._rostersLoadedFromCloud = true;
     localStorage.setItem("ffwc26_rosters", JSON.stringify(window._rosterCache));
-    if(isInitialized) refreshAll();
+    if(isInitialized){
+      // If this is the echo of our own just-saved change (within a few seconds),
+      // don't rebuild the group/KO cards — the user's own edit already patched
+      // the card in place; rebuilding would only collapse their open group. Other
+      // views (leaderboard, scorebar, consensus on next interaction) still refresh.
+      const isOwnEcho = (Date.now() - (window._lastLocalRosterWrite || 0)) < 4000;
+      refreshAll({ skipGroups: isOwnEcho });
+    }
   }, err => console.error('rosters listener error:', err));
 
   db.ref('results').on('value', snap => {
@@ -4665,6 +4686,13 @@ function renderGroups(){
   const groupsToShow = activeFilter==='all' ? Object.keys(GROUPS) : [activeFilter];
   const nextM = findNextMatch();
   const autoOpenGroup = nextM ? nextM.g : null;
+  // Preserve whichever groups the user currently has expanded, so any re-render
+  // (a Firebase sync, a result coming in, etc.) never collapses the group they
+  // were working in. On the very first render nothing is open yet, so we fall
+  // back to auto-opening the group with the next match.
+  const prevOpenGroups = new Set();
+  cont.querySelectorAll('.group-head.open .group-tag').forEach(t => prevOpenGroups.add(t.textContent.trim()));
+  const hadRendered = cont.children.length > 0;
   // Once every group has finished, the group stage is "done": collapse all the
   // group cards on the All-groups view so the player's focus lands on the
   // knockout predictions below. They can still tap any group open to review
@@ -4699,7 +4727,9 @@ function renderGroups(){
     // Single-group filter → always open. All-groups view → open the group with
     // the next upcoming match while the group stage is live; once it's done,
     // keep every group collapsed so the knockouts take the spotlight.
-    const open = activeFilter!=='all' || (!groupsDone && g===autoOpenGroup);
+    const open = activeFilter!=='all'
+      || prevOpenGroups.has(g)
+      || (!hadRendered && !groupsDone && g===autoOpenGroup);
     html+=`<div class="group-block">
       <div class="group-head ${open?'open':''}" onclick="toggleGroup(this)">
         <div class="group-tag">${g}</div>
@@ -4794,6 +4824,12 @@ function renderKoPredictions(){
     {key:'final', title:'Final', matches:[KO_FINAL.match]},
   ];
 
+  // Preserve whichever KO rounds the user currently has expanded, so a re-render
+  // doesn't collapse the round they're working in (same fix as the groups).
+  const prevOpenKoTitles = new Set();
+  cont.querySelectorAll('.ko-round-head.open .krh-tag').forEach(t => prevOpenKoTitles.add(t.textContent.trim()));
+  const hadRenderedKo = cont.querySelector('.ko-round-block') != null;
+
   // Auto-open the earliest round that still has an unpredicted, unlocked match.
   let autoOpenKey = null;
   for(const rd of rounds){
@@ -4843,7 +4879,7 @@ function renderKoPredictions(){
 
   rounds.forEach(rd=>{
     const mult = KO_ROUND_MULT[rd.key];
-    const open = rd.key===autoOpenKey;
+    const open = prevOpenKoTitles.has(rd.title) || (!hadRenderedKo && rd.key===autoOpenKey);
     // Perfect-round status pill (only for the four multi-match rounds that
     // carry a perfect bonus — not the single-match third place / final).
     let prPill = '';
