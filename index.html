@@ -441,6 +441,20 @@
   .pts-badge{margin-left:auto;font-family:'Archivo';font-weight:800;font-size:13px;color:#fff;background:var(--gold);padding:4px 11px;border-radius:20px}
   .pts-badge.zero{background:var(--muted)}
 
+  /* "Share my prediction" — appears on a match card once it locks */
+  .pred-share-btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    margin-top:10px;border:none;border-radius:10px;cursor:pointer;
+    padding:11px 14px;font-family:'Archivo';font-weight:700;font-size:13.5px;color:#fff;
+    background:linear-gradient(135deg,#25d366,#128c7e);
+    box-shadow:0 3px 10px rgba(18,140,126,.28);
+    transition:.15s;-webkit-tap-highlight-color:transparent;
+  }
+  .pred-share-btn:hover{box-shadow:0 5px 15px rgba(18,140,126,.38);transform:translateY(-1px)}
+  .pred-share-btn:active{transform:scale(.98)}
+  .pred-share-btn:disabled{opacity:.7;cursor:default;transform:none}
+  .pred-share-btn .psb-wa{font-family:'Inter';font-weight:600;font-size:11px;opacity:.85}
+
   /* ===== LEADERBOARD ===== */
   .lb-stats{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px}
   .stat{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
@@ -652,17 +666,26 @@
   .gt-legend .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
 
   /* ===== BRACKET ===== */
-  .bracket-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:10px}
+  .bracket-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:10px;scroll-snap-type:x proximity}
   .bracket{display:flex;gap:18px;min-width:1180px;padding:6px 2px}
-  .br-round{display:flex;flex-direction:column;flex:0 0 170px}
+  /* Each round is a scroll-snap column. The one nearest the centre of the
+     viewport gets .br-focus (expanded, full detail, lifted); the rest get
+     .br-dim (condensed + faded). Transitions animate the change as you scroll
+     left/right, so the bracket reads one round at a time instead of as a wall
+     of tiny cards. Column WIDTH is constant (transform/opacity only) so the
+     effect is GPU-composited and never causes horizontal scroll jitter. */
+  .br-round{display:flex;flex-direction:column;flex:0 0 176px;scroll-snap-align:center;transition:opacity .38s ease}
   .br-round-title{
     font-family:'Archivo';font-weight:800;font-size:11px;color:var(--muted);text-transform:uppercase;
-    letter-spacing:.5px;text-align:center;margin-bottom:10px
+    letter-spacing:.5px;text-align:center;margin-bottom:10px;
+    transition:color .3s ease, transform .3s ease;
   }
   .br-round .br-matches{display:flex;flex-direction:column;justify-content:space-around;flex:1;gap:10px}
   .br-match{
     background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 9px;
-    box-shadow:0 1px 3px rgba(20,40,10,.06);font-size:11px
+    box-shadow:0 1px 3px rgba(20,40,10,.06);font-size:11px;
+    transform-origin:center center;
+    transition:transform .38s cubic-bezier(.2,.7,.3,1), box-shadow .38s ease, filter .38s ease, border-color .3s ease;
   }
   .br-match .br-num{font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px}
   .br-side{display:flex;align-items:center;gap:6px;padding:3px 0;min-height:20px}
@@ -673,10 +696,29 @@
   .br-side.br-winner .br-name{color:var(--green-700);font-weight:800}
   .br-side.br-winner .br-score{color:var(--green-700)}
   .br-divider{height:1px;background:var(--line);margin:2px 0}
-  .br-venue{font-size:9px;color:var(--muted);margin-top:5px;text-align:center}
+  /* venue/date line — hidden until its round is focused, then it slides open */
+  .br-venue{
+    font-size:9px;color:var(--muted);text-align:center;
+    max-height:0;opacity:0;margin-top:0;overflow:hidden;
+    transition:max-height .38s ease, opacity .3s ease, margin .3s ease;
+  }
   .br-final .br-match{border-color:var(--gold);background:linear-gradient(0deg,var(--gold-soft),#fff 70%)}
   .br-third-place{margin-top:14px;text-align:center}
-  .br-third-place .br-match{display:inline-block;width:170px;text-align:left}
+  .br-third-place .br-match{display:inline-block;width:176px;text-align:left}
+
+  /* focus / dim states, applied from JS as you scroll */
+  .br-round.br-dim{opacity:.5}
+  .br-round.br-dim .br-match{transform:scale(.93);filter:grayscale(.5)}
+  .br-round.br-focus .br-round-title{color:var(--green-700);transform:scale(1.06)}
+  .br-round.br-focus .br-match{transform:scale(1.04);box-shadow:0 10px 24px rgba(20,40,10,.16);border-color:var(--green-500)}
+  .br-round.br-final.br-focus .br-match{border-color:var(--gold);box-shadow:0 10px 24px rgba(224,168,46,.28)}
+  .br-round.br-focus .br-venue{max-height:34px;opacity:1;margin-top:5px}
+  /* a small on-screen hint that the bracket is swipeable */
+  .bracket-hint{
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    font-size:11px;font-weight:600;color:var(--muted);margin:0 0 8px;
+  }
+  .bracket-hint .bh-arrows{color:var(--green-700);font-weight:800;letter-spacing:1px}
 
   .toast{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -992,6 +1034,28 @@
     padding-top: 8px; border-top: 1px solid rgba(255,255,255,.06);
     text-align: center; letter-spacing: .3px;
   }
+  /* red cards strip */
+  #liveMatchBanner .lmb-reds {
+    grid-column: 1 / -1;
+    font-size: 11px; font-weight: 600;
+    padding-top: 8px; margin-top: 2px;
+    display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap;
+  }
+  #liveMatchBanner .lmb-reds-label {
+    font-size: 10px; color: #ff6b5e; font-weight: 800; white-space: nowrap;
+  }
+  #liveMatchBanner .lmb-reds-names { display: flex; gap: 12px; flex-wrap: wrap; }
+  #liveMatchBanner .lmb-red-item {
+    display: inline-flex; align-items: center; gap: 5px; color: rgba(255,255,255,.8);
+  }
+  #liveMatchBanner .lmb-red-card {
+    width: 9px; height: 12px; border-radius: 2px; flex: 0 0 auto;
+    background: #e23b2e; box-shadow: 0 0 0 1px rgba(0,0,0,.25);
+  }
+  #liveMatchBanner .lmb-red-card.second-yellow {
+    background: linear-gradient(135deg, #e0a82e 0 50%, #e23b2e 50% 100%);
+  }
+  #liveMatchBanner .lmb-red-team { color: rgba(255,255,255,.42); }
   /* Progress bar — bottom of the card, shows estimated match progress */
   .lmb-slide .lmb-progress {
     position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
@@ -2091,6 +2155,12 @@ function getMatchPhase(kickoffUTC, matchId) {
   // or the match isn't in the feed window yet). ----
   const liveStatus = matchId != null ? getLiveApiStatus(matchId) : null;
   if (liveStatus) {
+    // ESPN says the match hasn't started (delayed / postponed / still scheduled)
+    // even though its originally-scheduled time may have passed — it is NOT live.
+    // Returning null here is what stops a delayed match showing as "in progress".
+    if (liveStatus.status === 'DELAYED' || liveStatus.status === 'SCHEDULED') {
+      return null;
+    }
     if (liveStatus.status === 'PAUSED') {
       return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht', source: 'live' };
     }
@@ -3528,6 +3598,9 @@ function matchState(id){
   const r = DB.results()[id];
   const hasResult = r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='';
   if(api && (api.status==='IN_PLAY' || api.status==='PAUSED')) return 'live';
+  // ESPN says the match hasn't kicked off (delayed / still scheduled) — treat it
+  // as upcoming even if its originally-scheduled clock time has already passed.
+  if(api && (api.status==='DELAYED' || api.status==='SCHEDULED')) return 'upcoming';
   if(api && api.status==='FINISHED') return 'finished';
   if(hasResult) return 'finished';
   const ko = MATCH_UTC[id];
@@ -3961,6 +4034,9 @@ function findLiveMatches() {
     // ESPN's real status wins whenever we have a fresh reading for this match.
     const api = getLiveApiStatus(info.id);
     if (api && (api.status === 'IN_PLAY' || api.status === 'PAUSED')) return true;
+    // ESPN says it hasn't started (delayed / scheduled) — not live, regardless
+    // of whether its originally-scheduled window has opened.
+    if (api && (api.status === 'DELAYED' || api.status === 'SCHEDULED')) return false;
     // No fresh ESPN reading — fall back to the scheduled-time window estimate.
     const elapsed = now - MATCH_UTC[info.id].getTime();
     return elapsed > 0 && elapsed < MATCH_OVER_AT_MIN * 60000;
@@ -4016,6 +4092,19 @@ function liveProgressPct(live, phase) {
   }
   const elapsedMin = (Date.now() - MATCH_UTC[live.id].getTime()) / 60000;
   return Math.min(100, Math.round((elapsedMin / T_FULL_TIME_START) * 100));
+}
+
+/** Red-card strip for a live banner slide (empty string when none). Straight
+ *  reds show a solid red card; second yellows a split yellow/red card. */
+function liveRedsHtml(live, r){
+  const reds = (r && r.reds) || [];
+  if(!reds.length) return '';
+  const items = reds.map(rc=>{
+    const team = rc.side==='h' ? live.h : (rc.side==='a' ? live.a : '');
+    const nm = rc.name || (rc.secondYellow ? '2nd yellow' : 'Red card');
+    return `<span class="lmb-red-item"><span class="lmb-red-card ${rc.secondYellow?'second-yellow':''}"></span>${esc(nm)}${team?` <span class="lmb-red-team">${esc(team)}</span>`:''}</span>`;
+  }).join('');
+  return `<div class="lmb-reds"><span class="lmb-reds-label">🟥 Red${reds.length>1?'s':''}</span><span class="lmb-reds-names">${items}</span></div>`;
 }
 
 function liveMatchSlideHtml(live) {
@@ -4086,7 +4175,8 @@ function liveMatchSlideHtml(live) {
           <div class="lmb-team-name">${live.a}</div>
         </div>
       </div>
-      <div data-f="scorers-block">${scorersHtml}</div>
+      <div data-f="scorers-block" style="grid-column:1/-1">${scorersHtml}</div>
+      <div data-f="reds-block" style="grid-column:1/-1">${liveRedsHtml(live, r)}</div>
       <div class="lmb-tap-hint">Tap to see your prediction →</div>
       <div class="lmb-progress"><div class="lmb-progress-fill" data-f="progress-fill" style="width:${progressPct}%"></div></div>
     </div>
@@ -4173,6 +4263,9 @@ function patchLiveSlide(live) {
   }
   const scorersBlockEl = slideEl.querySelector('[data-f="scorers-block"]');
   if (scorersBlockEl) scorersBlockEl.innerHTML = scorersHtml;
+
+  const redsBlockEl = slideEl.querySelector('[data-f="reds-block"]');
+  if (redsBlockEl) redsBlockEl.innerHTML = liveRedsHtml(live, r);
 
   const progressEl = slideEl.querySelector('[data-f="progress-fill"]');
   if (progressEl) progressEl.style.width = progressPct + '%';
@@ -5175,6 +5268,10 @@ function koMatchCard(matchId, roundKey, roster){
     </div>`;
   }
 
+  // Share the locked pick to WhatsApp — once the tie has locked and the player
+  // actually backed an advancer.
+  if(locked && effectiveKoAdvancer(matchId, pred, home, away)){ html += predShareBtnHtml(matchId, true); }
+
   html += `</div>`;
   return html;
 }
@@ -5530,6 +5627,9 @@ function matchCard(m,roster,result){
       ${predScorers.length?`<span style="color:var(--muted);font-size:11px">⚽ ${predScorers.map(esc).join(', ')}</span>`:''}
     </div>`;
   }
+  // Once the match has locked, let the player share their pick to WhatsApp —
+  // only when they actually set a scoreline (nothing to share otherwise).
+  if(locked && ph!=null && pa!=null){ html+=predShareBtnHtml(m.id, false); }
   html+=`</div>`;
   return html;
 }
@@ -6452,6 +6552,225 @@ async function shareMyCard(btn){
   }
 }
 
+/* ============================================================
+   SHARE A SINGLE PREDICTION (once the match locks)
+   Renders the player's locked prediction for one match onto a 1080×1080 card
+   and shares it — Web Share (so WhatsApp/Teams appear in the sheet) with an
+   image + text on mobile, or a WhatsApp text link on desktop. Only offered
+   after a match kicks off (nothing to hide once it's locked in).
+   ============================================================ */
+async function buildPredictionShareCanvas(matchId, isKo){
+  const r = getRoster(activeName);
+  if(!r) return null;
+
+  let home, away, label, venue;
+  const pred = isKo ? (r.koPredictions||{})[matchId] : (r.predictions||{})[matchId];
+  if(isKo){
+    const p = getKoParticipants(matchId);
+    home = p.home; away = p.away;
+    label = koRoundTitle(matchId) + ' · Match ' + matchId;
+    const meta = KO_ALL_MATCHES.find(m=>m.match===matchId);
+    venue = meta ? meta.venue : '';
+  } else {
+    const m = MATCHES.find(x=>x.id===matchId);
+    if(!m) return null;
+    home = m.h; away = m.a; label = 'Group ' + m.g; venue = m.venue;
+  }
+  if(!home || !away) return null;
+
+  const res = DB.results()[matchId];
+  const hasResult = res && res.h!=null && res.h!=='' && res.a!=null && res.a!=='';
+  const ph = pred ? pred.h : null, pa = pred ? pred.a : null;
+  const predScorers = ((pred && pred.scorers) || []).map(s=>(s||'').trim()).filter(Boolean);
+  const earned = hasResult ? (isKo ? (function(){
+      const base = scoreKoMatch(matchId, pred, res); if(base==null) return null;
+      let pts = base * (KO_ROUND_MULT[koRoundOf(matchId)]||1);
+      if(r.wildcard===matchId) pts*=2; return Math.round(pts);
+    })() : scoreMatch(pred, res)) : null;
+
+  try{
+    await Promise.all([
+      document.fonts.load('800 60px Archivo'),
+      document.fonts.load('700 150px Oswald'),
+      document.fonts.load('700 26px Inter'),
+      document.fonts.ready
+    ]);
+  }catch(e){}
+
+  const [logoRaw, hRaw, aRaw, favRaw] = await Promise.all([
+    loadCorsImage('https://i.ibb.co/hFvmBTj9/ICD-25-Logo-3.png'),
+    loadCorsImage(cardFlagUrl(home)),
+    loadCorsImage(cardFlagUrl(away)),
+    loadCorsImage(cardFlagUrl(r.team))
+  ]);
+  const logo = imageExportSafe(logoRaw)?logoRaw:null;
+  const hFlag = imageExportSafe(hRaw)?hRaw:null;
+  const aFlag = imageExportSafe(aRaw)?aRaw:null;
+  const fav = imageExportSafe(favRaw)?favRaw:null;
+
+  const W=1080, H=1080, CX=W/2;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+
+  // background (matches the standing card)
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#1c4a0e'); g.addColorStop(1,'#225a11');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(CX,-120,80,CX,-120,820);
+  glow.addColorStop(0,'rgba(127,187,66,.20)'); glow.addColorStop(1,'rgba(127,187,66,0)');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(CX,H/2,250,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle='rgba(127,187,66,.45)'; ctx.fillRect(0,H-6,W,6);
+
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic'; _ls(ctx,'0px');
+
+  // logo
+  if(logo){ const lh=64, lw=logo.naturalWidth*(lh/logo.naturalHeight); ctx.drawImage(logo, CX-lw/2, 118-lh, lw, lh); }
+  else { ctx.fillStyle='#fff'; _ls(ctx,'5px'); ctx.font='900 40px Archivo'; ctx.fillText('ICD', CX, 112); _ls(ctx,'0px'); }
+
+  // "MY PREDICTION"
+  ctx.font='800 44px Archivo'; _ls(ctx,'1px');
+  const seg1='MY ', seg2='PREDICTION';
+  const w1=ctx.measureText(seg1).width, w2=ctx.measureText(seg2).width;
+  let sx=CX-(w1+w2)/2; ctx.textAlign='left';
+  ctx.fillStyle='#fff'; ctx.fillText(seg1, sx, 205);
+  ctx.fillStyle='#7fbb42'; ctx.fillText(seg2, sx+w1, 205);
+  ctx.textAlign='center'; _ls(ctx,'0px');
+
+  // match label
+  ctx.font='600 20px Inter'; ctx.fillStyle='rgba(255,255,255,.55)'; _ls(ctx,'3px');
+  ctx.fillText(label.toUpperCase(), CX, 250); _ls(ctx,'0px');
+
+  // teams + predicted score
+  const flagW=150, flagH=100, rowY=300;
+  const lx=150, rx=W-150-flagW;
+  if(hFlag){ ctx.save(); _rr(ctx,lx,rowY,flagW,flagH,8); ctx.clip(); ctx.drawImage(hFlag,lx,rowY,flagW,flagH); ctx.restore(); ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.5; _rr(ctx,lx,rowY,flagW,flagH,8); ctx.stroke(); }
+  if(aFlag){ ctx.save(); _rr(ctx,rx,rowY,flagW,flagH,8); ctx.clip(); ctx.drawImage(aFlag,rx,rowY,flagW,flagH); ctx.restore(); ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.5; _rr(ctx,rx,rowY,flagW,flagH,8); ctx.stroke(); }
+
+  // team short names under flags
+  ctx.font='700 26px Inter'; ctx.fillStyle='#fff';
+  const clip=(s,max)=>{ let t=s; while(ctx.measureText(t).width>max && t.length>3){ t=t.slice(0,-1); } return t===s?s:t+'…'; };
+  ctx.fillText(clip(home,190), lx+flagW/2, rowY+flagH+38);
+  ctx.fillText(clip(away,190), rx+flagW/2, rowY+flagH+38);
+
+  // predicted score in the middle
+  const scoreStr = (ph!=null && pa!=null) ? `${ph} – ${pa}` : '– : –';
+  ctx.font='700 110px Oswald'; ctx.fillStyle='#7fbb42';
+  ctx.fillText(scoreStr, CX, rowY+flagH/2+38);
+  ctx.font='700 18px Inter'; ctx.fillStyle='rgba(255,255,255,.5)'; _ls(ctx,'2px');
+  ctx.fillText('MY SCORE', CX, rowY+flagH/2+72); _ls(ctx,'0px');
+
+  let y = 540;
+
+  // scorers
+  if(predScorers.length){
+    ctx.font='700 20px Inter'; ctx.fillStyle='#e0a82e'; _ls(ctx,'1px');
+    ctx.fillText('MY GOALSCORERS', CX, y); _ls(ctx,'0px'); y+=36;
+    ctx.font='600 26px Inter'; ctx.fillStyle='rgba(255,255,255,.9)';
+    const line = clip(predScorers.join('  ·  '), W-160);
+    ctx.fillText(line, CX, y); y+=40;
+  }
+
+  // result / points (if the match has a result)
+  if(hasResult){
+    y = Math.max(y, 600);
+    const chipW = 560, chipH = 132, chipX = CX-chipW/2, chipY = y;
+    _rr(ctx, chipX, chipY, chipW, chipH, 18);
+    ctx.fillStyle='rgba(255,255,255,.06)'; ctx.fill();
+    ctx.strokeStyle='rgba(127,187,66,.4)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.font='700 18px Inter'; ctx.fillStyle='rgba(255,255,255,.55)'; _ls(ctx,'2px');
+    ctx.fillText('ACTUAL RESULT', CX, chipY+40); _ls(ctx,'0px');
+    ctx.font='700 46px Oswald'; ctx.fillStyle='#fff';
+    ctx.fillText(`${clip(home,150)} ${res.h} – ${res.a} ${clip(away,150)}`, CX, chipY+86);
+    if(earned!=null){
+      ctx.font='800 26px Archivo'; ctx.fillStyle= earned>0 ? '#7fbb42' : 'rgba(255,255,255,.5)';
+      ctx.fillText(`${earned>0?'+':''}${earned} point${earned===1?'':'s'}${(isKo && r.wildcard===matchId)?'  ⭐':''}`, CX, chipY+120);
+    }
+    y = chipY + chipH + 40;
+  } else {
+    y = Math.max(y, 620);
+    ctx.font='600 24px Inter'; ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillText('🔒 Locked in — awaiting the result', CX, y); y+=40;
+  }
+
+  // player identity
+  const idY = 900;
+  ctx.font='700 34px Archivo'; const name=activeName||'';
+  const nameW=ctx.measureText(name).width;
+  const fw=64, fh=43, gp=16;
+  let gx=CX-((fav?fw+gp:0)+nameW)/2;
+  if(fav){
+    ctx.save(); _rr(ctx,gx,idY-fh+8,fw,fh,6); ctx.clip(); ctx.drawImage(fav,gx,idY-fh+8,fw,fh); ctx.restore();
+    ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1.5; _rr(ctx,gx,idY-fh+8,fw,fh,6); ctx.stroke();
+    gx+=fw+gp;
+  }
+  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.fillText(name, gx, idY); ctx.textAlign='center';
+
+  // footer
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='600 22px Inter'; _ls(ctx,'1.5px');
+  ctx.fillText('ICD · FANTASY WORLD CUP 2026', CX, 1015); _ls(ctx,'0px');
+
+  return cv;
+}
+
+function predictionShareText(matchId, isKo){
+  const r = getRoster(activeName);
+  let home, away;
+  const pred = isKo ? (r.koPredictions||{})[matchId] : (r.predictions||{})[matchId];
+  if(isKo){ const p=getKoParticipants(matchId); home=p.home; away=p.away; }
+  else { const m=MATCHES.find(x=>x.id===matchId); home=m.h; away=m.a; }
+  const ph = pred? pred.h : null, pa = pred? pred.a : null;
+  const scoreStr = (ph!=null&&pa!=null) ? `${ph}–${pa}` : 'no score set';
+  const sc = ((pred&&pred.scorers)||[]).map(s=>(s||'').trim()).filter(Boolean);
+  let t = `My ICD Fantasy World Cup 2026 pick: ${home} ${scoreStr} ${away}`;
+  if(sc.length) t += ` (${sc.join(', ')})`;
+  return t + ' ⚽';
+}
+
+async function sharePrediction(matchId, isKo, btn){
+  if(!activeName || !getRoster(activeName)){ toast('Add your name & team first'); return; }
+  const orig = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Creating…'; }
+  try{
+    const text = predictionShareText(matchId, isKo);
+    const cv = await buildPredictionShareCanvas(matchId, isKo);
+    const blob = cv ? await new Promise(res=> cv.toBlob(res,'image/png')) : null;
+    const file = blob ? new File([blob], 'ICD-prediction.png', {type:'image/png'}) : null;
+
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({ files:[file], title:'ICD Fantasy World Cup 2026', text }); }
+      catch(e){ /* dismissed — no-op */ }
+    } else if(file && navigator.share){
+      // Web Share without file support — share text (still lets them pick WhatsApp)
+      try{ await navigator.share({ title:'ICD Fantasy World Cup 2026', text }); }
+      catch(e){ /* dismissed */ }
+    } else {
+      // Desktop fallback: download the image AND open WhatsApp Web with the text.
+      if(blob){
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download=file.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      }
+      window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank');
+      toast('📥 Image saved — WhatsApp opened with your pick');
+    }
+  }catch(e){
+    console.error('Share prediction failed:', e);
+    toast('Sorry — couldn\'t create the prediction card');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML=orig; }
+  }
+}
+
+/** The slim "Share my prediction" button shown on a locked match card. */
+function predShareBtnHtml(matchId, isKo){
+  return `<button class="pred-share-btn" onclick="event.stopPropagation(); sharePrediction(${matchId}, ${isKo?'true':'false'}, this)">
+    <span>📤</span> Share my prediction<span class="psb-wa">on WhatsApp</span>
+  </button>`;
+}
+
 function renderLeaderboard(){
   const players=computeStandingsArray();
   const baseline = refreshStandingsBaseline();
@@ -6869,7 +7188,8 @@ function renderKoMatchCard(matchId, label, leftTbc, rightTbc, venue){
 
 function renderBracket(){
   const cont = document.getElementById('bracketContainer');
-  let html = `<div class="bracket-wrap"><div class="bracket">`;
+  let html = `<div class="bracket-hint"><span class="bh-arrows">‹ ›</span> Swipe across the rounds — each one opens up as you reach it</div>`;
+  html += `<div class="bracket-wrap"><div class="bracket">`;
 
   // Round of 32
   html += `<div class="br-round"><div class="br-round-title">Round of 32</div><div class="br-matches">`;
@@ -6912,11 +7232,63 @@ function renderBracket(){
   </div>`;
 
   cont.innerHTML = html;
+
+  // Wire up the scroll-driven focus: the round nearest the centre expands, the
+  // rest condense. Re-attach each render (innerHTML replaced the old nodes).
+  const wrap = cont.querySelector('.bracket-wrap');
+  if(wrap){
+    wrap.addEventListener('scroll', _brFocusScroll, { passive: true });
+    // start focused on the earliest round that still has an undecided match
+    // (the "current" round), so the bracket opens on the action.
+    requestAnimationFrame(() => { scrollBracketToCurrentRound(wrap); updateBracketFocus(); });
+  }
 }
 
-/* ============================================================
-   FORCE SYNC
-   ============================================================ */
+/* ---- Bracket scroll-focus: expand the centred round, condense the rest ---- */
+let _brFocusRaf = null;
+function updateBracketFocus(){
+  const wrap = document.querySelector('#bracketContainer .bracket-wrap');
+  if(!wrap || !wrap.offsetParent) return; // not visible
+  const rounds = wrap.querySelectorAll('.br-round');
+  if(!rounds.length) return;
+  const wr = wrap.getBoundingClientRect();
+  const mid = wr.left + wrap.clientWidth / 2;
+  let best = null, bestDist = Infinity;
+  rounds.forEach(r => {
+    const rect = r.getBoundingClientRect();
+    const c = rect.left + rect.width / 2;
+    const d = Math.abs(c - mid);
+    if(d < bestDist){ bestDist = d; best = r; }
+  });
+  rounds.forEach(r => {
+    r.classList.toggle('br-focus', r === best);
+    r.classList.toggle('br-dim', r !== best);
+  });
+}
+function _brFocusScroll(){
+  if(_brFocusRaf) return;
+  _brFocusRaf = requestAnimationFrame(() => { _brFocusRaf = null; updateBracketFocus(); });
+}
+/** Scroll the bracket so the earliest round with an unresolved match sits in
+ *  view — i.e. open on the round that's actually being contested. */
+function scrollBracketToCurrentRound(wrap){
+  const groups = [
+    KO_R32.map(m=>m.match), KO_R16.map(m=>m.match), KO_QF.map(m=>m.match),
+    KO_SF.map(m=>m.match), [KO_FINAL.match]
+  ];
+  let idx = 0;
+  for(let i=0;i<groups.length;i++){
+    const anyUnresolved = groups[i].some(id => !getKoWinner(id));
+    if(anyUnresolved){ idx = i; break; }
+    idx = i; // if all resolved, land on the last (Final)
+  }
+  const rounds = wrap.querySelectorAll('.br-round');
+  const target = rounds[idx];
+  if(!target) return;
+  // centre the target column in the viewport
+  const left = target.offsetLeft - (wrap.clientWidth - target.clientWidth) / 2;
+  wrap.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
+}
 /** Calm, accurate sync status. Predictions already auto-save to the cloud on
  *  every change (DB.saveRosters writes to Firebase once hydrated), so this just
  *  reassures rather than nags — green when cloud sync is live, amber only when
@@ -7212,7 +7584,13 @@ function parseEspnEvent(ev){
   } else if(state === 'post'){
     status = 'FINISHED';
   } else {
-    return null; // scheduled / postponed / delayed — nothing usable yet
+    // Not started yet. Rather than discard it, capture WHETHER ESPN considers
+    // the match merely scheduled or actually delayed/postponed — this is the
+    // authoritative "it hasn't kicked off" signal that stops the clock-based
+    // estimate from wrongly flipping a delayed match to "in progress" once its
+    // originally-scheduled time slips past.
+    const nm = `${st.name||''} ${st.detail||''} ${st.shortDetail||''}`.toUpperCase();
+    status = /DELAY|POSTPON|SUSPEND|ABANDON|CANCEL/.test(nm) ? 'DELAYED' : 'SCHEDULED';
   }
   const comps = comp.competitors || [];
   const homeC = comps.find(c => c.homeAway === 'home');
@@ -7226,9 +7604,25 @@ function parseEspnEvent(ev){
   if(awayC.team) sideById[awayC.team.id] = 'away';
 
   const goals = [];
+  const reds = [];
   let pkH = null, pkA = null, anyShootout = false;
   (comp.details || []).forEach(d => {
-    if(!d || !d.scoringPlay) return;   // only goals
+    if(!d) return;
+    // Red cards — straight reds and second yellows. ESPN tags these in the
+    // play-by-play `type` (text like "Red Card" / "Yellow Red Card"), separate
+    // from goals. We surface them on the live banner as they happen.
+    const typeText = (d.type && (d.type.text || d.type.name)) || '';
+    if(/red\s*card/i.test(typeText)){
+      const rath = (d.athletesInvolved && d.athletesInvolved[0]) || null;
+      reds.push({
+        side: sideById[d.team && d.team.id] || null,
+        name: rath ? (rath.displayName || rath.shortName || rath.fullName || '') : '',
+        secondYellow: /yellow/i.test(typeText),
+        clock: (d.clock && d.clock.displayValue) || ''
+      });
+      return;
+    }
+    if(!d.scoringPlay) return;   // only goals below
     if(d.shootout){ anyShootout = true; return; } // shootout goals counted separately, not as match goals
     if(!(d.scoreValue >= 1)) return;
     const ath = (d.athletesInvolved && d.athletesInvolved[0]) || null;
@@ -7253,6 +7647,7 @@ function parseEspnEvent(ev){
     status, state, period, displayClock,
     minute: parseEspnMinute(displayClock),
     goals,
+    reds,
     pk: { had: hadShootout, h: pkH, a: pkA }
   };
 }
@@ -7340,8 +7735,11 @@ function getLiveApiStatus(matchId){
   if(!cached) return null;
   // In-play / paused readings are trusted for much longer than finished ones —
   // a live match stays live across a brief polling gap, so we keep showing
-  // ESPN's real minute instead of dropping to the clock estimate.
-  const maxAge = (cached.status === 'IN_PLAY' || cached.status === 'PAUSED')
+  // ESPN's real minute instead of dropping to the clock estimate. A delayed /
+  // scheduled reading gets the same long window: a match that hasn't kicked off
+  // stays not-kicked-off between polls, so the "not started" signal persists.
+  const maxAge = (cached.status === 'IN_PLAY' || cached.status === 'PAUSED' ||
+                  cached.status === 'DELAYED' || cached.status === 'SCHEDULED')
     ? LIVE_API_INPLAY_MAX_AGE_MS
     : LIVE_API_STATUS_MAX_AGE_MS;
   if(Date.now() - cached.fetchedAt > maxAge) return null;
@@ -7374,9 +7772,25 @@ async function fetchLiveScoresFromAPI(opts){
 
     events.forEach(ev => {
       const parsed = parseEspnEvent(ev);
-      if(!parsed || !parsed.status) return;            // not live/finished yet
+      if(!parsed || !parsed.status) return;            // no usable status
       const local = findLocalMatch(parsed.home.name, parsed.away.name, ev.date);
       if(!local) return;
+
+      // A match ESPN hasn't started (scheduled / delayed / postponed) must never
+      // write a score — ESPN can report 0–0 before kickoff. We only bother
+      // recording its status when its scheduled clock time has already passed,
+      // since that's the sole case where the clock estimate would otherwise
+      // wrongly show it "in progress". This is what makes the app self-correct
+      // for a delayed match without needing a code change to its kickoff time.
+      if(parsed.status === 'SCHEDULED' || parsed.status === 'DELAYED'){
+        const ko = MATCH_UTC[local.id];
+        if(ko && ko.getTime() <= Date.now()){
+          const prevStatus = liveStatusMap[local.id] && liveStatusMap[local.id].status;
+          recordLiveApiStatus(liveStatusMap, local.id, parsed);
+          if(prevStatus !== parsed.status) statusChanged = true;
+        }
+        return; // never touch scores/scorers for a match that hasn't kicked off
+      }
 
       // Always record the real status/clock, even if the score is
       // admin-overridden or unchanged — the live banner should reflect reality.
@@ -7410,6 +7824,21 @@ async function fetchLiveScoresFromAPI(opts){
       const oldScorers     = (existing && existing.scorers) || [];
       const scorersChanged = scorers.length !== oldScorers.length || scorers.some((s,i) => s !== oldScorers[i]);
 
+      // Red cards, mapped onto THIS fixture's home/away the same way the score
+      // is, so a red always lands on the correct side even if ESPN's home/away
+      // orientation differs from ours.
+      const espnSideToLocal = s => {
+        if(parsed.home.name === local.h) return s === 'home' ? 'h' : 'a';
+        if(parsed.away.name === local.h) return s === 'home' ? 'a' : 'h';
+        return s === 'home' ? 'h' : 'a';
+      };
+      const reds = (parsed.reds || []).map(rc => ({
+        side: espnSideToLocal(rc.side), name: rc.name || '', secondYellow: !!rc.secondYellow
+      }));
+      const oldReds = (existing && existing.reds) || [];
+      const redsChanged = reds.length !== oldReds.length ||
+        reds.some((rc,i) => !oldReds[i] || oldReds[i].side !== rc.side || oldReds[i].name !== rc.name);
+
       // Penalty shootout, for level knockout ties. Map ESPN's shootout score onto
       // this fixture's home/away the same way the match score was mapped, then
       // derive the advancer side. Only auto-apply when the tie is actually level
@@ -7424,8 +7853,9 @@ async function fetchLiveScoresFromAPI(opts){
       const oldPk = existing ? (existing.pkWinner||null) : null;
       const pkChanged = (pkWinner||null) !== oldPk;
 
-      if(scoreChanged || scorersChanged || pkChanged){
+      if(scoreChanged || scorersChanged || pkChanged || redsChanged){
         const rec = { h: hVal, a: aVal, scorers };
+        if(reds.length) rec.reds = reds;
         // Carry through / set the shootout result only for a level scoreline.
         if(hVal === aVal){
           if(pkWinner){ rec.pkWinner = pkWinner; if(pkH!=null) rec.pkH = pkH; if(pkA!=null) rec.pkA = pkA; }
@@ -7436,6 +7866,7 @@ async function fetchLiveScoresFromAPI(opts){
         if(scoreChanged) scoreUpdates++;
         if(scorersChanged) scorerUpdates++;
         if(pkChanged) scoreUpdates++;
+        if(redsChanged) scorerUpdates++; // piggyback on the "soft update" refresh path
         changedIds.push(local.id);
       }
     });
@@ -7831,7 +8262,7 @@ function init(){
   syncTabbarH();
   setupLiveBannerObserver();
   window.addEventListener('scroll', _fixSpotlightScroll, { passive: true });
-  window.addEventListener('resize', () => { syncTabbarH(); setupLiveBannerObserver(); }, { passive: true });
+  window.addEventListener('resize', () => { syncTabbarH(); setupLiveBannerObserver(); updateBracketFocus(); }, { passive: true });
   setInterval(tick, 1000);
   setInterval(renderNextMatchCard, 30000);
 }
