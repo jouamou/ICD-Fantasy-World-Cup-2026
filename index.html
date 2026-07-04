@@ -1395,6 +1395,102 @@
   @keyframes scoreFlip{0%{transform:translateY(0)}40%{transform:translateY(-8px);color:var(--gold)}100%{transform:translateY(0)}}
   .score-flip{animation:scoreFlip .5s ease-out}
 
+  /* ===== MOMENT OVERLAY (full time · penalties · welcome) ===== */
+  #momentOverlay{
+    position:fixed;inset:0;z-index:210;display:none;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  #momentOverlay.show{display:flex}
+  #momentOverlay .mo-scrim{
+    position:absolute;inset:0;background:rgba(12,26,6,.55);backdrop-filter:blur(3px);
+    opacity:0;animation:moScrim .3s ease forwards;
+  }
+  @keyframes moScrim{to{opacity:1}}
+  #momentOverlay .mo-card{
+    position:relative;max-width:410px;width:100%;border-radius:22px;overflow:hidden;
+    text-align:center;color:#fff;box-shadow:0 24px 70px rgba(10,24,4,.55);
+    transform:translateY(26px) scale(.94);opacity:0;
+    animation:moCardIn .5s cubic-bezier(.2,1.3,.35,1) forwards;
+  }
+  @keyframes moCardIn{to{transform:translateY(0) scale(1);opacity:1}}
+  #momentOverlay .mo-inner{position:relative;padding:26px 24px 22px}
+  #momentOverlay .mo-pitch{position:absolute;inset:0;opacity:.06;pointer-events:none;
+    background:repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 64px)}
+  .mo-card.moment-ft{background:linear-gradient(160deg,#1c4a0e,#225a11 78%);border:2px solid var(--green-500)}
+  .mo-card.moment-pens{background:linear-gradient(160deg,#2a1f00,#3a2a00 78%);border:2px solid var(--gold)}
+  .mo-card.moment-welcome{background:linear-gradient(160deg,#1c4a0e,#123309 82%);border:1px solid rgba(127,187,66,.4)}
+  #momentOverlay .mo-eyebrow{
+    font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+    color:var(--green-500);margin-bottom:14px;
+  }
+  .mo-card.moment-pens .mo-eyebrow{color:var(--gold)}
+  #momentOverlay .mo-emoji{font-size:44px;display:block;margin-bottom:4px;animation:moEmoji .7s ease-out}
+  @keyframes moEmoji{0%{transform:scale(.3) rotate(-12deg);opacity:0}60%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+  #momentOverlay .mo-teams{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px}
+  #momentOverlay .mo-team{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;min-width:0}
+  #momentOverlay .mo-team img{width:50px;height:34px;border-radius:5px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+  #momentOverlay .mo-team-name{font-size:12px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.2}
+  #momentOverlay .mo-score{font-family:'Oswald';font-weight:700;font-size:52px;line-height:1;color:#fff;flex:0 0 auto}
+  #momentOverlay .mo-score .mo-dash{color:rgba(255,255,255,.4);padding:0 6px}
+  #momentOverlay .mo-winner{font-family:'Archivo';font-weight:800;font-size:16px;margin-top:12px;color:#fff}
+  #momentOverlay .mo-winner b{color:var(--green-500)}
+  .mo-card.moment-pens .mo-winner b{color:var(--gold)}
+  #momentOverlay .mo-scorers{font-size:12px;color:rgba(255,255,255,.6);margin-top:8px;line-height:1.4}
+  #momentOverlay .mo-you{
+    margin-top:16px;border-radius:13px;padding:12px 14px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  }
+  #momentOverlay .mo-you.hit{background:rgba(127,187,66,.16);border-color:rgba(127,187,66,.5)}
+  #momentOverlay .mo-you-line{font-size:13.5px;font-weight:700;color:#fff;line-height:1.35}
+  #momentOverlay .mo-you-pts{font-family:'Oswald';font-weight:700;font-size:30px;margin-top:3px;color:var(--green-500)}
+  #momentOverlay .mo-you-pts.gold{color:var(--gold)}
+  #momentOverlay .mo-dismiss{
+    margin-top:16px;width:100%;border:none;border-radius:11px;cursor:pointer;
+    padding:12px;font-family:'Archivo';font-weight:800;font-size:14px;
+    background:rgba(255,255,255,.14);color:#fff;-webkit-tap-highlight-color:transparent;transition:.12s;
+  }
+  #momentOverlay .mo-dismiss:hover{background:rgba(255,255,255,.22)}
+  #momentOverlay .mo-dismiss:active{transform:scale(.98)}
+  /* welcome-specific */
+  .mo-card.moment-welcome .mo-logo{height:44px;width:auto;margin-bottom:16px}
+  .mo-card.moment-welcome .mo-title{font-family:'Archivo';font-weight:900;font-size:24px;line-height:1.08;text-transform:uppercase;letter-spacing:.5px}
+  .mo-card.moment-welcome .mo-title em{font-style:normal;color:var(--green-500)}
+  .mo-card.moment-welcome .mo-sub{font-size:13.5px;color:rgba(255,255,255,.82);margin-top:12px;line-height:1.5}
+  .mo-card.moment-welcome .mo-steps{display:flex;gap:8px;margin-top:16px}
+  .mo-card.moment-welcome .mo-step{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:12px 8px}
+  .mo-card.moment-welcome .mo-step-ico{font-size:20px;line-height:1}
+  .mo-card.moment-welcome .mo-step-t{font-size:11px;font-weight:700;margin-top:6px;color:#fff;line-height:1.3}
+  .mo-card.moment-welcome .mo-cta{
+    margin-top:18px;width:100%;border:none;border-radius:12px;cursor:pointer;
+    padding:14px;font-family:'Archivo';font-weight:800;font-size:15px;
+    background:linear-gradient(135deg,var(--green-500),#6ab838);color:#fff;
+    box-shadow:0 6px 18px rgba(127,187,66,.3);-webkit-tap-highlight-color:transparent;transition:.12s;
+  }
+  .mo-card.moment-welcome .mo-cta:active{transform:scale(.98)}
+  @media(max-width:420px){
+    #momentOverlay .mo-score{font-size:44px}
+    .mo-card.moment-welcome .mo-title{font-size:21px}
+  }
+
+  /* ===== NEXT-MATCH STAFF ODDS ===== */
+  #nextMatchCard .nmc-odds{flex:1 1 100%;margin-top:2px}
+  #nextMatchCard .nmc-odds-label{
+    font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+    color:rgba(255,255,255,.5);margin-bottom:7px;display:flex;align-items:center;
+    gap:6px;justify-content:center;
+  }
+  #nextMatchCard .nmc-odds-bar{display:flex;height:26px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+  #nextMatchCard .nmc-odds-seg{
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Oswald';font-weight:700;font-size:12px;color:#fff;min-width:0;white-space:nowrap;
+    transition:width .5s ease;
+  }
+  #nextMatchCard .nmc-odds-seg.h{background:rgba(127,187,66,.9)}
+  #nextMatchCard .nmc-odds-seg.d{background:rgba(255,255,255,.22);color:rgba(255,255,255,.92)}
+  #nextMatchCard .nmc-odds-seg.a{background:rgba(224,168,46,.9);color:#3a2a00}
+  #nextMatchCard .nmc-odds-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.55);gap:8px}
+  #nextMatchCard .nmc-odds-ends span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
   /* ===== KNOCKOUT PREDICTIONS (Play tab) ===== */
   /* Once the group stage is complete, the Play view reorders so the knockout
      predictions sit ABOVE the (now collapsed) group cards — the action moves
@@ -2123,6 +2219,14 @@ const T_FULL_TIME_START     = T_SECOND_HALF_END + STOPPAGE_BUFFER_2H;           
 // land, without finished matches lingering in the live area indefinitely.
 const FT_DISPLAY_WINDOW_MIN = 5;
 const MATCH_OVER_AT_MIN = T_FULL_TIME_START + FT_DISPLAY_WINDOW_MIN;            // used by findLiveMatches()
+// Extra-time window (knockout ties level after 90'). Used only as a FALLBACK
+// estimate when no fresh ESPN reading exists — ESPN's real ET clock is always
+// preferred. Rough two 15-minute halves + a short break, then penalties.
+const T_ET_START      = T_FULL_TIME_START;   // ET begins after 90+stoppage
+const T_ET_FIRST_END  = T_ET_START + 15;     // ET 1st half (~15 min → clock 90'-105')
+const T_ET_HT_END     = T_ET_FIRST_END + 3;  // short ET half-time break
+const T_ET_SECOND_END = T_ET_HT_END + 15;    // ET 2nd half (clock 105'-120')
+const T_ET_OVER       = T_ET_SECOND_END + 8; // stoppage + shootout display window
 // How long a cached real-world status from ESPN stays trusted
 // before getMatchPhase() falls back to the clock-only estimate again (covers
 // sync being paused/disabled, or a match temporarily dropping off the feed).
@@ -2162,15 +2266,26 @@ function getMatchPhase(kickoffUTC, matchId) {
       return null;
     }
     if (liveStatus.status === 'PAUSED') {
+      // ESPN pauses at half time, and again at the breaks around extra time. A
+      // period ≥ 3 means we're past the two normal halves, so it's an extra-time
+      // (or pre-penalties) interval, not the standard half-time break.
+      const pp = liveStatus.period || 0;
+      if (pp >= 4) return { phase: 'Penalties', displayMin: 'PENS', phase_code: 'pens', source: 'live' };
+      if (pp >= 3) return { phase: 'Extra-time break', displayMin: 'ET', phase_code: 'et-break', source: 'live' };
       return { phase: 'Half Time', displayMin: 'HT', phase_code: 'ht', source: 'live' };
     }
     if (liveStatus.status === 'FINISHED') {
       return { phase: 'Full Time', displayMin: 'FT', phase_code: 'ft', source: 'live' };
     }
     if (liveStatus.status === 'IN_PLAY') {
-      const period = liveStatus.period || (typeof liveStatus.minute === 'number' && liveStatus.minute > HALF_LENGTH_MIN ? 2 : 1);
-      const code = period >= 2 ? '2h' : '1h';
-      const phaseName = period >= 2 ? '2nd Half' : '1st Half';
+      let period = liveStatus.period;
+      if (!period) period = (typeof liveStatus.minute === 'number' && liveStatus.minute > HALF_LENGTH_MIN) ? 2 : 1;
+      // ESPN period numbering: 1=1st half, 2=2nd half, 3/4=extra time, 5=penalties.
+      let code, phaseName;
+      if (period >= 5)      { code = 'pens'; phaseName = 'Penalties'; }
+      else if (period >= 3) { code = 'et';   phaseName = 'Extra Time'; }
+      else if (period >= 2) { code = '2h';   phaseName = '2nd Half'; }
+      else                  { code = '1h';   phaseName = '1st Half'; }
       // Use ESPN's clock string; the banner appends a trailing apostrophe, so
       // strip ESPN's trailing one ("90'+8'" -> "90'+8" -> banner shows "90'+8'").
       let dm = '';
@@ -2179,14 +2294,25 @@ function getMatchPhase(kickoffUTC, matchId) {
       } else if (typeof liveStatus.minute === 'number' && liveStatus.minute >= 0) {
         dm = `${liveStatus.minute}`;
       }
+      // Penalties have no meaningful running minute — label the phase itself.
+      if (code === 'pens' && !/\d/.test(dm)) dm = 'PENS';
       // ESPN confirms the match is in play, so always return a live phase — never
       // fall through to the scheduled-clock estimate, which is meaningless (and
       // returns null) once a match has been delayed past its scheduled window.
-      if (!dm) dm = period >= 2 ? `${HALF_LENGTH_MIN}` : '0';
+      if (!dm) dm = period >= 3 ? '90' : (period >= 2 ? `${HALF_LENGTH_MIN}` : '0');
       return { phase: phaseName, displayMin: dm, phase_code: code, source: 'live' };
     }
     // Status present but not usable for a number — fall through to the clock
     // estimate below, still tagged as confirmed live.
+  }
+
+  // Knockout ties level after 90' go to extra time (then penalties). The plain
+  // clock model has no concept of this and would flip to Full Time too early, so
+  // when we have no fresh in-play ESPN reading, extend a level KO tie into an ET
+  // estimate. Only fires once we're actually past full time (returns null before).
+  if (matchId != null && (!liveStatus || liveStatus.status !== 'IN_PLAY') && koRoundOf(matchId)) {
+    const et = koExtraTimeEstimate(matchId, elapsedMin);
+    if (et) return et;
   }
 
   const clockPhase = getMatchPhaseFromClock(elapsedMin);
@@ -2196,6 +2322,31 @@ function getMatchPhase(kickoffUTC, matchId) {
     clockPhase.source = 'estimate';
   }
   return clockPhase;
+}
+
+/** Fallback-only extra-time phase estimate for a knockout tie that finished
+ *  level after 90' (ESPN's real clock is always preferred when available).
+ *  Returns null before full time, or once the tie is truly over. */
+function koExtraTimeEstimate(matchId, elapsedMin){
+  if(elapsedMin < T_ET_START) return null;               // still within normal time
+  const r = DB.results()[matchId];
+  const level = r && r.h!=null && r.h!=='' && r.a!=null && r.a!=='' && (+r.h===+r.a);
+  if(!level) return null;                                 // only level ties go to ET
+  if(r.pkWinner==='h' || r.pkWinner==='a')
+    return { phase:'Penalties', displayMin:'PENS', phase_code:'pens', source:'estimate' };
+  if(elapsedMin < T_ET_FIRST_END){
+    const m = 90 + Math.floor(elapsedMin - T_ET_START);
+    return { phase:'Extra Time', displayMin:`${Math.min(105,Math.max(90,m))}`, phase_code:'et', source:'estimate' };
+  }
+  if(elapsedMin < T_ET_HT_END)
+    return { phase:'Extra-time break', displayMin:'ET', phase_code:'et-break', source:'estimate' };
+  if(elapsedMin < T_ET_SECOND_END){
+    const m = 105 + Math.floor(elapsedMin - T_ET_HT_END);
+    return { phase:'Extra Time', displayMin:`${Math.min(120,Math.max(105,m))}`, phase_code:'et', source:'estimate' };
+  }
+  if(elapsedMin < T_ET_OVER)
+    return { phase:'Penalties', displayMin:'PENS', phase_code:'pens', source:'estimate' };
+  return null; // truly over
 }
 
 /** Pure clock-based phase estimate (the original model): assumes a standard
@@ -2726,6 +2877,10 @@ if(firebaseReady){
       // Celebrate any new goal that just arrived for a live match (cross-device).
       if(typeof detectAndCelebrateGoals==='function' && window._knownScoresSeeded){
         detectAndCelebrateGoals(Object.keys(window._resultsCache));
+      }
+      // Full-time / penalty-shootout pop-ups for matches that just resolved.
+      if(typeof detectMatchMoments==='function'){
+        detectMatchMoments(Object.keys(window._resultsCache));
       }
       refreshAll();
     }
@@ -3527,6 +3682,7 @@ function nextMatchSlideHtml(next) {
         <div class="nmc-countdown-units" id="cdUnits-${next.id}">${countdownHtml}</div>
         <div class="nmc-lock-note">🔒 Predictions lock at kick-off</div>
       </div>
+      ${nmcOddsHtml(next)}
       <button class="nmc-predict-btn" onclick="${predictAction}">Predict now →</button>
     </div>
   </div>`;
@@ -4039,6 +4195,278 @@ function seedKnownScores(){
 }
 
 /* ============================================================
+   MOMENT OVERLAY — full-time result, penalty shootout, and the
+   first-open welcome. One shared, tasteful pop-up layer (separate from the
+   goal overlay so a goal and a full-time card never fight over the DOM).
+   All pop-ups auto-dismiss and are tap-to-close; nothing blocks the app.
+   ============================================================ */
+window._ftSeen  = window._ftSeen  || new Set(); // match ids we've shown a full-time card for
+window._penSeen = window._penSeen || new Set(); // match ids we've shown a penalties card for
+
+function showMomentOverlay(innerHtml, autoMs){
+  let ov = document.getElementById('momentOverlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='momentOverlay'; ov.setAttribute('aria-hidden','true'); document.body.appendChild(ov); }
+  ov.innerHTML = `<div class="mo-scrim" onclick="dismissMoment()"></div>${innerHtml}`;
+  ov.classList.add('show');
+  ov.setAttribute('aria-hidden','false');
+  clearTimeout(window._momentTimer);
+  if(autoMs) window._momentTimer = setTimeout(dismissMoment, autoMs);
+}
+function dismissMoment(){
+  const ov=document.getElementById('momentOverlay');
+  if(!ov) return;
+  ov.classList.remove('show');
+  ov.setAttribute('aria-hidden','true');
+  ov.innerHTML='';
+  clearTimeout(window._momentTimer);
+}
+
+/** Confetti burst reused from the goal celebration (same falling pieces). */
+function momentConfetti(){
+  const colors = ['#7fbb42','#e0a82e','#2d6b15','#ffffff','#f5c842'];
+  let c='';
+  for(let i=0;i<26;i++){
+    const left=Math.random()*100, dur=1.8+Math.random()*1.6, delay=Math.random()*.35;
+    c+=`<div class="goal-confetti" style="left:${left}vw;background:${colors[i%colors.length]};animation-duration:${dur}s;animation-delay:${delay}s"></div>`;
+  }
+  return c;
+}
+
+/** Encouraging one-liner for the full-time card, tuned to the points earned
+ *  and whether it was a knockout tie (which pays far more). */
+function ftEncouragement(pts, matchId){
+  const isKo = !!koRoundOf(matchId);
+  if(pts<=0) return isKo ? 'Not this tie — onto the next one 💪' : 'No luck this time — plenty more to play 💪';
+  if(isKo){
+    if(pts>=30) return '🔥 Massive haul — you read this one perfectly!';
+    if(pts>=16) return '🎯 Brilliant call on this tie!';
+    if(pts>=10) return '✓ You called who goes through — nice!';
+    return '👏 On the board for this tie!';
+  }
+  if(pts>=13) return '🎯 Spot on — exact score AND a scorer!';
+  if(pts>=10) return '🎯 Exact score — superb call!';
+  if(pts>=8)  return '👏 Great shout — result plus a scorer!';
+  if(pts>=5)  return '✓ You called the result right!';
+  return '👏 On the board!';
+}
+
+/** Is this a knockout tie that finished level and hasn't had its shootout
+ *  winner recorded yet? If so we hold the full-time card until it's decided. */
+function isUndecidedKoLevel(id){
+  if(!koRoundOf(id)) return false;
+  const r=DB.results()[id];
+  return r && r.h!=null && r.a!=null && +r.h===+r.a && !(r.pkWinner==='h'||r.pkWinner==='a');
+}
+
+/** Full-time result pop-up, personalised for the active player. */
+function celebrateFullTime(matchId){
+  const info = liveMatchInfo(matchId);
+  const res  = DB.results()[matchId];
+  if(!info || !res || res.h==null || res.a==null) return;
+  const home=info.h, away=info.a, h=+res.h, a=+res.a;
+  const wentToPens = h===a && (res.pkWinner==='h'||res.pkWinner==='a');
+  let winnerLine;
+  if(wentToPens) winnerLine = `<b>${esc(res.pkWinner==='h'?home:away)}</b> advance on penalties`;
+  else if(h>a)   winnerLine = `<b>${esc(home)}</b> win`;
+  else if(a>h)   winnerLine = `<b>${esc(away)}</b> win`;
+  else           winnerLine = `It ends <b>all square</b>`;
+
+  const myPts = (activeName && getRoster(activeName)) ? pointsOnMatch(getRoster(activeName), matchId) : null;
+  let youHtml='';
+  if(myPts!=null){
+    youHtml = `<div class="mo-you ${myPts>0?'hit':'miss'}">
+      <div class="mo-you-line">${ftEncouragement(myPts, matchId)}</div>
+      ${myPts>0?`<div class="mo-you-pts ${info.isKo?'gold':''}">+${myPts} pt${myPts===1?'':'s'}</div>`:''}
+    </div>`;
+  }
+  const scLine = (res.scorers && res.scorers.length)
+    ? `<div class="mo-scorers">⚽ ${res.scorers.map(esc).join(' · ')}</div>` : '';
+  const label = info.isKo ? koRoundTitle(matchId) : (info.label||'');
+  const inner = `<div class="mo-card moment-ft">
+    <div class="mo-pitch"></div>
+    <div class="mo-inner">
+      <div class="mo-eyebrow">Full time${label?` · ${esc(label)}`:''}</div>
+      <div class="mo-teams">
+        <div class="mo-team"><img src="${teamFlag(home)}" alt=""><div class="mo-team-name">${esc(home)}</div></div>
+        <div class="mo-score">${h}<span class="mo-dash">–</span>${a}</div>
+        <div class="mo-team"><img src="${teamFlag(away)}" alt=""><div class="mo-team-name">${esc(away)}</div></div>
+      </div>
+      <div class="mo-winner">${winnerLine}</div>
+      ${scLine}
+      ${youHtml}
+      <button class="mo-dismiss" onclick="dismissMoment()">Got it</button>
+    </div>
+  </div>`;
+  const confetti = (myPts!=null && myPts>0) ? momentConfetti() : '';
+  showMomentOverlay(confetti+inner, 6500);
+}
+
+/** Penalty-shootout pop-up — the drama of a KO tie decided from the spot. */
+function celebratePenalties(matchId){
+  const info = liveMatchInfo(matchId);
+  const res  = DB.results()[matchId];
+  if(!info || !res || (res.pkWinner!=='h' && res.pkWinner!=='a')) return;
+  const home=info.h, away=info.a;
+  const winner = res.pkWinner==='h'?home:away;
+  const pkStr = (res.pkH!=null && res.pkA!=null) ? `${res.pkH}–${res.pkA}` : '';
+  let youHtml='';
+  if(activeName && getRoster(activeName) && info.isKo){
+    const pred = getRoster(activeName).koPredictions && getRoster(activeName).koPredictions[matchId];
+    const adv  = effectiveKoAdvancer(matchId, pred, home, away);
+    if(adv){
+      const ok = adv===winner;
+      youHtml = `<div class="mo-you ${ok?'hit':'miss'}">
+        <div class="mo-you-line">${ok?`✅ You backed ${esc(winner)} to go through!`:`You had ${esc(adv)} — cruel on penalties 💔`}</div>
+      </div>`;
+    }
+  }
+  const inner = `<div class="mo-card moment-pens">
+    <div class="mo-pitch"></div>
+    <div class="mo-inner">
+      <span class="mo-emoji">🥅</span>
+      <div class="mo-eyebrow">Penalty shootout</div>
+      <div class="mo-teams">
+        <div class="mo-team"><img src="${teamFlag(home)}" alt=""><div class="mo-team-name">${esc(home)}</div></div>
+        <div class="mo-score">${res.h}<span class="mo-dash">–</span>${res.a}</div>
+        <div class="mo-team"><img src="${teamFlag(away)}" alt=""><div class="mo-team-name">${esc(away)}</div></div>
+      </div>
+      <div class="mo-winner"><b>${esc(winner)}</b> win on penalties${pkStr?` (${pkStr})`:''}</div>
+      ${youHtml}
+      <button class="mo-dismiss" onclick="dismissMoment()">Got it</button>
+    </div>
+  </div>`;
+  showMomentOverlay(momentConfetti()+inner, 7000);
+}
+
+/** Watches changed results and fires the right pop-up ONCE per match. Only for
+ *  matches that finished recently (so the admin "rebuild from ESPN" tool can't
+ *  spew dozens of historical finals) and only while the tab is visible. Seeded
+ *  on load so nothing that was already finished when the page opened re-fires. */
+function detectMatchMoments(changedIds){
+  if(!window._momentsSeeded) return;
+  const now = Date.now();
+  (changedIds||[]).forEach(idRaw=>{
+    const id = +idRaw;
+    const res = DB.results()[id];
+    if(!res || res.h==null || res.h==='' || res.a==null || res.a==='') return;
+    const ko = MATCH_UTC[id];
+    const recent = ko ? (now-ko.getTime()>0 && now-ko.getTime() < 4*3600*1000) : false;
+    const decidedByPens = res.pkWinner==='h' || res.pkWinner==='a';
+    // A shootout result IS this tie's finale — show the pens card, not a plain FT.
+    if(decidedByPens && !window._penSeen.has(id)){
+      window._penSeen.add(id);
+      window._ftSeen.add(id);
+      if(recent && !document.hidden) celebratePenalties(id);
+      return;
+    }
+    if(!window._ftSeen.has(id) && matchState(id)==='finished'){
+      if(isUndecidedKoLevel(id)) return; // wait for the shootout to be recorded
+      window._ftSeen.add(id);
+      if(recent && !document.hidden) celebrateFullTime(id);
+    }
+  });
+}
+
+/** Seed the "already seen" sets on load so pre-existing finished matches (and
+ *  decided shootouts) never retro-fire a pop-up when the page first opens. */
+function seedMoments(){
+  const res = DB.results();
+  Object.keys(res).forEach(idRaw=>{
+    const id=+idRaw, r=res[id];
+    if(!r || r.h==null || r.a==null) return;
+    if(r.pkWinner==='h' || r.pkWinner==='a') window._penSeen.add(id);
+    if(matchState(id)==='finished') window._ftSeen.add(id);
+  });
+  window._momentsSeeded = true;
+}
+
+/* ============================================================
+   FIRST-OPEN WELCOME
+   A one-time branded greeting the very first time someone opens the app on
+   this device. Sets its flag as soon as it appears, so it never nags again.
+   ============================================================ */
+function maybeShowWelcome(){
+  if(localStorage.getItem('ffwc26_welcomed')==='1') return;
+  localStorage.setItem('ffwc26_welcomed','1'); // show once, ever
+  setTimeout(()=>{
+    const inner = `<div class="mo-card moment-welcome">
+      <div class="mo-pitch"></div>
+      <div class="mo-inner">
+        <img class="mo-logo" src="https://i.ibb.co/hFvmBTj9/ICD-25-Logo-3.png" alt="ICD">
+        <div class="mo-title">Fantasy <em>World Cup</em> 2026</div>
+        <div class="mo-sub">Welcome to the ICD staff prediction championship! Predict every match, name the scorers, and climb the leaderboard against your colleagues.</div>
+        <div class="mo-steps">
+          <div class="mo-step"><div class="mo-step-ico">⚽</div><div class="mo-step-t">Predict every match</div></div>
+          <div class="mo-step"><div class="mo-step-ico">🎯</div><div class="mo-step-t">Points for accuracy</div></div>
+          <div class="mo-step"><div class="mo-step-ico">🏆</div><div class="mo-step-t">Top the table</div></div>
+        </div>
+        <button class="mo-cta" onclick="dismissWelcome()">Let's play →</button>
+      </div>
+    </div>`;
+    showMomentOverlay(inner, 0); // stays until dismissed
+  }, 700);
+}
+function dismissWelcome(){
+  dismissMoment();
+  const playTab = document.querySelector('.tab[data-view="play"]');
+  if(playTab) playTab.click();
+}
+
+/* ============================================================
+   NEXT-MATCH STAFF ODDS
+   A lightweight "odds" read for the upcoming fixture, built purely from how the
+   staff themselves predicted it — a group match splits Win/Draw/Win; a knockout
+   tie splits by who each colleague backed to advance. Social, self-contained,
+   no external feed. Hidden until at least two colleagues have weighed in.
+   ============================================================ */
+function matchConsensusOdds(info){
+  const rosters = DB.rosters();
+  if(info.isKo){
+    const c = koConsensus(info.id);
+    if(!c || c.total < 2) return null;
+    return { total:c.total, hw:c.homeCount, dr:0, aw:c.awayCount,
+             h:c.homePct, d:0, a:c.awayPct, twoWay:true };
+  }
+  let hw=0, dr=0, aw=0, total=0;
+  Object.keys(rosters).forEach(n=>{
+    const p = rosters[n].predictions && rosters[n].predictions[info.id];
+    if(!p || p.h==null || p.a==null) return;
+    total++;
+    if(+p.h>+p.a) hw++; else if(+p.a>+p.h) aw++; else dr++;
+  });
+  if(total < 2) return null;
+  return { total, hw, dr, aw,
+           h:Math.round(hw/total*100), d:Math.round(dr/total*100), a:Math.round(aw/total*100),
+           twoWay:false };
+}
+
+function nmcOddsHtml(info){
+  const o = matchConsensusOdds(info);
+  if(!o) return '';
+  // Segment widths use raw fractions (exact), labels use rounded percentages.
+  const w = n => (o.total ? (n/o.total*100) : 0);
+  const seg = (cls, count, pct) => count>0
+    ? `<div class="nmc-odds-seg ${cls}" style="width:${w(count)}%">${pct>=14?pct+'%':''}</div>` : '';
+  let bar, ends;
+  if(o.twoWay){
+    bar = seg('h',o.hw,o.h) + seg('a',o.aw,o.a);
+    ends = `<span>${esc(shortTeamName(info.h))} adv.</span><span>${esc(shortTeamName(info.a))} adv.</span>`;
+  } else {
+    bar = seg('h',o.hw,o.h) + seg('d',o.dr,o.d) + seg('a',o.aw,o.a);
+    ends = `<span>${esc(shortTeamName(info.h))}</span><span>Draw</span><span>${esc(shortTeamName(info.a))}</span>`;
+  }
+  return `<div class="nmc-odds">
+    <div class="nmc-odds-label">📊 Staff odds · ${o.total} pick${o.total===1?'':'s'} so far</div>
+    <div class="nmc-odds-bar">${bar}</div>
+    <div class="nmc-odds-ends">${ends}</div>
+  </div>`;
+}
+
+function shortTeamName(t){
+  return (t||'').replace('Bosnia & Herzegovina','Bosnia').replace('Korea Republic','Korea Rep.').replace('United States','USA');
+}
+
+/* ============================================================
    LIVE MATCH BANNER(S)
    ============================================================ */
 /** Returns every match currently in progress. A match counts as live if EITHER
@@ -4102,10 +4530,33 @@ function anyMatchPlausiblyLive(now){
  *  (phase.source === 'live'), base progress on that minute out of 90 — this is
  *  correct even for delayed matches, whose elapsed-since-scheduled-kickoff is
  *  meaningless. Otherwise fall back to the scheduled-clock elapsed estimate. */
+/** The compact minute/phase label shown in the live banner & mini-bar. Handles
+ *  the non-numeric phases (HT / FT / PENS / ET break) and appends an apostrophe
+ *  only to a real running minute ("90+5" -> "90+5'", "PENS" -> "PENS"). */
+function fmtPhaseMin(phase){
+  if(!phase) return '';
+  switch(phase.phase_code){
+    case 'ht': return 'HT';
+    case 'ft': return 'FT';
+    case 'pens': return 'PENS';
+    case 'et-break': return 'ET';
+  }
+  const dm = String(phase.displayMin);
+  return /\d$/.test(dm) ? dm + "'" : dm;
+}
+
 function liveProgressPct(live, phase) {
   if (phase) {
     if (phase.phase_code === 'ft') return 100;
+    if (phase.phase_code === 'pens') return 100;
     if (phase.phase_code === 'ht') return 55;
+    if (phase.phase_code === 'et-break') return 88;
+    // Extra time runs the clock 90'→120', so scale those minutes across 90-100%.
+    if (phase.phase_code === 'et') {
+      const mm = String(phase.displayMin).match(/\d+/);
+      if (mm) return Math.min(100, 88 + Math.round(((parseInt(mm[0],10) - 90) / 30) * 12));
+      return 92;
+    }
     if (phase.source === 'live') {
       const mm = String(phase.displayMin).match(/\d+/);
       if (mm) return Math.min(100, Math.round((parseInt(mm[0], 10) / 90) * 100));
@@ -4157,7 +4608,7 @@ function liveMatchSlideHtml(live) {
     scorersHtml = `<div class="lmb-no-score">Score updates as the organiser enters results</div>`;
   }
 
-  const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
+  const minDisplay = fmtPhaseMin(phase);
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
   const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
   const isEstimated = phase.source === 'estimate';
@@ -4227,7 +4678,7 @@ function patchLiveSlide(live) {
 
   const progressPct = liveProgressPct(live, phase);
 
-  const minDisplay = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
+  const minDisplay = fmtPhaseMin(phase);
   const minLabel = isHT ? 'Half time' : (isFT ? 'Full time' : phase.phase);
   const liveLabel = isFT ? 'FT' : (isHT ? 'HT' : 'Live');
   const isEstimated = phase.source === 'estimate';
@@ -4355,7 +4806,7 @@ function miniChipHtml(live){
   const aS = hasScore ? r.a : '–';
   const isHT = phase && phase.phase_code === 'ht';
   const isFT = phase && phase.phase_code === 'ft';
-  const minD = isHT ? 'HT' : (isFT ? 'FT' : (phase ? `${phase.displayMin}'` : ''));
+  const minD = phase ? fmtPhaseMin(phase) : '';
   const tapAction = live.isKo ? `scrollToKoMatch(${live.id})` : `scrollToMatch(${live.id})`;
   return `<button class="lmb-mini-chip" id="mini-chip-${live.id}" onclick="${tapAction}" aria-label="View your prediction for ${live.h} versus ${live.a}">
     <span class="mini-dot ${(!isFT && !isHT) ? 'pulse' : ''}"></span>
@@ -4380,7 +4831,7 @@ function patchMiniChip(live){
   const aS = hasScore ? r.a : '–';
   const isHT = phase.phase_code === 'ht';
   const isFT = phase.phase_code === 'ft';
-  const minD = isHT ? 'HT' : (isFT ? 'FT' : `${phase.displayMin}'`);
+  const minD = fmtPhaseMin(phase);
   const hEl = el.querySelector('[data-f="mini-h"]');
   if(hEl){ hEl.textContent = hS; hEl.classList.toggle('pending', !hasScore); }
   const aEl = el.querySelector('[data-f="mini-a"]');
@@ -7921,6 +8372,13 @@ async function fetchLiveScoresFromAPI(opts){
       if(scoreUpdates > 0 && window._knownScoresSeeded){
         detectAndCelebrateGoals(changedIds);
       }
+      // Full-time / penalty pop-ups. Deduped by seen-sets, so the Firebase
+      // listener echo of these same writes won't double-fire. On a status-only
+      // finish (score already present) sweep the scannable set to catch it.
+      if(window._momentsSeeded){
+        detectMatchMoments(changedIds);
+        if(statusChanged) detectMatchMoments(liveScannableIds());
+      }
       renderScorebar();
       renderLiveBanner();
       renderNextMatchCard();
@@ -8295,6 +8753,8 @@ function init(){
     enterPredict();
   }
   seedKnownScores();
+  seedMoments();
+  maybeShowWelcome();
   renderMatchesHub();
   initFilterArrows();
   syncTabbarH();
