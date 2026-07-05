@@ -521,11 +521,21 @@
   .lrh-who{font-family:'Archivo';font-weight:800;font-size:15px;color:var(--head)}
   .lrh-verb{font-size:13px;color:var(--muted);font-weight:600}
   .lrh-pts{font-family:'Oswald';font-weight:700;font-size:16px;color:#fff;background:var(--gold);border-radius:20px;padding:3px 12px;margin-left:auto}
+  .lrh-pred{margin-top:9px;background:rgba(255,255,255,.55);border:1px solid rgba(224,168,46,.28);border-radius:10px;padding:9px 12px}
+  .lrh-pred-lbl{font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#8a6516;margin-bottom:5px}
+  .lrh-pred-row{font-size:12.5px;color:var(--head);font-weight:600;line-height:1.5}
+  .lrh-pred-row+.lrh-pred-row{margin-top:3px}
+  .lrh-pred-name{font-weight:800;color:var(--green-800)}
+  .lrh-pred-noscore{color:var(--muted);font-weight:500;font-style:italic}
+  .lrh-tick.ok{color:var(--green-700);font-weight:800}
+  .lrh-tick.no{color:#c0392b;font-weight:800}
+  .lrh-note{font-size:10px;color:var(--muted);font-weight:500;margin-top:7px;text-align:center;line-height:1.4}
   @media(max-width:560px){
     .lrh-hero{gap:6px;padding:9px 10px}
     .lrh-who{font-size:14px}
     .lrh-verb{font-size:12px}
     .lrh-pts{margin-left:0}
+    .lrh-pred-row{font-size:12px}
   }
 
   /* ===== CLOSEST RIVALS (your race) ===== */
@@ -7359,6 +7369,38 @@ function rankMoveHtml(baseline, name, nowRank){
 
 /** "Last result" hero card — celebrates who scored best on the most recently
  *  finished match. Quiet when nothing's finished yet. */
+/** Compact "winning pick" line for one top player on the last-result hero:
+ *  their predicted score (with a ✓ if exact, ✗ otherwise) plus each named
+ *  scorer marked ✓/✗ against who actually scored. Works for group and KO
+ *  matches. Returns '' if that player has no usable prediction on record. */
+function lrhPredLine(m, result, name){
+  const roster = DB.rosters()[name];
+  if(!roster) return '';
+  const pred = m.isKo ? (roster.koPredictions && roster.koPredictions[m.id])
+                      : (roster.predictions && roster.predictions[m.id]);
+  if(!pred) return '';
+  const ph = pred.h, pa = pred.a;
+  let scoreBit;
+  if(ph!=null && pa!=null){
+    const exact = (+ph===+result.h && +pa===+result.a);
+    scoreBit = `<b>${ph}\u2013${pa}</b> <span class="lrh-tick ${exact?'ok':'no'}">${exact?'\u2713':'\u2717'}</span>`;
+  } else {
+    scoreBit = `<span class="lrh-pred-noscore">no score picked</span>`;
+  }
+  // Scorers: index alignment matches matchedScorerIndexes (both use the same
+  // trimmed, non-empty list), so hit.has(i) lines up with predSc[i].
+  const predSc = (pred.scorers||[]).map(s=>(s||'').trim()).filter(Boolean);
+  let scorersBit = '';
+  if(predSc.length){
+    const hit = matchedScorerIndexes(pred, result);
+    scorersBit = ' &middot; ' + predSc.map((s,i)=>{
+      const ok = hit.has(i);
+      return `<span class="lrh-tick ${ok?'ok':'no'}">${ok?'\u2713':'\u2717'}</span> ${esc(s)}`;
+    }).join(', ');
+  }
+  return scoreBit + scorersBit;
+}
+
 function renderLastResultHero(){
   const el = document.getElementById('lastResultHero');
   if(!el) return;
@@ -7399,6 +7441,23 @@ function renderLastResultHero(){
       <span class="lrh-verb">${verb}</span>
       <span class="lrh-pts">${ptsLabel}</span>
     </div>
+    ${(() => {
+      // Compact "winning pick(s)": show what the top scorer(s) predicted so the
+      // points are verifiable. Single winner → one line (name already in hero);
+      // multiple → one short line each, name-prefixed.
+      const rows = h.top.map(t => {
+        const line = lrhPredLine(m, r, t.name);
+        if(!line) return '';
+        const namePrefix = h.top.length>1 ? `<span class="lrh-pred-name">${esc(t.name)}</span> ` : '';
+        return `<div class="lrh-pred-row">${namePrefix}${line}</div>`;
+      }).filter(Boolean).join('');
+      if(!rows) return '';
+      return `<div class="lrh-pred">
+        <div class="lrh-pred-lbl">Winning pick${h.top.length>1?'s':''}</div>
+        ${rows}
+      </div>`;
+    })()}
+    ${m.isKo ? `<div class="lrh-note">Raw match points — each player's leaderboard total also applies their personal underdog boost.</div>` : ''}
   </div>`;
 }
 
