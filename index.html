@@ -1688,6 +1688,9 @@
   }
   .ko-wild-toggle:hover{background:rgba(224,168,46,.14)}
   .ko-wild-toggle.on{background:var(--gold);color:#4a3608;border-style:solid}
+  .ko-wild-toggle.locked{cursor:default}
+  .ko-wild-toggle.used{border-style:solid;border-color:var(--line);color:var(--muted);background:var(--bg);cursor:not-allowed;opacity:.75}
+  .ko-wild-toggle.used:hover{background:var(--bg)}
   .ko-wild-toggle .kw-star{font-size:14px}
 
   .ko-result-strip{
@@ -5750,9 +5753,22 @@ function koMatchCard(matchId, roundKey, roster){
       for(let i=0;i<aGoals;i++){ html+=koScorerRow(matchId, (pred.scorers||[])[gi], gi, away, (i+1), aGoals); gi++; }
     }
     html += `</div></div>`;
-    html += `<div class="ko-wild-toggle ${isWild?'on':''}" onclick="toggleWildcard(${matchId})">
-      <span class="kw-star">⭐</span>${isWild?'Wildcard set — points on this match are DOUBLED':'Make this my Wildcard (double points)'}
-    </div>`;
+    if(isWild){
+      // This match holds the (permanent) wildcard.
+      html += `<div class="ko-wild-toggle on locked" onclick="toggleWildcard(${matchId})">
+        <span class="kw-star">⭐</span>Wildcard locked here — points DOUBLED (one-time choice)
+      </div>`;
+    } else if(roster.wildcard!=null){
+      // Wildcard already used on another match — disabled, so it's clear it's a
+      // one-time pick the player has already made and can't select again.
+      html += `<div class="ko-wild-toggle used" title="Your Wildcard can only be set once — it's already used">
+        <span class="kw-star">⭐</span>Wildcard already used on match ${roster.wildcard}
+      </div>`;
+    } else {
+      html += `<div class="ko-wild-toggle" onclick="toggleWildcard(${matchId})">
+        <span class="kw-star">⭐</span>Make this my Wildcard (double points · one-time)
+      </div>`;
+    }
   }
 
   // Share the locked pick to WhatsApp — once the tie has locked and the player
@@ -5955,14 +5971,26 @@ function updateKoScorer(matchId, idx, val){
 }
 
 function toggleWildcard(matchId){
-  // Can't set (or clear) a wildcard on a match that has already kicked off —
-  // the points are locked the moment it starts, like the prediction itself.
+  // Can't set a wildcard on a match that has already kicked off — the points
+  // are locked the moment it starts, like the prediction itself.
   if(koKickedOff(matchId)){ toast('🔒 This match has kicked off — wildcard locked'); return; }
   const r=getRoster(activeName);
-  if(r.wildcard===matchId){ r.wildcard=null; toast('Wildcard cleared'); }
-  else { r.wildcard=matchId; toast('⭐ Wildcard set — this match now scores double'); }
+  // The Wildcard Banker is a ONE-TIME, permanent choice. Once it's set on any
+  // match it can't be moved or cleared, and it can't be picked a second time.
+  // Tapping it again — here or on any other match — just explains why.
+  if(r.wildcard!=null){
+    if(r.wildcard===matchId) toast('⭐ Your Wildcard is locked on this match — it can only be set once');
+    else toast(`⭐ Wildcard already used on match ${r.wildcard} — it can only be set once`);
+    return;
+  }
+  // First and only time it can ever be set — confirm, since it can't be undone.
+  const ok = confirm("Set your Wildcard on this match?\n\nThis DOUBLES your points on this one knockout match — but it's a ONE-TIME choice. You can't move it or clear it later.");
+  if(!ok) return;
+  r.wildcard=matchId;
   saveRoster(r);
-  // A wildcard change affects the banner + every KO card's header, so re-render
+  toast('⭐ Wildcard locked — this match now scores double');
+  hapticTap();
+  // The wildcard now affects the banner + every KO card's header, so re-render
   // the whole KO section (cheap, and keeps the chip/labels consistent).
   renderKoPredictions();
   renderScorebar();
