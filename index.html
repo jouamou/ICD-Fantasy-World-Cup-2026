@@ -1821,6 +1821,211 @@
   .ko-catchup.collapsible.open .kc-toggle .kc-chev{transform:rotate(180deg)}
   .ko-catchup.collapsible .kc-body{display:none;padding:0 17px 15px}
   .ko-catchup.collapsible.open .kc-body{display:block}
+
+  /* ============================================================
+     🏆 THE GRAND FINALE
+     Everything below only ever shows once the Final is under way / decided.
+     Gold is reserved exclusively for this — it should feel like the app has
+     changed character on the last day of the tournament.
+     ============================================================ */
+  @keyframes goldSweep{0%{background-position:-220% 0}100%{background-position:220% 0}}
+  @keyframes trophyFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-9px) rotate(2deg)}}
+  @keyframes trophyPop{0%{transform:scale(.3) rotate(-25deg);opacity:0}55%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes ringPulse{0%{transform:scale(.85);opacity:.55}100%{transform:scale(1.6);opacity:0}}
+  @keyframes starTwinkle{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.9;transform:scale(1.15)}}
+  @keyframes finaleRise{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+  @keyframes crownBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+  /* --- Champion ribbon under the hero score bar --- */
+  #championRibbon{display:none}
+  body.tournament-complete #championRibbon{
+    display:block;margin-top:14px;border-radius:12px;overflow:hidden;
+    border:1px solid rgba(224,168,46,.55);
+    background:linear-gradient(100deg,rgba(224,168,46,.10) 0%,rgba(246,231,194,.28) 45%,rgba(224,168,46,.10) 100%);
+    background-size:220% 100%;animation:goldSweep 5.5s linear infinite;
+    padding:11px 14px;display:flex;align-items:center;justify-content:center;gap:11px;flex-wrap:wrap;
+    cursor:pointer;
+  }
+  #championRibbon .cr-tag{
+    font-family:'Inter';font-weight:800;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--gold);background:rgba(0,0,0,.22);padding:4px 9px;border-radius:99px;white-space:nowrap;
+  }
+  #championRibbon img{width:28px;height:19px;border-radius:3px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  #championRibbon .cr-txt{font-family:'Archivo';font-weight:800;font-size:13.5px;color:#fff}
+  #championRibbon .cr-txt b{color:var(--gold-soft)}
+  #championRibbon .cr-go{font-size:12px;font-weight:800;color:var(--gold);white-space:nowrap}
+
+  /* --- The Finale tab itself gets a gold treatment --- */
+  .tab.tab-finale{color:#a5801f;font-weight:800}
+  .tab.tab-finale.active{color:#8a6a12;border-bottom-color:var(--gold)}
+  .tab.tab-finale .ic{animation:crownBob 2.4s ease-in-out infinite}
+
+  /* --- Finale hero --- */
+  .fin-hero{
+    position:relative;overflow:hidden;border-radius:20px;padding:30px 20px 26px;text-align:center;
+    background:linear-gradient(165deg,#2a1f00 0%,#3d2d02 55%,#241a00 100%);
+    border:2px solid var(--gold);box-shadow:0 18px 44px rgba(60,45,5,.32);margin-bottom:18px;
+    animation:finaleRise .5s ease-out both;
+  }
+  .fin-hero .fh-stars{position:absolute;inset:0;pointer-events:none}
+  .fin-hero .fh-star{position:absolute;color:var(--gold);font-size:11px;animation:starTwinkle 2.6s ease-in-out infinite}
+  .fin-hero .fh-eyebrow{
+    position:relative;font-family:'Inter';font-weight:800;font-size:10.5px;letter-spacing:2.4px;
+    text-transform:uppercase;color:var(--gold);margin-bottom:8px;
+  }
+  .fin-hero .fh-trophy{position:relative;font-size:64px;line-height:1;display:inline-block;animation:trophyFloat 3.4s ease-in-out infinite;filter:drop-shadow(0 8px 20px rgba(224,168,46,.45))}
+  .fin-hero .fh-title{
+    position:relative;font-family:'Archivo';font-weight:900;font-size:27px;line-height:1.1;margin-top:10px;
+    background:linear-gradient(100deg,#f6e7c2 0%,#fff8e6 30%,#e0a82e 50%,#fff8e6 70%,#f6e7c2 100%);
+    background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:goldSweep 4.5s linear infinite;
+  }
+  .fin-hero .fh-champ{position:relative;margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:9px}
+  .fin-hero .fh-flagwrap{position:relative;display:inline-block}
+  .fin-hero .fh-flagwrap::after{
+    content:"";position:absolute;inset:-10px;border-radius:12px;border:2px solid var(--gold);
+    animation:ringPulse 2.4s ease-out infinite;pointer-events:none;
+  }
+  .fin-hero .fh-flag{width:104px;height:70px;border-radius:9px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 10px 26px rgba(0,0,0,.45)}
+  .fin-hero .fh-team{font-family:'Oswald';font-weight:700;font-size:34px;color:#fff;letter-spacing:.5px;line-height:1}
+  .fin-hero .fh-cap{font-size:12px;font-weight:700;color:rgba(255,255,255,.6)}
+  .fin-hero .fh-score{
+    position:relative;margin-top:12px;display:inline-flex;align-items:center;gap:8px;
+    background:rgba(0,0,0,.3);border:1px solid rgba(224,168,46,.4);border-radius:99px;padding:7px 15px;
+    font-size:12.5px;font-weight:700;color:rgba(255,255,255,.85);
+  }
+  .fin-hero .fh-score img{width:22px;height:15px;border-radius:2px;object-fit:cover}
+  .fin-hero .fh-score b{font-family:'Oswald';font-size:17px;color:var(--gold)}
+
+  /* --- Section headers inside the finale --- */
+  .fin-sec{margin:22px 0 10px;display:flex;align-items:center;gap:9px}
+  .fin-sec-t{font-family:'Archivo';font-weight:900;font-size:15px;color:var(--head);letter-spacing:.2px}
+  .fin-sec-l{flex:1;height:1px;background:linear-gradient(90deg,var(--gold) 0%,var(--line) 100%);opacity:.55}
+
+  /* --- World podium (3 real teams) --- */
+  .fin-world{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .fin-wcard{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 8px 12px;text-align:center;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .fin-wcard.gold{border:2px solid var(--gold);box-shadow:0 8px 22px rgba(224,168,46,.22);transform:translateY(-4px)}
+  .fin-wcard.gold::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(224,168,46,.10),transparent 60%);pointer-events:none}
+  .fin-wcard .fw-medal{font-size:22px;line-height:1}
+  .fin-wcard img{width:52px;height:35px;border-radius:5px;object-fit:cover;margin:8px auto 6px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .fin-wcard .fw-team{font-family:'Archivo';font-weight:800;font-size:12.5px;color:var(--ink);line-height:1.25;word-break:break-word}
+  .fin-wcard .fw-lab{font-size:9.5px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .fin-wcard.gold .fw-lab{color:#a5801f}
+
+  /* --- The ICD fantasy champion --- */
+  .fin-king{
+    position:relative;overflow:hidden;border-radius:18px;padding:24px 18px 20px;text-align:center;
+    background:linear-gradient(160deg,#1c4a0e,#225a11 80%);border:2px solid var(--gold);
+    box-shadow:0 14px 34px rgba(20,40,10,.28);
+  }
+  .fin-king .fk-crown{font-size:36px;line-height:1;animation:trophyPop .8s cubic-bezier(.2,1.3,.4,1) both}
+  .fin-king .fk-eyebrow{font-family:'Inter';font-weight:800;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-top:6px}
+  .fin-king .fk-name{font-family:'Archivo';font-weight:900;font-size:26px;color:#fff;margin-top:6px;line-height:1.15;word-break:break-word}
+  .fin-king .fk-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:9px;font-size:12px;font-weight:700;color:rgba(255,255,255,.72)}
+  .fin-king .fk-row img{width:26px;height:18px;border-radius:3px;object-fit:cover}
+  .fin-king .fk-pts{font-family:'Oswald';font-weight:700;font-size:52px;color:var(--gold);line-height:1;margin-top:12px;text-shadow:0 6px 22px rgba(224,168,46,.35)}
+  .fin-king .fk-pts-l{font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px}
+  .fin-king .fk-gap{margin-top:12px;font-size:12px;color:rgba(255,255,255,.6);font-weight:600}
+  .fin-king .fk-gap b{color:var(--green-500)}
+  .fin-king .fk-tie{margin-top:10px;font-size:12px;color:rgba(255,255,255,.8);font-weight:700}
+
+  /* --- Finale action buttons --- */
+  .fin-acts{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+  .fin-btn{
+    flex:1 1 46%;min-width:150px;display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 12px;border-radius:12px;border:1px solid var(--gold);cursor:pointer;
+    background:linear-gradient(100deg,rgba(224,168,46,.12),rgba(246,231,194,.3),rgba(224,168,46,.12));
+    background-size:220% 100%;animation:goldSweep 6s linear infinite;
+    font-family:'Archivo';font-weight:800;font-size:13px;color:#7a5c0d;
+  }
+  .fin-btn:hover{filter:brightness(1.04)}
+  .fin-btn:disabled{opacity:.6;cursor:default}
+  .fin-btn.plain{background:var(--card);border-color:var(--line);color:var(--head);animation:none}
+
+  /* --- Awards --- */
+  .fin-awards{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  @media(max-width:520px){.fin-awards{grid-template-columns:1fr}}
+  .aw{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 13px 12px;
+    box-shadow:var(--shadow);display:flex;gap:11px;align-items:flex-start;position:relative;overflow:hidden;
+  }
+  .aw.mine{border-color:var(--gold);box-shadow:0 6px 18px rgba(224,168,46,.18)}
+  .aw.mine::after{content:"YOU";position:absolute;top:9px;right:9px;font-size:8.5px;font-weight:900;letter-spacing:1px;color:#a5801f;background:rgba(224,168,46,.14);padding:2px 6px;border-radius:99px}
+  .aw-ico{font-size:24px;line-height:1;flex:0 0 auto;margin-top:1px}
+  .aw-b{min-width:0;flex:1}
+  .aw-t{font-family:'Archivo';font-weight:900;font-size:13px;color:var(--ink);line-height:1.2}
+  .aw-d{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .aw-w{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .aw-w img{width:20px;height:14px;border-radius:2px;object-fit:cover}
+  .aw-w .awn{font-family:'Archivo';font-weight:800;font-size:12.5px;color:var(--green-700);line-height:1.2}
+  .aw-v{margin-left:auto;font-family:'Oswald';font-weight:700;font-size:16px;color:var(--gold);white-space:nowrap}
+  .aw-none{font-size:11.5px;color:var(--muted);font-style:italic;margin-top:7px}
+
+  /* --- Season in numbers --- */
+  .fin-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .fin-num{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;box-shadow:var(--shadow)}
+  .fin-num .fn-v{font-family:'Oswald';font-weight:700;font-size:24px;color:var(--green-700);line-height:1}
+  .fin-num .fn-l{font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-top:5px;line-height:1.25}
+
+  /* --- Final classification table --- */
+  .fin-table{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .fin-tr{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid var(--line)}
+  .fin-tr:last-child{border-bottom:none}
+  .fin-tr.me{background:var(--green-100)}
+  .fin-tr.p1{background:linear-gradient(100deg,rgba(224,168,46,.14),rgba(246,231,194,.3),rgba(224,168,46,.14));background-size:220% 100%;animation:goldSweep 6s linear infinite}
+  .fin-tr .ft-r{font-family:'Oswald';font-weight:700;font-size:16px;color:var(--muted);width:30px;flex:0 0 auto;text-align:center}
+  .fin-tr.p1 .ft-r,.fin-tr.p2 .ft-r,.fin-tr.p3 .ft-r{font-size:18px}
+  .fin-tr img{width:26px;height:18px;border-radius:3px;object-fit:cover;flex:0 0 auto}
+  .fin-tr .ft-n{font-family:'Archivo';font-weight:800;font-size:13.5px;color:var(--ink);min-width:0;flex:1;line-height:1.2;word-break:break-word}
+  .fin-tr .ft-n small{display:block;font-weight:600;font-size:10.5px;color:var(--muted)}
+  .fin-tr .ft-p{font-family:'Oswald';font-weight:700;font-size:20px;color:var(--green-700);flex:0 0 auto}
+  .fin-tr.p1 .ft-p{color:#a5801f}
+
+  /* --- Teaser (Final kicked off, not decided) --- */
+  .fin-teaser{
+    position:relative;overflow:hidden;border-radius:20px;padding:34px 20px;text-align:center;
+    background:linear-gradient(165deg,#2a1f00,#3d2d02 60%,#241a00);border:2px solid var(--gold);
+  }
+  .fin-teaser .ft-em{font-size:56px;animation:trophyFloat 3.2s ease-in-out infinite;display:inline-block}
+  .fin-teaser .ft-t{font-family:'Archivo';font-weight:900;font-size:24px;color:var(--gold-soft);margin-top:10px}
+  .fin-teaser .ft-s{font-size:13px;color:rgba(255,255,255,.66);margin-top:8px;line-height:1.5;max-width:380px;margin-left:auto;margin-right:auto}
+
+  /* --- Coronation overlay (gold variant of the moment card) --- */
+  .mo-card.moment-crown{
+    background:linear-gradient(160deg,#2a1f00,#3d2d02 70%,#241a00);border:2px solid var(--gold);
+    box-shadow:0 24px 70px rgba(0,0,0,.6);
+    /* The tallest card in the app — never let a short phone clip the CTA. */
+    max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  @media(max-height:700px){
+    #momentOverlay .mo-card.moment-crown .mo-inner{padding:18px 20px 16px}
+    #momentOverlay .mo-crown-trophy{font-size:46px}
+    #momentOverlay .mo-crown-team img{width:70px;height:47px}
+    #momentOverlay .mo-crown-name{font-size:26px}
+    #momentOverlay .mo-crown-div{margin:12px 0 10px}
+  }
+  .mo-card.moment-crown .mo-eyebrow{color:var(--gold)}
+  #momentOverlay .mo-crown-trophy{font-size:62px;line-height:1;display:block;margin:2px 0 4px;animation:trophyPop .9s cubic-bezier(.2,1.3,.4,1) both;filter:drop-shadow(0 8px 22px rgba(224,168,46,.5))}
+  #momentOverlay .mo-crown-team{display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:6px}
+  #momentOverlay .mo-crown-team img{width:88px;height:59px;border-radius:8px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 8px 22px rgba(0,0,0,.5)}
+  #momentOverlay .mo-crown-name{font-family:'Oswald';font-weight:700;font-size:32px;color:#fff;line-height:1}
+  #momentOverlay .mo-crown-sub{font-size:11.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold)}
+  #momentOverlay .mo-crown-div{height:1px;background:linear-gradient(90deg,transparent,rgba(224,168,46,.55),transparent);margin:18px 0 14px}
+  #momentOverlay .mo-crown-you{background:rgba(224,168,46,.10);border:1px solid rgba(224,168,46,.35);border-radius:13px;padding:13px 12px}
+  #momentOverlay .mo-crown-you .cy-l{font-size:9.5px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+  #momentOverlay .mo-crown-you .cy-n{font-family:'Archivo';font-weight:900;font-size:19px;color:#fff;line-height:1.2;word-break:break-word}
+  #momentOverlay .mo-crown-you .cy-p{font-family:'Oswald';font-weight:700;font-size:30px;color:var(--gold);margin-top:3px;line-height:1}
+  #momentOverlay .mo-crown-you .cy-s{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px}
+  #momentOverlay .mo-crown-cta{
+    display:block;width:100%;margin-top:14px;padding:13px;border-radius:12px;border:none;cursor:pointer;
+    background:linear-gradient(100deg,#e0a82e,#f6e7c2 50%,#e0a82e);background-size:220% 100%;
+    animation:goldSweep 4s linear infinite;color:#3a2a00;font-family:'Archivo';font-weight:900;font-size:14px;
+  }
 </style>
 </head>
 <body>
@@ -1837,11 +2042,13 @@
     <div class="hero-sub">Staff Prediction Championship</div>
     <div class="hero-host">United States &middot; Canada &middot; Mexico</div>
     <div class="scorebar" id="scorebar"></div>
+    <div id="championRibbon" onclick="openFinaleTab()" title="Open the Finale"></div>
   </div>
 </header>
 
 <nav class="tabbar">
   <div class="tabbar-inner">
+    <button class="tab tab-finale" id="tabFinale" data-view="finale" style="display:none"><span class="ic">👑</span>Finale</button>
     <button class="tab active" data-view="matches"><span class="ic">📅</span>Matches</button>
     <button class="tab" data-view="play"><span class="ic">⚽</span>Play &amp; Predict</button>
     <button class="tab" data-view="leaderboard"><span class="ic">🏆</span>Leaderboard</button>
@@ -1920,6 +2127,11 @@
       <!-- KNOCKOUT PREDICTIONS (appears once all 12 groups finish) -->
       <div id="koPredictContainer" style="padding-top:2px"></div>
     </div>
+  </section>
+
+  <!-- ============ 🏆 THE GRAND FINALE ============ -->
+  <section class="view" id="view-finale">
+    <div id="finaleContainer"></div>
   </section>
 
   <!-- ============ LEADERBOARD ============ -->
@@ -2865,6 +3077,10 @@ function refreshAll(opts){
   if(tsv && tsv.classList.contains('active')) renderTopScorers();
   const mv = document.getElementById('view-matches');
   if(mv && mv.classList.contains('active')) renderMatchesHub();
+  // The Grand Finale: reveal the tab / gold state the moment the Final lands.
+  if(typeof applyFinaleState === 'function') applyFinaleState();
+  const fv = document.getElementById('view-finale');
+  if(fv && fv.classList.contains('active')) renderFinaleTab();
 }
 
 if(firebaseReady){
@@ -4365,6 +4581,18 @@ function detectMatchMoments(changedIds){
     const ko = MATCH_UTC[id];
     const recent = ko ? (now-ko.getTime()>0 && now-ko.getTime() < 4*3600*1000) : false;
     const decidedByPens = res.pkWinner==='h' || res.pkWinner==='a';
+    // THE FINAL. Not a full-time card, not a shootout card — a coronation.
+    if(id===KO_FINAL.match && tournamentComplete()){
+      if(window._crownSeen) return;
+      window._crownSeen = true;
+      window._ftSeen.add(id); window._penSeen.add(id);
+      applyFinaleState();
+      if(recent && !document.hidden){
+        localStorage.setItem('ffwc26_crowned','1'); // they're seeing it live
+        setTimeout(celebrateCoronation, 400);
+      }
+      return;
+    }
     // A shootout result IS this tie's finale — show the pens card, not a plain FT.
     if(decidedByPens && !window._penSeen.has(id)){
       window._penSeen.add(id);
@@ -4390,6 +4618,10 @@ function seedMoments(){
     if(r.pkWinner==='h' || r.pkWinner==='a') window._penSeen.add(id);
     if(matchState(id)==='finished') window._ftSeen.add(id);
   });
+  // If the Final was already decided before this page ever opened, mark the
+  // coronation as "seen" by the live detector — maybeShowCoronation() handles
+  // showing it once, calmly, on first open instead.
+  if(tournamentComplete()) window._crownSeen = true;
   window._momentsSeeded = true;
 }
 
@@ -4400,6 +4632,11 @@ function seedMoments(){
    ============================================================ */
 function maybeShowWelcome(){
   if(localStorage.getItem('ffwc26_welcomed')==='1') return;
+  // If they're arriving after the whistle, the coronation is the greeting.
+  if(typeof tournamentComplete==='function' && tournamentComplete()){
+    localStorage.setItem('ffwc26_welcomed','1');
+    return;
+  }
   localStorage.setItem('ffwc26_welcomed','1'); // show once, ever
   setTimeout(()=>{
     const inner = `<div class="mo-card moment-welcome">
@@ -8684,6 +8921,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     tab.classList.add('active');
     const v=tab.dataset.view;
     document.getElementById('view-'+v).classList.add('active');
+    if(v==='finale') renderFinaleTab();
     if(v==='matches') renderMatchesHub();
     if(v==='leaderboard') renderLeaderboard();
     if(v==='scorers') renderTopScorers();
@@ -8824,6 +9062,651 @@ function updateLocksSoonBadges(){
   });
 }
 
+/* ============================================================
+   🏆 THE GRAND FINALE
+   Everything that fires on the last day of the tournament: a coronation
+   overlay when the Final is decided, a permanent gold "tournament complete"
+   state for the whole app, and a dedicated Finale tab holding the world
+   podium, the crowned ICD champion, the season awards, the season in numbers
+   and the final classification — plus shareable champion cards.
+
+   Nothing here is visible until the Final actually kicks off, so the app is
+   completely unchanged for the rest of the tournament.
+   ============================================================ */
+
+/** The Final is decided (including on penalties) → the tournament is over. */
+function tournamentComplete(){ return !!getKoWinner(KO_FINAL.match); }
+/** The Finale tab appears from the moment the Final kicks off. */
+function finaleUnlocked(){ return tournamentComplete() || koKickedOff(KO_FINAL.match); }
+
+/** The real-world podium: world champion, runner-up, third and fourth. */
+function worldPodium(){
+  return {
+    champion: getKoWinner(KO_FINAL.match),
+    runnerUp: getKoLoser(KO_FINAL.match),
+    third:    getKoWinner(KO_THIRD_PLACE.match),
+    fourth:   getKoLoser(KO_THIRD_PLACE.match)
+  };
+}
+/** Printable scoreline of the Final, e.g. "2–1" or "1–1 (4–3 pens)". */
+function finalScorelineText(){
+  const r = DB.results()[KO_FINAL.match];
+  if(!r || r.h==null || r.h==='' || r.a==null || r.a==='') return '';
+  let s = `${r.h}–${r.a}`;
+  if(+r.h===+r.a && (r.pkWinner==='h'||r.pkWinner==='a')){
+    const ph = r.pkH, pa = r.pkA;
+    const w = r.pkWinner==='h' ? ph : pa, l = r.pkWinner==='h' ? pa : ph;
+    s += (w!=null && l!=null && w!=='' && l!=='') ? ` (${w}–${l} pens)` : ' (pens)';
+  }
+  return s;
+}
+
+/* ------------------------------------------------------------
+   SEASON STATS — one pass over every fixture for one player.
+   Everything the awards need, computed from the same scoring engine the
+   leaderboard uses so the numbers can never disagree with it.
+   ------------------------------------------------------------ */
+function playerSeasonStats(name){
+  const roster = DB.rosters()[name];
+  if(!roster) return null;
+  const res = DB.results();
+  const s = {
+    name, team: roster.team,
+    pts: totalPoints(roster),
+    groupPts: groupStagePoints(roster),
+    exact: 0,           // exact scorelines called (group + KO)
+    scorers: 0,         // goalscorers correctly named
+    results: 0,         // correct outcomes in the group stage
+    advancers: 0,       // correct KO advancers
+    scored: 0,          // fixtures that returned > 0 points
+    engaged: 0,         // fixtures they actually predicted that have a result
+    predicted: 0,       // total predictions on record (group + KO), played or not
+    best: 0, bestId: null,          // biggest single-match haul
+    wildcard: roster.wildcard || null, wildcardPts: 0,
+    champTeam: (roster.champion && roster.champion.team) || null,
+    champPts: championBonusForRoster(roster),
+    champTierPts: (roster.champion && roster.champion.tier && roster.champion.tier.pts) || 0,
+    perfectRounds: 0, perfectPts: perfectRoundBonusForRoster(roster),
+    boost: underdogBoostFor(name),
+    blanks: 0           // played fixtures they predicted but scored nothing on
+  };
+
+  // --- group stage ---
+  const gp = roster.predictions || {};
+  MATCHES.forEach(m=>{
+    const p = gp[m.id];
+    if(!p || p.h==null || p.a==null) return;
+    s.predicted++;
+    const r = res[m.id];
+    const pts = scoreMatch(p, r);
+    if(pts==null) return;      // not played yet
+    s.engaged++;
+    if(pts>0){ s.scored++; } else { s.blanks++; }
+    if(+p.h===+r.h && +p.a===+r.a) s.exact++;
+    else if(Math.sign(+p.h-+p.a)===Math.sign(+r.h-+r.a)) s.results++;
+    if(+p.h===+r.h && +p.a===+r.a) s.results++; // an exact score is also a correct result
+    s.scorers += matchedScorerIndexes(p, r).size;
+    if(pts > s.best){ s.best = pts; s.bestId = m.id; }
+  });
+
+  // --- knockouts ---
+  const kp = roster.koPredictions || {};
+  KO_ALL_MATCHES.forEach(km=>{
+    const id = km.match;
+    const p = kp[id];
+    if(!p) return;
+    const adv = effectiveKoAdvancer(id, p);
+    if(!adv) return;
+    s.predicted++;
+    const r = res[id];
+    if(!r || r.h==null || r.h==='' || r.a==null || r.a==='') return;
+    const base = scoreKoMatch(id, p, r);
+    if(base==null) return;
+    s.engaged++;
+    const shown = pointsOnMatch(roster, id) || 0; // base × round mult × wildcard
+    if(shown>0){ s.scored++; } else { s.blanks++; }
+    const winner = getKoWinner(id);
+    if(winner && adv===winner) s.advancers++;
+    if(p.h!=null && p.a!=null && +p.h===+r.h && +p.a===+r.a) s.exact++;
+    s.scorers += matchedScorerIndexes(p, r).size;
+    if(shown > s.best){ s.best = shown; s.bestId = id; }
+    if(s.wildcard===id) s.wildcardPts = shown;
+  });
+
+  PERFECT_ROUND_DEFS.forEach(rd=>{
+    if(roundFullyResolved(rd.matches) && roundAllAdvancersCorrect(roster, rd.matches)) s.perfectRounds++;
+  });
+  s.hitRate = s.engaged ? s.scored/s.engaged : 0;
+  return s;
+}
+
+/** Every player's season stats, plus their final and group-stage ranks. */
+function allSeasonStats(){
+  const names = Object.keys(DB.rosters());
+  const stats = names.map(playerSeasonStats).filter(Boolean);
+  // final rank (matches the leaderboard's own ordering exactly)
+  const finalOrder = computeStandingsArray();
+  const rankOf = {}; finalOrder.forEach((p,i)=> rankOf[p.name]=i+1);
+  // group-stage rank (where everyone stood when the knockouts began)
+  const groupOrder = stats.slice().sort((a,b)=> b.groupPts-a.groupPts || a.name.localeCompare(b.name));
+  const gRankOf = {}; groupOrder.forEach((p,i)=> gRankOf[p.name]=i+1);
+  stats.forEach(s=>{ s.rank = rankOf[s.name]||999; s.groupRank = gRankOf[s.name]||999; s.climb = s.groupRank - s.rank; });
+  return stats;
+}
+
+/* ------------------------------------------------------------
+   THE AWARDS — the fun part. Each award picks a winner (ties allowed) on a
+   single metric. An award with no meaningful winner (nobody qualified) is
+   simply skipped, so the grid never shows an empty trophy.
+   ------------------------------------------------------------ */
+function buildAwards(stats){
+  const champ = tournamentChampion();
+  const defs = [
+    { key:'oracle',   ico:'🔮', t:'The Oracle',        d:'Most exact scorelines called all tournament',
+      metric:s=>s.exact,      fmt:v=>`${v} exact`,   min:1 },
+    { key:'scout',    ico:'👟', t:'The Scout',         d:'Named the most goalscorers correctly',
+      metric:s=>s.scorers,    fmt:v=>`${v} scorers`, min:1 },
+    { key:'bracket',  ico:'🧠', t:'The Bracketologist',d:'Most correct knockout advancers',
+      metric:s=>s.advancers,  fmt:v=>`${v}/32`,      min:1 },
+    { key:'best',     ico:'💥', t:'Best Single Match', d:'The biggest haul anyone took from one fixture',
+      metric:s=>s.best,       fmt:(v,s)=>`${v} pts`,  min:1,
+      extra:s=> s.bestId!=null ? matchLabelFor(s.bestId) : '' },
+    { key:'climb',    ico:'🚀', t:'The Comeback',      d:'Climbed the most places once the knockouts began',
+      metric:s=>s.climb,      fmt:v=>`▲${v}`,        min:1 },
+    { key:'rock',     ico:'🪨', t:'Mr. Consistent',    d:'Scored on the highest share of the matches they predicted',
+      metric:s=> s.engaged>=20 ? Math.round(s.hitRate*100) : 0, fmt:v=>`${v}%`, min:1 },
+    { key:'gambler',  ico:'🎲', t:'The Gambler',       d:'Got the most out of their one Wildcard Banker',
+      metric:s=>s.wildcardPts, fmt:v=>`${v} pts`,     min:1,
+      extra:s=> s.wildcard!=null ? matchLabelFor(s.wildcard) : '' },
+    { key:'prophet',  ico:'🏆', t:'The Prophet',       d:`Backed ${champ||'the champions'} to lift the trophy — and got paid`,
+      metric:s=> (champ && s.champTeam===champ) ? s.champPts : 0, fmt:v=>`+${v} pts`, min:1 },
+    { key:'perfect',  ico:'💎', t:'Flawless Rounds',   d:'Called every advancer right in a completed round',
+      metric:s=>s.perfectRounds, fmt:v=>`${v} round${v===1?'':'s'}`, min:1 },
+    { key:'grind',    ico:'📝', t:'The Completionist', d:'Made the most predictions across all 104 fixtures',
+      metric:s=>s.predicted,  fmt:v=>`${v}/104`,      min:1 },
+    { key:'underdog', ico:'⚡', t:'Rose From the Cellar', d:'Turned the biggest Underdog Boost into the most knockout points',
+      metric:s=> s.boost>1.05 ? Math.round((s.pts - s.groupPts)) : 0, fmt:v=>`${v} KO pts`, min:1 },
+    { key:'heart',    ico:'💔', t:'So Close',          d:'Finished second — the smallest margin in the game',
+      metric:s=> s.rank===2 ? 1 : 0, fmt:(v,s)=>`#2`, min:1 },
+  ];
+
+  const out = [];
+  defs.forEach(def=>{
+    let best = -Infinity, winners = [];
+    stats.forEach(s=>{
+      const v = def.metric(s);
+      if(v==null || v < (def.min||0)) return;
+      if(v > best){ best = v; winners = [s]; }
+      else if(v === best){ winners.push(s); }
+    });
+    if(!winners.length) return;
+    winners.sort((a,b)=> a.rank-b.rank);
+    out.push({
+      ico:def.ico, t:def.t, d:def.d,
+      winners: winners.slice(0,3),
+      more: Math.max(0, winners.length-3),
+      value: def.fmt(best, winners[0]),
+      extra: def.extra ? def.extra(winners[0]) : ''
+    });
+  });
+  return out;
+}
+
+/** Short human label for any fixture id — "🇧🇷 Brazil v Spain (Final)". */
+function matchLabelFor(id){
+  const info = liveMatchInfo(id);
+  if(!info) return '';
+  const round = koRoundOf(id) ? koRoundTitle(id) : `Group ${(MATCHES.find(m=>m.id===id)||{}).g||''}`;
+  return `${shortTeamName(info.h)} v ${shortTeamName(info.a)} · ${round}`;
+}
+
+/* ------------------------------------------------------------
+   SEASON IN NUMBERS — tournament-wide totals across every colleague.
+   ------------------------------------------------------------ */
+function seasonNumbers(stats){
+  const res = DB.results();
+  let goals = 0, played = 0;
+  liveScannableIds().forEach(id=>{
+    const r = res[id];
+    if(!r || r.h==null || r.h==='' || r.a==null || r.a==='') return;
+    if(matchState(id)!=='finished') return;
+    played++; goals += (+r.h) + (+r.a);
+  });
+  return {
+    players: stats.length,
+    played,
+    goals,
+    predictions: stats.reduce((n,s)=>n+s.predicted,0),
+    points: stats.reduce((n,s)=>n+s.pts,0),
+    exact: stats.reduce((n,s)=>n+s.exact,0),
+    scorers: stats.reduce((n,s)=>n+s.scorers,0),
+    topScore: stats.length ? Math.max(...stats.map(s=>s.pts)) : 0,
+    avg: stats.length ? Math.round(stats.reduce((n,s)=>n+s.pts,0)/stats.length) : 0
+  };
+}
+
+/* ------------------------------------------------------------
+   RENDER — the Finale tab
+   ------------------------------------------------------------ */
+function openFinaleTab(){
+  const t = document.getElementById('tabFinale');
+  if(t && t.style.display!=='none') t.click();
+}
+
+function finWorldPodiumHtml(){
+  const w = worldPodium();
+  if(!w.champion) return '';
+  const cell = (team, medal, label, gold)=> team ? `
+    <div class="fin-wcard ${gold?'gold':''}">
+      <div class="fw-medal">${medal}</div>
+      <img src="${teamFlag(team)}" alt="">
+      <div class="fw-team">${esc(team)}</div>
+      <div class="fw-lab">${label}</div>
+    </div>` : '';
+  return `
+    <div class="fin-sec"><div class="fin-sec-t">🌍 The World Podium</div><div class="fin-sec-l"></div></div>
+    <div class="fin-world">
+      ${cell(w.runnerUp,'🥈','Runner-up',false)}
+      ${cell(w.champion,'🥇','World Champions',true)}
+      ${cell(w.third,'🥉','Third place',false)}
+    </div>`;
+}
+
+function finKingHtml(stats){
+  const order = computeStandingsArray();
+  if(!order.length) return '';
+  const top = order[0];
+  const tied = order.filter(p=>p.pts===top.pts);
+  const runner = order.find(p=>p.pts<top.pts);
+  const gap = runner ? top.pts - runner.pts : null;
+  const s = stats.find(x=>x.name===top.name);
+  return `
+    <div class="fin-sec"><div class="fin-sec-t">👑 ICD Fantasy Champion</div><div class="fin-sec-l"></div></div>
+    <div class="fin-king">
+      <div class="fk-crown">👑</div>
+      <div class="fk-eyebrow">Champion of the office</div>
+      <div class="fk-name">${esc(top.name)}</div>
+      <div class="fk-row"><img src="${teamFlag(top.team)}" alt=""> ${esc(top.team)}</div>
+      <div class="fk-pts">${top.pts}</div>
+      <div class="fk-pts-l">Points</div>
+      ${tied.length>1
+        ? `<div class="fk-tie">🤝 Shared with ${esc(tied.slice(1).map(t=>t.name).join(', '))} — dead heat at the top!</div>`
+        : (gap!=null ? `<div class="fk-gap">Won by <b>${gap} point${gap===1?'':'s'}</b> from ${esc(runner.name)}</div>` : '')}
+      ${s && s.champTeam ? `<div class="fk-gap" style="margin-top:6px">Champion pick: <b>${esc(s.champTeam)}</b>${s.champPts?` (+${s.champPts} pts)`:''}</div>` : ''}
+    </div>
+    <div class="fin-acts">
+      <button class="fin-btn" onclick="shareChampionCard(this)">📤 Share the champion card</button>
+      <button class="fin-btn plain" onclick="replayCoronation()">🎬 Replay the coronation</button>
+    </div>`;
+}
+
+function finAwardsHtml(stats){
+  const awards = buildAwards(stats);
+  if(!awards.length) return '';
+  return `
+    <div class="fin-sec"><div class="fin-sec-t">🎖 Season Awards</div><div class="fin-sec-l"></div></div>
+    <div class="fin-awards">
+      ${awards.map(a=>{
+        const mine = a.winners.some(w=>w.name===activeName);
+        return `<div class="aw ${mine?'mine':''}">
+          <div class="aw-ico">${a.ico}</div>
+          <div class="aw-b">
+            <div class="aw-t">${a.t}</div>
+            <div class="aw-d">${esc(a.d)}</div>
+            ${a.winners.map((w,i)=>`
+              <div class="aw-w">
+                <img src="${teamFlag(w.team)}" alt="">
+                <span class="awn">${esc(w.name)}</span>
+                ${i===0?`<span class="aw-v">${esc(a.value)}</span>`:''}
+              </div>`).join('')}
+            ${a.more?`<div class="aw-d" style="margin-top:4px">+${a.more} more tied</div>`:''}
+            ${a.extra?`<div class="aw-d" style="margin-top:4px">${esc(a.extra)}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function finNumbersHtml(stats){
+  const n = seasonNumbers(stats);
+  const cell = (v,l)=>`<div class="fin-num"><div class="fn-v">${v}</div><div class="fn-l">${l}</div></div>`;
+  return `
+    <div class="fin-sec"><div class="fin-sec-t">📊 The Season in Numbers</div><div class="fin-sec-l"></div></div>
+    <div class="fin-nums">
+      ${cell(n.players,'Colleagues played')}
+      ${cell(n.predictions.toLocaleString(),'Predictions made')}
+      ${cell(n.played,'Matches settled')}
+      ${cell(n.goals,'Goals witnessed')}
+      ${cell(n.exact,'Exact scores called')}
+      ${cell(n.scorers,'Scorers named')}
+      ${cell(n.points.toLocaleString(),'Points won in total')}
+      ${cell(n.avg,'Average score')}
+      ${cell(n.topScore,'Winning score')}
+    </div>`;
+}
+
+function finTableHtml(){
+  const order = computeStandingsArray();
+  if(!order.length) return '';
+  const medal = i=> i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+  return `
+    <div class="fin-sec"><div class="fin-sec-t">🏁 Final Classification</div><div class="fin-sec-l"></div></div>
+    <div class="fin-table">
+      ${order.map((p,i)=>`
+        <div class="fin-tr ${i===0?'p1':''} ${i===1?'p2':''} ${i===2?'p3':''} ${p.name===activeName?'me':''}">
+          <div class="ft-r">${medal(i)}</div>
+          <img src="${teamFlag(p.team)}" alt="">
+          <div class="ft-n">${esc(p.name)}${p.name===activeName?' <small>you</small>':`<small>${esc(p.team)}</small>`}</div>
+          <div class="ft-p">${p.pts}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderFinaleTab(){
+  const el = document.getElementById('finaleContainer');
+  if(!el) return;
+
+  if(!tournamentComplete()){
+    const p = getKoParticipants(KO_FINAL.match);
+    const teams = (p.home && p.away)
+      ? `<div class="fk-row" style="justify-content:center;margin-top:14px">
+           <img src="${teamFlag(p.home)}" alt=""> ${esc(p.home)}
+           <span style="color:var(--gold);font-weight:900;padding:0 4px">vs</span>
+           <img src="${teamFlag(p.away)}" alt=""> ${esc(p.away)}
+         </div>` : '';
+    el.innerHTML = `
+      <div class="fin-teaser">
+        <div class="ft-em">🏆</div>
+        <div class="ft-t">The Final is under way</div>
+        ${teams}
+        <div class="ft-s">One match left. When the whistle blows, this page fills up: the world champions, the crowned ICD champion, the season awards and the final classification.</div>
+      </div>`;
+    return;
+  }
+
+  const stats = allSeasonStats();
+  const w = worldPodium();
+  const score = finalScorelineText();
+  const stars = Array.from({length:9},(_,i)=>{
+    const l = 6 + Math.random()*88, t = 8 + Math.random()*80, d = (Math.random()*2.4).toFixed(2);
+    return `<span class="fh-star" style="left:${l}%;top:${t}%;animation-delay:${d}s">✦</span>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="fin-hero">
+      <div class="fh-stars">${stars}</div>
+      <div class="fh-eyebrow">Tournament Complete · 19 July 2026</div>
+      <div class="fh-trophy">🏆</div>
+      <div class="fh-title">Champions of the World</div>
+      <div class="fh-champ">
+        <div class="fh-flagwrap"><img class="fh-flag" src="${teamFlag(w.champion)}" alt=""></div>
+        <div class="fh-team">${esc(w.champion)}</div>
+        <div class="fh-cap">FIFA World Cup 2026 winners</div>
+      </div>
+      ${w.runnerUp ? `<div class="fh-score">
+        Final: <img src="${teamFlag(w.champion)}" alt=""> <b>${esc(score)}</b> <img src="${teamFlag(w.runnerUp)}" alt=""> ${esc(w.runnerUp)}
+      </div>` : ''}
+    </div>
+    ${finKingHtml(stats)}
+    ${finWorldPodiumHtml()}
+    ${finAwardsHtml(stats)}
+    ${finNumbersHtml(stats)}
+    ${finTableHtml()}
+    <div style="text-align:center;margin:22px 0 8px;font-size:12px;color:var(--muted);line-height:1.6">
+      That's a wrap on the <b>ICD Fantasy World Cup 2026</b>.<br>Thanks for playing, everyone — 104 matches, one champion. See you in 2030. ⚽
+    </div>`;
+}
+
+/* ------------------------------------------------------------
+   GLOBAL FINALE STATE — the gold ribbon, the tab, the body class.
+   Safe to call as often as we like; it's idempotent.
+   ------------------------------------------------------------ */
+function applyFinaleState(){
+  const done = tournamentComplete();
+  document.body.classList.toggle('tournament-complete', done);
+
+  const tab = document.getElementById('tabFinale');
+  if(tab) tab.style.display = finaleUnlocked() ? '' : 'none';
+
+  const rib = document.getElementById('championRibbon');
+  if(rib && done){
+    const w = worldPodium();
+    const order = computeStandingsArray();
+    const king = order.length ? order[0] : null;
+    rib.innerHTML = `
+      <span class="cr-tag">Tournament complete</span>
+      ${w.champion?`<img src="${teamFlag(w.champion)}" alt="">`:''}
+      <span class="cr-txt"><b>${esc(w.champion||'')}</b> lift the World Cup${king?` · <b>${esc(king.name)}</b> wins the office`:''}</span>
+      <span class="cr-go">View the Finale →</span>`;
+  }
+  if(typeof syncTabbarH === 'function') syncTabbarH();
+}
+
+/* ------------------------------------------------------------
+   THE CORONATION — the one overlay this whole app has been building to.
+   ------------------------------------------------------------ */
+function goldConfetti(){
+  const colors = ['#e0a82e','#f6e7c2','#fff8e6','#c9971f','#ffffff','#7fbb42'];
+  let c='';
+  for(let i=0;i<48;i++){
+    const left=Math.random()*100, dur=2.4+Math.random()*2.2, delay=Math.random()*.9;
+    const w=6+Math.random()*8, h=10+Math.random()*10;
+    c+=`<div class="goal-confetti" style="left:${left}vw;width:${w}px;height:${h}px;background:${colors[i%colors.length]};animation-duration:${dur}s;animation-delay:${delay}s"></div>`;
+  }
+  return c;
+}
+
+function celebrateCoronation(){
+  const w = worldPodium();
+  if(!w.champion) return;
+  const order = computeStandingsArray();
+  const king = order.length ? order[0] : null;
+  const tied = king ? order.filter(p=>p.pts===king.pts) : [];
+  const me = activeName ? order.find(p=>p.name===activeName) : null;
+  const myRank = me ? order.indexOf(me)+1 : null;
+  const roster = activeName ? getRoster(activeName) : null;
+  const gotChamp = roster && roster.champion && roster.champion.team===w.champion;
+
+  const youLine = king
+    ? (king.name===activeName
+        ? (tied.length>1 ? `You share the crown with ${esc(tied.filter(t=>t.name!==activeName).map(t=>t.name).join(', '))}!` : 'You did it — you win the office. 🎉')
+        : `${esc(king.name)} takes the crown${myRank?` — you finished #${myRank}`:''}.`)
+    : '';
+
+  const inner = `
+    ${goldConfetti()}
+    <div class="mo-card moment-crown">
+      <div class="mo-pitch"></div>
+      <div class="mo-inner">
+        <div class="mo-eyebrow">Full time · The Final</div>
+        <span class="mo-crown-trophy">🏆</span>
+        <div class="mo-crown-team">
+          <img src="${teamFlag(w.champion)}" alt="">
+          <div class="mo-crown-name">${esc(w.champion)}</div>
+          <div class="mo-crown-sub">Champions of the World</div>
+        </div>
+        ${w.runnerUp?`<div class="mo-scorers" style="margin-top:10px">Beat ${esc(w.runnerUp)} ${esc(finalScorelineText())} in the Final</div>`:''}
+        <div class="mo-crown-div"></div>
+        ${king?`
+          <div class="mo-crown-you">
+            <div class="cy-l">👑 ICD Fantasy Champion</div>
+            <div class="cy-n">${esc(king.name)}</div>
+            <div class="cy-p">${king.pts} pts</div>
+            <div class="cy-s">${youLine}</div>
+            ${gotChamp?`<div class="cy-s" style="color:var(--gold);font-weight:700;margin-top:5px">🔮 You called ${esc(w.champion)} as champions!</div>`:''}
+          </div>`:''}
+        <button class="mo-crown-cta" onclick="dismissMoment();openFinaleTab()">See the full Finale →</button>
+        <button class="mo-dismiss" onclick="dismissMoment()">Close</button>
+      </div>
+    </div>`;
+  showMomentOverlay(inner, 0); // stays until dismissed — this one has earned it
+  try{ if(navigator.vibrate) navigator.vibrate([30,60,30,60,90]); }catch(e){}
+}
+
+/** Fires the coronation exactly once per device, whenever the viewer first
+ *  sees a completed tournament — live at the whistle, or on their next open. */
+function maybeShowCoronation(){
+  if(!tournamentComplete()) return;
+  if(localStorage.getItem('ffwc26_crowned')==='1') return;
+  localStorage.setItem('ffwc26_crowned','1');
+  setTimeout(celebrateCoronation, 600);
+}
+/** Manual replay from the Finale tab — always allowed. */
+function replayCoronation(){ celebrateCoronation(); }
+
+/* ------------------------------------------------------------
+   CHAMPION SHARE CARD — a gold 1080×1080 for the group chat.
+   ------------------------------------------------------------ */
+async function buildChampionCardCanvas(){
+  const order = computeStandingsArray();
+  if(!order.length) return null;
+  const king = order[0];
+  const w = worldPodium();
+
+  try{
+    await Promise.all([
+      document.fonts.load('900 66px Archivo'),
+      document.fonts.load('700 200px Oswald'),
+      document.fonts.load('700 26px Inter'),
+      document.fonts.ready
+    ]);
+  }catch(e){}
+
+  const [logoRaw, favRaw, champRaw] = await Promise.all([
+    loadCorsImage('https://i.ibb.co/hFvmBTj9/ICD-25-Logo-3.png'),
+    loadCorsImage(cardFlagUrl(king.team)),
+    w.champion ? loadCorsImage(cardFlagUrl(w.champion)) : Promise.resolve(null)
+  ]);
+  const logo = imageExportSafe(logoRaw)?logoRaw:null;
+  const fav  = imageExportSafe(favRaw)?favRaw:null;
+  const wcFlag = imageExportSafe(champRaw)?champRaw:null;
+
+  const W=1080, H=1080, CX=W/2;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+
+  // deep gold background
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#2a1f00'); g.addColorStop(.55,'#3d2d02'); g.addColorStop(1,'#1e1600');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(CX,220,60,CX,220,760);
+  glow.addColorStop(0,'rgba(224,168,46,.30)'); glow.addColorStop(1,'rgba(224,168,46,0)');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(224,168,46,.10)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(CX,H/2,260,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle='#e0a82e'; ctx.fillRect(0,H-8,W,8);
+  ctx.strokeStyle='rgba(224,168,46,.55)'; ctx.lineWidth=4;
+  ctx.strokeRect(26,26,W-52,H-52);
+
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic'; _ls(ctx,'0px');
+
+  if(logo){
+    const lh=70, lw=logo.naturalWidth*(lh/logo.naturalHeight);
+    ctx.drawImage(logo, CX-lw/2, 122-lh, lw, lh);
+  }else{
+    ctx.fillStyle='#fff'; _ls(ctx,'5px'); ctx.font='900 42px Archivo';
+    ctx.fillText('ICD', CX, 112); _ls(ctx,'0px');
+  }
+
+  _ls(ctx,'5px'); ctx.font='800 22px Inter'; ctx.fillStyle='#e0a82e';
+  ctx.fillText('FANTASY WORLD CUP 2026', CX, 178);
+  ctx.font='800 17px Inter'; ctx.fillStyle='rgba(255,255,255,.42)';
+  ctx.fillText('TOURNAMENT COMPLETE', CX, 214); _ls(ctx,'0px');
+
+  ctx.font='140px serif'; ctx.fillText('🏆', CX, 372);
+
+  _ls(ctx,'3px'); ctx.font='800 20px Inter'; ctx.fillStyle='#e0a82e';
+  ctx.fillText('CHAMPION', CX, 432); _ls(ctx,'0px');
+
+  // winner name (auto-shrink to fit)
+  let fs=76;
+  ctx.font=`900 ${fs}px Archivo`;
+  while(ctx.measureText(king.name).width > W-160 && fs>34){ fs-=3; ctx.font=`900 ${fs}px Archivo`; }
+  ctx.fillStyle='#fff'; ctx.fillText(king.name, CX, 512);
+
+  // their favourite team
+  if(fav){
+    const fw=54, fh=36;
+    ctx.font='700 26px Inter';
+    const tw=ctx.measureText(king.team).width;
+    const total=fw+14+tw;
+    let x=CX-total/2;
+    ctx.save(); _rr(ctx,x,536,fw,fh,5); ctx.clip(); ctx.drawImage(fav,x,536,fw,fh); ctx.restore();
+    ctx.textAlign='left'; ctx.fillStyle='rgba(255,255,255,.6)';
+    ctx.fillText(king.team, x+fw+14, 564); ctx.textAlign='center';
+  }
+
+  // the score
+  ctx.font='700 200px Oswald'; ctx.fillStyle='#e0a82e';
+  ctx.fillText(String(king.pts), CX, 758);
+  _ls(ctx,'6px'); ctx.font='800 20px Inter'; ctx.fillStyle='rgba(255,255,255,.45)';
+  ctx.fillText('POINTS', CX, 796); _ls(ctx,'0px');
+
+  // world champions strip
+  if(w.champion){
+    const label='WORLD CHAMPIONS';
+    ctx.font='700 17px Inter'; const lw2=ctx.measureText(label).width;
+    ctx.font='700 30px Archivo'; const tw2=ctx.measureText(w.champion).width;
+    const fw2 = wcFlag?42:0, fgap = wcFlag?12:0;
+    const bw = 30+lw2+16+fw2+fgap+tw2+30, bh=64;
+    const bx = CX-bw/2, by = 846;
+    _rr(ctx,bx,by,bw,bh,18);
+    ctx.fillStyle='rgba(224,168,46,.16)'; ctx.fill();
+    ctx.strokeStyle='rgba(224,168,46,.6)'; ctx.lineWidth=2; ctx.stroke();
+    const cy=by+bh/2;
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    _ls(ctx,'1px'); ctx.font='700 17px Inter'; ctx.fillStyle='rgba(255,255,255,.6)';
+    ctx.fillText(label, bx+30, cy+1); _ls(ctx,'0px');
+    let vx=bx+30+lw2+16;
+    if(wcFlag){
+      const fhh=28;
+      ctx.save(); _rr(ctx,vx,cy-fhh/2,fw2,fhh,4); ctx.clip();
+      ctx.drawImage(wcFlag,vx,cy-fhh/2,fw2,fhh); ctx.restore();
+      vx+=fw2+fgap;
+    }
+    ctx.font='700 30px Archivo'; ctx.fillStyle='#fff';
+    ctx.fillText(w.champion, vx, cy);
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  }
+
+  ctx.font='700 19px Inter'; ctx.fillStyle='rgba(255,255,255,.32)';
+  ctx.fillText('ICD Staff Prediction Championship', CX, 986);
+
+  return cv;
+}
+
+async function shareChampionCard(btn){
+  const order = computeStandingsArray();
+  if(!order.length){ toast('No standings yet'); return; }
+  const king = order[0];
+  const w = worldPodium();
+  const orig = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Building the card…'; }
+  try{
+    const cv = await buildChampionCardCanvas();
+    if(!cv){ toast('Could not build the card'); return; }
+    const blob = await new Promise(res=> cv.toBlob(res,'image/png'));
+    if(!blob){ toast('Could not export the card'); return; }
+    const file = new File([blob], 'ICD-Fantasy-World-Cup-2026-Champion.png', {type:'image/png'});
+    const text = `🏆 ICD Fantasy World Cup 2026 is done!\n👑 Champion: ${king.name} — ${king.pts} pts${w.champion?`\n🌍 World Champions: ${w.champion}`:''}`;
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({ files:[file], title:'ICD Fantasy World Cup 2026', text }); }
+      catch(e){ /* dismissed */ }
+    }else{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      toast('📥 Champion card saved — post it to the group chat!');
+    }
+  }catch(e){
+    console.error('Champion card failed:', e);
+    toast('Sorry — couldn\'t create the card');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML=orig; }
+  }
+}
+
 function init(){
   buildTeamGrid();
   buildDatalists();
@@ -8841,7 +9724,9 @@ function init(){
   }
   seedKnownScores();
   seedMoments();
+  applyFinaleState();
   maybeShowWelcome();
+  maybeShowCoronation();
   renderMatchesHub();
   initFilterArrows();
   syncTabbarH();
